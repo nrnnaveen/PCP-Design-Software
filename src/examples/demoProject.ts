@@ -11,10 +11,10 @@ export function createDemoProject(): ApexProject {
 
   return {
     metadata: {
-      id: 'proj_apex_iot_node_demo',
-      name: 'Apex IoT Sensor Node',
+      id: 'proj_floz_iot_node_demo',
+      name: 'FloZ IoT Sensor Node',
       version: '1.0.0',
-      author: 'Apex EDA Engineering Team',
+      author: 'FloZ ECA Engineering Team',
       description: 'Production-ready IoT sensor board with MCU, USB-C power, LDO regulation, I2C telemetry, and status indicators.',
       createdAt: now,
       updatedAt: now,
@@ -245,7 +245,7 @@ export function createDemoProject(): ApexProject {
           ],
           hierarchicalSheets: [],
           texts: [
-            { id: 'txt_title', text: 'APEX IOT SENSOR NODE - MAIN CONTROLLER', x: 10, y: 10, fontSize: 4.5, color: '#3b82f6' },
+            { id: 'txt_title', text: 'FLOZ IOT SENSOR NODE - MAIN CONTROLLER', x: 10, y: 10, fontSize: 4.5, color: '#3b82f6' },
             { id: 'txt_pwr', text: 'POWER & REGULATION (5V to 3.3V)', x: 20, y: 20, fontSize: 3.0, color: '#94a3b8' },
             { id: 'txt_mcu', text: 'STM32F401 CORE & PERIPHERALS', x: 100, y: 45, fontSize: 3.0, color: '#94a3b8' },
           ],
@@ -591,7 +591,7 @@ export function createDemoProject(): ApexProject {
         { type: 'circle', layer: 'Edge.Cuts', x: 4, y: 51, radius: 1.6, strokeWidth: 0.2 },
       ],
       texts: [
-        { id: 'txt_p1', text: 'APEX IOT SENSOR NODE', layer: 'F.Silkscreen', x: 38, y: 8, fontSize: 1.8, strokeWidth: 0.2, rotation: 0, mirror: false },
+        { id: 'txt_p1', text: 'FLOZ IOT SENSOR NODE', layer: 'F.Silkscreen', x: 38, y: 8, fontSize: 1.8, strokeWidth: 0.2, rotation: 0, mirror: false },
         { id: 'txt_p2', text: 'REV 1.0 (2026)', layer: 'F.Silkscreen', x: 38, y: 11, fontSize: 1.2, strokeWidth: 0.15, rotation: 0, mirror: false },
         { id: 'txt_p3', text: 'PWR', layer: 'F.Silkscreen', x: 45, y: 39, fontSize: 1.0, strokeWidth: 0.15, rotation: 0, mirror: false },
       ],
@@ -794,7 +794,7 @@ export function createDemoProject(): ApexProject {
       generatePickAndPlace: true,
       generateBOM: true,
       generateDrillMap: true,
-      companyName: 'Apex Electronics Lab',
+      companyName: 'FloZ Engineering Lab',
       designer: 'Lead Hardware Engineer',
       revision: '1.0',
     },

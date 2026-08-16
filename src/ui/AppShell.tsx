@@ -1,6 +1,6 @@
 /**
- * Apex EDA - Main Desktop Application Shell
- * Tabbed CAD workspace, menu bar, dockable tool panels, undo/redo manager, and cross-probing.
+ * FloZ ECA - Main Desktop Application Shell
+ * Tabbed CAD workspace, menu bar, dockable tool panels, undo/redo manager, library manager, and cross-probing.
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -20,11 +20,15 @@ import { GerberViewer } from '../gerbview/GerberViewer';
 import { Calculators } from '../calculator/Calculators';
 import { SymbolChooser } from '../library/SymbolChooser';
 import { FootprintAssignment } from '../library/FootprintAssignment';
+import { LibraryManager } from '../library/LibraryManager';
+import { ImportPreviewModal } from '../library/ImportPreviewModal';
+import { LibraryImportAnalyzer, ImportAnalysisSummary } from '../library/importAnalyzer';
 import { PropertiesPanel } from './PropertiesPanel';
 import { ERCPanel } from '../erc/ERCPanel';
 import { DRCPanel } from '../drc/DRCPanel';
 import { ManufacturingModal } from '../manufacturing/ManufacturingModal';
 import { ProjectManager } from './ProjectManager';
+import { AboutModal } from './AboutModal';
 
 // Icons
 import {
@@ -46,6 +50,8 @@ import {
   Cpu,
   Zap,
   CheckCircle2,
+  Info,
+  Package,
 } from 'lucide-react';
 
 export type WorkspaceTab =
@@ -71,8 +77,13 @@ export const AppShell: React.FC = () => {
   // Modals & Dialogs
   const [showSymbolChooser, setShowSymbolChooser] = useState<boolean>(false);
   const [showFootprintAssignment, setShowFootprintAssignment] = useState<boolean>(false);
+  const [showLibraryManager, setShowLibraryManager] = useState<boolean>(false);
   const [showMfgModal, setShowMfgModal] = useState<boolean>(false);
   const [showProjectManager, setShowProjectManager] = useState<boolean>(false);
+  const [showAboutModal, setShowAboutModal] = useState<boolean>(false);
+
+  // Drag & drop import analysis modal
+  const [dropImportAnalysis, setDropImportAnalysis] = useState<ImportAnalysisSummary | null>(null);
 
   // Selection state for inspector
   const [selectedSymbolId, setSelectedSymbolId] = useState<string | undefined>();
@@ -161,6 +172,37 @@ export const AppShell: React.FC = () => {
     return () => window.removeEventListener('keydown', handleGlobalKeys);
   }, [project, handleUndo, handleRedo]);
 
+  // Global Drag & Drop Handler for Library Files (.kicad_sym, .kicad_mod)
+  useEffect(() => {
+    const handleGlobalDrop = async (e: DragEvent) => {
+      e.preventDefault();
+      if (e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
+        const fileList = Array.from(e.dataTransfer.files);
+        const hasLibFile = fileList.some((f) => {
+          const l = f.name.toLowerCase();
+          return l.endsWith('.kicad_sym') || l.endsWith('.kicad_mod') || l.endsWith('.pretty');
+        });
+
+        if (hasLibFile) {
+          const analysis = await LibraryImportAnalyzer.analyzeFiles(fileList);
+          setDropImportAnalysis(analysis);
+        }
+      }
+    };
+
+    const handleDragOver = (e: DragEvent) => {
+      e.preventDefault();
+    };
+
+    window.addEventListener('dragover', handleDragOver);
+    window.addEventListener('drop', handleGlobalDrop);
+
+    return () => {
+      window.removeEventListener('dragover', handleDragOver);
+      window.removeEventListener('drop', handleGlobalDrop);
+    };
+  }, []);
+
   // EventBus Cross-probing Listeners
   useEffect(() => {
     const unsub1 = eventBus.on('SELECT_SYMBOL', (data) => {
@@ -182,15 +224,15 @@ export const AppShell: React.FC = () => {
       {/* 1. Top CAD Menu Bar */}
       <header className="h-9 bg-cad-header border-b border-cad-border px-3 flex items-center justify-between text-xs">
         <div className="flex items-center space-x-3">
-          {/* Logo & Project Title */}
+          {/* Logo & Product Title */}
           <div
             onClick={() => setShowProjectManager(true)}
             className="flex items-center space-x-2 cursor-pointer hover:opacity-80 transition-opacity"
           >
             <div className="w-5 h-5 rounded bg-blue-600 flex items-center justify-center text-white font-bold text-xs shadow-sm">
-              Λ
+              F
             </div>
-            <span className="font-bold text-white tracking-wide">Apex EDA</span>
+            <span className="font-bold text-white tracking-wide">FloZ ECA</span>
           </div>
 
           <div className="h-3.5 w-px bg-cad-border" />
@@ -256,6 +298,15 @@ export const AppShell: React.FC = () => {
           </button>
 
           <button
+            onClick={() => setShowLibraryManager(true)}
+            title="Open Component Library Manager"
+            className="px-2.5 py-1 bg-cad-subpanel hover:bg-cad-border text-slate-200 rounded text-[11px] font-semibold flex items-center gap-1.5 border border-cad-border transition-colors"
+          >
+            <Layers size={12} className="text-emerald-400" />
+            Libraries
+          </button>
+
+          <button
             onClick={() => setShowFootprintAssignment(true)}
             className="px-2.5 py-1 bg-cad-subpanel hover:bg-cad-border text-slate-200 rounded text-[11px] font-semibold flex items-center gap-1.5 border border-cad-border"
           >
@@ -269,6 +320,14 @@ export const AppShell: React.FC = () => {
           >
             <Download size={12} />
             Export Gerber ZIP
+          </button>
+
+          <button
+            onClick={() => setShowAboutModal(true)}
+            title="About FloZ ECA"
+            className="p-1 hover:bg-cad-subpanel rounded text-cad-textMuted hover:text-white ml-1"
+          >
+            <Info size={14} />
           </button>
         </div>
       </header>
@@ -394,7 +453,7 @@ export const AppShell: React.FC = () => {
         </div>
 
         <div className="flex items-center space-x-4">
-          <span className="text-slate-400">Apex EDA Engine v1.0.0 (Desktop-Class)</span>
+          <span className="text-slate-400">FloZ ECA Engine v1.0.0 — Electronic Circuit Architect</span>
         </div>
       </footer>
 
@@ -450,6 +509,11 @@ export const AppShell: React.FC = () => {
         onUpdateProject={updateProject}
       />
 
+      <LibraryManager
+        isOpen={showLibraryManager}
+        onClose={() => setShowLibraryManager(false)}
+      />
+
       <ManufacturingModal
         project={project}
         isOpen={showMfgModal}
@@ -461,6 +525,26 @@ export const AppShell: React.FC = () => {
           currentProject={project}
           onOpenProject={(p) => setProject(p)}
           onClose={() => setShowProjectManager(false)}
+          onOpenLibraryManager={() => setShowLibraryManager(true)}
+        />
+      )}
+
+      {showAboutModal && (
+        <AboutModal
+          isOpen={showAboutModal}
+          onClose={() => setShowAboutModal(false)}
+        />
+      )}
+
+      {/* Drag & Drop Import Preview Modal */}
+      {dropImportAnalysis && (
+        <ImportPreviewModal
+          analysis={dropImportAnalysis}
+          isOpen={Boolean(dropImportAnalysis)}
+          onClose={() => setDropImportAnalysis(null)}
+          onImportComplete={(summary) => {
+            showToast(`Imported ${summary.importedCount} items into FloZ ECA`);
+          }}
         />
       )}
     </div>

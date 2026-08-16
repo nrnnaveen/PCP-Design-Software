@@ -1,5 +1,5 @@
 /**
- * Apex EDA - Desktop Project Manager Dashboard
+ * FloZ ECA - Desktop Project Manager Dashboard
  * Project creation, template library, file import/export, and recent design workspace.
  */
 
@@ -25,16 +25,23 @@ interface Props {
   currentProject: ApexProject;
   onOpenProject: (project: ApexProject) => void;
   onClose: () => void;
+  onOpenLibraryManager?: () => void;
 }
 
-export const ProjectManager: React.FC<Props> = ({ currentProject, onOpenProject, onClose }) => {
+export const ProjectManager: React.FC<Props> = ({
+  currentProject,
+  onOpenProject,
+  onClose,
+  onOpenLibraryManager,
+}) => {
   const [activeTab, setActiveTab] = useState<'recent' | 'templates' | 'new'>('recent');
-  const [newPrjName, setNewPrjName] = useState('New_Apex_Design');
+  const [newPrjName, setNewPrjName] = useState('New_FloZ_Design');
 
   const handleCreateNew = () => {
     const freshProject = createDemoProject();
     freshProject.metadata.id = `proj_${Date.now()}`;
     freshProject.metadata.name = newPrjName;
+    freshProject.metadata.author = 'FloZ ECA Engineer';
     freshProject.schematic.sheets[0].symbols = [];
     freshProject.schematic.sheets[0].wires = [];
     freshProject.schematic.sheets[0].junctions = [];
@@ -74,16 +81,16 @@ export const ProjectManager: React.FC<Props> = ({ currentProject, onOpenProject,
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md select-none">
-      <div className="bg-cad-panel border border-cad-border w-[900px] h-[580px] rounded-xl shadow-2xl flex flex-col overflow-hidden text-cad-text">
+      <div className="bg-cad-panel border border-cad-border w-[920px] h-[600px] rounded-xl shadow-2xl flex flex-col overflow-hidden text-cad-text">
         {/* Header */}
         <div className="h-14 bg-cad-header border-b border-cad-border px-6 flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white font-bold text-base shadow-md">
-              Λ
+              F
             </div>
             <div>
-              <h1 className="text-sm font-bold text-white tracking-wide">Apex EDA Studio</h1>
-              <p className="text-[11px] text-cad-textMuted font-mono">Desktop Electronics Design Suite v1.0</p>
+              <h1 className="text-sm font-bold text-white tracking-wide">FloZ ECA — Electronic Circuit Architect</h1>
+              <p className="text-[11px] text-cad-textMuted font-mono">Professional Desktop Electronics Design Suite v1.0.0</p>
             </div>
           </div>
           <button onClick={onClose} className="text-xs px-3 py-1.5 bg-cad-subpanel hover:bg-cad-border rounded text-slate-300">
@@ -94,7 +101,7 @@ export const ProjectManager: React.FC<Props> = ({ currentProject, onOpenProject,
         {/* 2-Pane Body */}
         <div className="flex-1 flex overflow-hidden">
           {/* Left Navigation */}
-          <div className="w-56 border-r border-cad-border bg-cad-bg/40 p-3 space-y-1">
+          <div className="w-60 border-r border-cad-border bg-cad-bg/40 p-3 space-y-1">
             <button
               onClick={() => setActiveTab('recent')}
               className={`w-full px-3 py-2 rounded-lg text-xs font-semibold flex items-center gap-2.5 transition-colors ${
@@ -125,11 +132,24 @@ export const ProjectManager: React.FC<Props> = ({ currentProject, onOpenProject,
               New Project
             </button>
 
+            {onOpenLibraryManager && (
+              <button
+                onClick={() => {
+                  onClose();
+                  onOpenLibraryManager();
+                }}
+                className="w-full px-3 py-2 rounded-lg text-xs font-semibold flex items-center gap-2.5 text-cad-textMuted hover:text-white hover:bg-cad-subpanel transition-colors"
+              >
+                <Layers size={15} className="text-amber-400" />
+                Library Manager
+              </button>
+            )}
+
             <div className="pt-4 border-t border-cad-border mt-4 space-y-2">
               <label className="w-full px-3 py-2 rounded-lg text-xs font-semibold flex items-center gap-2.5 bg-cad-subpanel hover:bg-cad-border text-slate-300 cursor-pointer border border-cad-border">
                 <Upload size={15} className="text-emerald-400" />
-                Import Project (.apexprj)
-                <input type="file" accept=".json,.apexprj" onChange={handleImportFile} className="hidden" />
+                Import Project File
+                <input type="file" accept=".json,.apexprj,.flozprj" onChange={handleImportFile} className="hidden" />
               </label>
             </div>
           </div>
@@ -188,7 +208,7 @@ export const ProjectManager: React.FC<Props> = ({ currentProject, onOpenProject,
                       <Layers size={24} />
                     </div>
                     <div>
-                      <h3 className="font-bold text-sm text-white">Apex IoT Sensor Node v1.0</h3>
+                      <h3 className="font-bold text-sm text-white">FloZ IoT Sensor Node v1.0</h3>
                       <p className="text-xs text-cad-textMuted mt-1">
                         STM32F401 MCU + USB-C 5V Input + AP2112K 3.3V LDO + SHT31 I2C Sensor + Status LED + Traces + Ground Pour.
                       </p>
