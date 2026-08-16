@@ -1,0 +1,58 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --cad-bg: #14171c;
+  --cad-panel: #1a1e24;
+  --cad-subpanel: #20262e;
+  --cad-header: #111418;
+  --cad-border: #2a313c;
+  --cad-accent: #2563eb;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--cad-bg);
+  color: #e2e8f0;
+  user-select: none;
+  -webkit-user-select: none;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  overflow: hidden;
+}
+
+/* Custom CAD scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #14171c;
+}
+::-webkit-scrollbar-thumb {
+  background: #2a313c;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #3b82f6;
+}
+
+/* Canvas styling */
+canvas {
+  image-rendering: pixelated;
+}
+
+/* Tooltip & dropdown animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.98); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.cad-dropdown {
+  animation: fadeIn 0.1s ease-out;
+}
