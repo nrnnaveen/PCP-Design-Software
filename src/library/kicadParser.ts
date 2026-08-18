@@ -5,6 +5,7 @@
 
 import {
   SymbolDefinition,
+  SymbolUnitDefinition,
   FootprintDefinition,
   SchematicPin,
   SymbolGraphicShape,
@@ -268,23 +269,45 @@ export class KiCadSymbolParser {
         const keywordsStr = getProperty(symNode, 'ki_keywords') || getProperty(symNode, 'Keywords') || '';
         const keywords = keywordsStr.split(/\s+/).filter(Boolean);
 
-        const pins: SchematicPin[] = [];
-        const shapes: SymbolGraphicShape[] = [];
+        const unitMap = new Map<number, { pins: SchematicPin[]; shapes: SymbolGraphicShape[] }>();
+        unitMap.set(0, { pins: [], shapes: [] });
 
         // Helper to extract pins and shapes recursively from symbol units
-        const processSubUnits = (node: SExpr[]) => {
+        const processSubUnits = (node: SExpr[], currentUnit = 0) => {
+          let unitId = currentUnit;
+          const nodeName = typeof node[1] === 'string' ? node[1] : '';
+          const unitMatch = nodeName.match(/_(\d+)_(\d+)$/);
+          if (unitMatch) {
+            unitId = parseInt(unitMatch[1], 10);
+          }
+
+          if (!unitMap.has(unitId)) {
+            unitMap.set(unitId, { pins: [], shapes: [] });
+          }
+          const currentStorage = unitMap.get(unitId)!;
+
           for (const item of node) {
             if (!Array.isArray(item)) continue;
 
             const keyword = item[0];
 
-            if (keyword === 'pin') {
-              // (pin electrical_type graphic_style (at x y orientation) (length len) (name "NAME" ...) (number "NUM" ...))
+            if (keyword === 'symbol') {
+              // Sub-unit symbol (e.g. 4010_1_1)
+              processSubUnits(item, unitId);
+            } else if (keyword === 'pin') {
+              // (pin electrical_type graphic_style (at x y orientation) (length len) (name "NAME" ...) (number "NUM" ...) (hide yes))
               const electType = mapElectricalType(typeof item[1] === 'string' ? item[1] : 'unspecified');
+              const styleStr = typeof item[2] === 'string' ? item[2] : 'line';
+              let graphicStyle: any = 'line';
+              if (styleStr === 'inverted') graphicStyle = 'inverted';
+              else if (styleStr === 'clock') graphicStyle = 'clock';
+              else if (styleStr === 'inverted_clock') graphicStyle = 'inverted_clock';
+
               const atNode = getSubList(item, 'at');
               const lenNode = getSubList(item, 'length');
               const nameNode = getSubList(item, 'name');
               const numNode = getSubList(item, 'number');
+              const hideNode = getSubList(item, 'hide');
 
               let px = 0, py = 0, rot: 0 | 90 | 180 | 270 = 0;
               if (atNode) {
@@ -296,41 +319,66 @@ export class KiCadSymbolParser {
 
               const pinLen = lenNode ? parseFloat(lenNode[1] as string) || 3.81 : 3.81;
               const pinName = nameNode && typeof nameNode[1] === 'string' ? nameNode[1] : '~';
-              const pinNum = numNode && typeof numNode[1] === 'string' ? numNode[1] : `${pins.length + 1}`;
+              const pinNum = numNode && typeof numNode[1] === 'string' ? numNode[1] : `${currentStorage.pins.length + 1}`;
+              const isHidden = !!hideNode || (item.some((tok) => tok === 'hide' || tok === '(hide yes)'));
 
-              pins.push({
-                id: `pin_${pinNum}_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+              currentStorage.pins.push({
+                id: `pin_${symName}_u${unitId}_${pinNum}_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
                 number: pinNum,
                 name: pinName,
                 electricalType: electType,
+                graphicStyle,
                 x: px,
                 y: py,
                 length: pinLen,
                 orientation: rot,
-                visible: true,
+                visible: !isHidden,
               });
             } else if (keyword === 'rectangle') {
               // (rectangle (start x1 y1) (end x2 y2) ...)
               const startNode = getSubList(item, 'start');
               const endNode = getSubList(item, 'end');
+              const fillNode = getSubList(item, 'fill');
+              const strokeNode = getSubList(item, 'stroke');
+
+              let strokeWidth = 0.25;
+              if (strokeNode) {
+                const widthNode = getSubList(strokeNode, 'width');
+                if (widthNode) strokeWidth = parseFloat(widthNode[1] as string) || 0.25;
+              }
+
+              const isFilled = fillNode ? fillNode[1] === 'background' || fillNode[1] === 'yes' : false;
+
               if (startNode && endNode) {
                 const x1 = parseFloat(startNode[1] as string) || 0;
                 const y1 = -(parseFloat(startNode[2] as string) || 0);
                 const x2 = parseFloat(endNode[1] as string) || 0;
                 const y2 = -(parseFloat(endNode[2] as string) || 0);
 
-                shapes.push({
+                currentStorage.shapes.push({
                   type: 'rectangle',
                   x: (x1 + x2) / 2,
                   y: (y1 + y2) / 2,
                   width: Math.abs(x2 - x1),
                   height: Math.abs(y2 - y1),
-                  strokeWidth: 0.25,
+                  strokeWidth,
+                  filled: isFilled,
                 });
               }
             } else if (keyword === 'polyline') {
               // (polyline (pts (xy x y) (xy x y) ...) ...)
               const ptsNode = getSubList(item, 'pts');
+              const fillNode = getSubList(item, 'fill');
+              const strokeNode = getSubList(item, 'stroke');
+
+              let strokeWidth = 0.25;
+              if (strokeNode) {
+                const widthNode = getSubList(strokeNode, 'width');
+                if (widthNode) strokeWidth = parseFloat(widthNode[1] as string) || 0.25;
+              }
+
+              const isFilled = fillNode ? fillNode[1] === 'background' || fillNode[1] === 'yes' : false;
+
               if (ptsNode) {
                 const points: Point2D[] = [];
                 for (const pt of ptsNode) {
@@ -342,10 +390,11 @@ export class KiCadSymbolParser {
                   }
                 }
                 if (points.length >= 2) {
-                  shapes.push({
-                    type: 'line',
+                  currentStorage.shapes.push({
+                    type: points.length >= 3 && isFilled ? 'polygon' : 'line',
                     points,
-                    strokeWidth: 0.25,
+                    strokeWidth,
+                    filled: isFilled,
                   });
                 }
               }
@@ -353,13 +402,17 @@ export class KiCadSymbolParser {
               // (circle (center x y) (radius r) ...)
               const centerNode = getSubList(item, 'center');
               const radNode = getSubList(item, 'radius');
+              const fillNode = getSubList(item, 'fill');
+              const isFilled = fillNode ? fillNode[1] === 'background' || fillNode[1] === 'yes' : false;
+
               if (centerNode && radNode) {
-                shapes.push({
+                currentStorage.shapes.push({
                   type: 'circle',
                   x: parseFloat(centerNode[1] as string) || 0,
                   y: -(parseFloat(centerNode[2] as string) || 0),
                   radius: parseFloat(radNode[1] as string) || 1.0,
                   strokeWidth: 0.25,
+                  filled: isFilled,
                 });
               }
             } else if (keyword === 'arc') {
@@ -367,7 +420,7 @@ export class KiCadSymbolParser {
               const startNode = getSubList(item, 'start');
               const endNode = getSubList(item, 'end');
               if (startNode && endNode) {
-                shapes.push({
+                currentStorage.shapes.push({
                   type: 'arc',
                   x: parseFloat(startNode[1] as string) || 0,
                   y: -(parseFloat(startNode[2] as string) || 0),
@@ -377,25 +430,99 @@ export class KiCadSymbolParser {
                   strokeWidth: 0.25,
                 });
               }
-            } else if (keyword === 'symbol') {
-              // Unit symbol (e.g. Device:R_1_1)
-              processSubUnits(item);
+            } else if (keyword === 'text') {
+              const textContent = typeof item[1] === 'string' ? item[1] : '';
+              const atNode = getSubList(item, 'at');
+              if (textContent && atNode) {
+                currentStorage.shapes.push({
+                  type: 'text',
+                  x: parseFloat(atNode[1] as string) || 0,
+                  y: -(parseFloat(atNode[2] as string) || 0),
+                  text: textContent,
+                  fontSize: 1.27,
+                });
+              }
             }
           }
         };
 
-        processSubUnits(symNode);
+        processSubUnits(symNode, 0);
 
-        // Fallback graphical shape if none were parsed
-        if (shapes.length === 0 && pins.length > 0) {
-          shapes.push({
-            type: 'rectangle',
-            x: 0,
-            y: 0,
-            width: 14,
-            height: Math.max(14, pins.length * 3.5),
-            strokeWidth: 0.25,
+        const positiveUnits = Array.from(unitMap.keys()).filter((u) => u > 0).sort((a, b) => a - b);
+        const shared = unitMap.get(0) || { pins: [], shapes: [] };
+
+        let finalUnits: SymbolUnitDefinition[] = [];
+        let finalPins: SchematicPin[] = [];
+        let finalShapes: SymbolGraphicShape[] = [];
+
+        if (positiveUnits.length > 0) {
+          finalUnits = positiveUnits.map((unitNum) => {
+            const uData = unitMap.get(unitNum)!;
+            const isPower = uData.pins.length > 0 && uData.pins.every((p) => p.electricalType === 'power_in' || p.electricalType === 'power_out');
+            const unitLetter = unitNum <= 26 ? String.fromCharCode(64 + unitNum) : `Unit ${unitNum}`;
+            const name = isPower ? 'Power' : unitLetter;
+
+            const shapes = [...shared.shapes, ...uData.shapes];
+            if (shapes.length === 0 && uData.pins.length > 0) {
+              shapes.push({
+                type: 'rectangle',
+                x: 0,
+                y: 0,
+                width: 14,
+                height: Math.max(14, uData.pins.length * 3.5),
+                strokeWidth: 0.25,
+              });
+            }
+
+            return {
+              unit: unitNum,
+              name,
+              pins: [...uData.pins],
+              shapes,
+              isPower,
+            };
           });
+
+          // Collect all distinct pins across all units
+          const pinSet = new Set<string>();
+          finalUnits.forEach((u: SymbolUnitDefinition) => {
+            u.pins.forEach((p: SchematicPin) => {
+              if (!pinSet.has(p.number)) {
+                pinSet.add(p.number);
+                finalPins.push(p);
+              }
+            });
+          });
+          shared.pins.forEach((p: SchematicPin) => {
+            if (!pinSet.has(p.number)) {
+              pinSet.add(p.number);
+              finalPins.push(p);
+            }
+          });
+
+          finalShapes = finalUnits[0]?.shapes.length > 0 ? finalUnits[0].shapes : shared.shapes;
+        } else {
+          // Single unit symbol
+          finalPins = shared.pins;
+          finalShapes = shared.shapes;
+          if (finalShapes.length === 0 && finalPins.length > 0) {
+            finalShapes.push({
+              type: 'rectangle',
+              x: 0,
+              y: 0,
+              width: 14,
+              height: Math.max(14, finalPins.length * 3.5),
+              strokeWidth: 0.25,
+            });
+          }
+          finalUnits = [
+            {
+              unit: 1,
+              name: 'A',
+              pins: finalPins,
+              shapes: finalShapes,
+            },
+          ];
         }
 
         const symbolDef: SymbolDefinition = {
@@ -408,8 +535,10 @@ export class KiCadSymbolParser {
           defaultPrefix: reference.replace(/\?$/, '') || 'U',
           defaultFootprint: footprint,
           datasheet,
-          pins,
-          shapes,
+          pins: finalPins,
+          shapes: finalShapes,
+          unitCount: finalUnits.length,
+          units: finalUnits,
           isPower: symName.startsWith('+') || symName === 'GND' || symName === 'VCC' || symName === 'VDD',
         };
 

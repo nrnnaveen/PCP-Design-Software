@@ -74,6 +74,20 @@ export class GerberGenerator {
 
     // 2. Copper Layers (F.Cu / B.Cu)
     if (layer === 'F.Cu' || layer === 'B.Cu') {
+      // Zones / Ground Plating (G36 / G37 filled polygon)
+      pcb.zones.forEach((zone) => {
+        const poly = zone.points || (zone.filledPolygons && zone.filledPolygons[0]);
+        if (zone.layer === layer && poly && poly.length >= 3) {
+          gbr += `G36*\n`;
+          gbr += `X${formatCoord(poly[0].x)}Y${formatCoord(poly[0].y)}D02*\n`;
+          for (let i = 1; i < poly.length; i++) {
+            gbr += `X${formatCoord(poly[i].x)}Y${formatCoord(poly[i].y)}D01*\n`;
+          }
+          gbr += `X${formatCoord(poly[0].x)}Y${formatCoord(poly[0].y)}D01*\n`;
+          gbr += `G37*\n`;
+        }
+      });
+
       // Tracks
       pcb.tracks.forEach((track) => {
         if (track.layer === layer) {
@@ -119,9 +133,45 @@ export class GerberGenerator {
       });
     }
 
-    // 3. Silkscreen Layers (F.Silkscreen / B.Silkscreen)
+    // 3. Solder Mask & Solder Paste Layers (F.Mask / B.Mask / F.Paste / B.Paste)
+    if (layer === 'F.Mask' || layer === 'B.Mask' || layer === 'F.Paste' || layer === 'B.Paste') {
+      const isMask = layer === 'F.Mask' || layer === 'B.Mask';
+      const targetCuLayer: PCBLayerId = layer.startsWith('F.') ? 'F.Cu' : 'B.Cu';
+
+      pcb.footprints.forEach((fp) => {
+        const rad = (fp.rotation * Math.PI) / 180;
+        const cosR = Math.cos(rad);
+        const sinR = Math.sin(rad);
+
+        fp.pads.forEach((pad) => {
+          if (!pad.layers.includes(targetCuLayer)) return;
+          if (!isMask && pad.type === 'through_hole') return; // No paste for THT holes
+
+          const rx = pad.x * cosR - pad.y * sinR;
+          const ry = pad.x * sinR + pad.y * cosR;
+          const absX = fp.x + rx;
+          const absY = fp.y + ry;
+
+          if (pad.type === 'through_hole') {
+            gbr += `D17*\n`;
+            gbr += `X${formatCoord(absX)}Y${formatCoord(absY)}D03*\n`;
+          } else if (pad.shape === 'roundrect' || pad.shape === 'rect') {
+            const apCode = pad.width > 1.2 ? 'D14' : pad.width >= 1.0 ? 'D15' : 'D16';
+            gbr += `${apCode}*\n`;
+            gbr += `X${formatCoord(absX)}Y${formatCoord(absY)}D03*\n`;
+          } else {
+            gbr += `D13*\n`;
+            gbr += `X${formatCoord(absX)}Y${formatCoord(absY)}D03*\n`;
+          }
+        });
+      });
+    }
+
+    // 4. Silkscreen Layers (F.Silkscreen / B.Silkscreen)
     if (layer === 'F.Silkscreen' || layer === 'B.Silkscreen') {
       gbr += `D10*\n`;
+
+      // Footprint outlines and shapes
       pcb.footprints.forEach((fp) => {
         if (fp.layer !== (layer === 'F.Silkscreen' ? 'F.Cu' : 'B.Cu')) return;
 
@@ -154,6 +204,18 @@ export class GerberGenerator {
             }
           }
         });
+      });
+
+      // Free texts on silkscreen
+      pcb.texts.forEach((txt) => {
+        if (txt.layer === layer) {
+          const charWidth = (txt.fontSize || 1.2) * 0.6;
+          const totalWidth = txt.text.length * charWidth;
+          const startX = txt.x - totalWidth / 2;
+          const startY = txt.y;
+          gbr += `X${formatCoord(startX)}Y${formatCoord(startY)}D02*\n`;
+          gbr += `X${formatCoord(startX + totalWidth)}Y${formatCoord(startY)}D01*\n`;
+        }
       });
     }
 

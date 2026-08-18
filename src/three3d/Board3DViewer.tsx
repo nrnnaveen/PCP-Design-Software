@@ -171,8 +171,36 @@ export const Board3DViewer: React.FC<Props> = ({ project, onSelectComponent }) =
 
         // Procedural 3D Package Bodies
         const pkg = fp.model3D?.packageType || fp.footprintDefId;
+        const isTHT = fp.pads.some((p) => p.type === 'through_hole') || pkg.includes('THT');
 
-        if (pkg.includes('LQFP-48') || pkg.includes('QFP')) {
+        if (pkg.includes('ESP32') || pkg.includes('WROOM')) {
+          // ESP32-WROOM-32 Module (Shield Can + PCB Antenna)
+          const canGeo = new THREE.BoxGeometry(18.0, 18.0, 2.8);
+          const canMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.9, roughness: 0.2 });
+          const canMesh = new THREE.Mesh(canGeo, canMat);
+          canMesh.position.set(0, 2.0, 1.4);
+          compGroup.add(canMesh);
+
+          // PCB Antenna area
+          const antGeo = new THREE.BoxGeometry(18.0, 6.0, 0.8);
+          const antMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.8 });
+          const antMesh = new THREE.Mesh(antGeo, antMat);
+          antMesh.position.set(0, -9.5, 0.4);
+          compGroup.add(antMesh);
+        } else if (pkg.includes('SW_Push') || pkg.includes('Button') || fp.reference.startsWith('SW')) {
+          // Tactile Push Button 6x6mm (Black Body + Round Actuator)
+          const btnGeo = new THREE.BoxGeometry(6.0, 6.0, 3.5);
+          const btnMesh = new THREE.Mesh(btnGeo, icBlackMat);
+          btnMesh.position.set(0, 0, 1.75);
+          compGroup.add(btnMesh);
+
+          const actGeo = new THREE.CylinderGeometry(1.5, 1.5, 1.5, 16);
+          const actMat = new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.4 });
+          const actMesh = new THREE.Mesh(actGeo, actMat);
+          actMesh.rotation.x = Math.PI / 2;
+          actMesh.position.set(0, 0, 4.25);
+          compGroup.add(actMesh);
+        } else if (pkg.includes('LQFP-48') || pkg.includes('QFP')) {
           // MCU Main Body
           const icGeo = new THREE.BoxGeometry(7.0, 7.0, 1.4);
           const icMesh = new THREE.Mesh(icGeo, icBlackMat);
@@ -238,11 +266,161 @@ export const Board3DViewer: React.FC<Props> = ({ project, onSelectComponent }) =
           const sotMesh = new THREE.Mesh(sotGeo, icBlackMat);
           sotMesh.position.set(0, 0, 0.55);
           compGroup.add(sotMesh);
+        } else if (pkg.includes('LED_5mm') || pkg.includes('LED_D5') || (fp.reference.startsWith('D') && fp.value.toUpperCase().includes('LED'))) {
+          // 5mm Through-Hole LED (Dome + Rim + Epoxy Lens)
+          const ledColor = fp.value.toUpperCase().includes('RED') ? 0xef4444 : fp.value.toUpperCase().includes('BLUE') ? 0x3b82f6 : 0x22c55e;
+          const ledMat = new THREE.MeshStandardMaterial({
+            color: ledColor,
+            roughness: 0.1,
+            metalness: 0.1,
+            emissive: ledColor,
+            emissiveIntensity: 0.5,
+            transparent: true,
+            opacity: 0.85,
+          });
+
+          // Cylinder base
+          const baseGeo = new THREE.CylinderGeometry(2.5, 2.5, 4.0, 16);
+          const baseMesh = new THREE.Mesh(baseGeo, ledMat);
+          baseMesh.rotation.x = Math.PI / 2;
+          baseMesh.position.set(0, 0, 2.0);
+          compGroup.add(baseMesh);
+
+          // Dome top
+          const domeGeo = new THREE.SphereGeometry(2.5, 16, 12, 0, Math.PI * 2, 0, Math.PI / 2);
+          const domeMesh = new THREE.Mesh(domeGeo, ledMat);
+          domeMesh.rotation.x = -Math.PI / 2;
+          domeMesh.position.set(0, 0, 4.0);
+          compGroup.add(domeMesh);
+        } else if (pkg.includes('DO-41') || (pkg.includes('Diode') && isTHT)) {
+          // Axial DO-41 Diode (1N5819 / 1N4007)
+          const diodeBodyGeo = new THREE.CylinderGeometry(1.3, 1.3, 5.0, 16);
+          const diodeBodyMesh = new THREE.Mesh(diodeBodyGeo, icBlackMat);
+          diodeBodyMesh.rotation.z = Math.PI / 2;
+          diodeBodyMesh.position.set(0, 0, 1.3);
+          compGroup.add(diodeBodyMesh);
+
+          // Cathode silver band
+          const cathodeGeo = new THREE.CylinderGeometry(1.32, 1.32, 0.8, 16);
+          const silverMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.8, roughness: 0.2 });
+          const cathodeMesh = new THREE.Mesh(cathodeGeo, silverMat);
+          cathodeMesh.rotation.z = Math.PI / 2;
+          cathodeMesh.position.set(1.6, 0, 1.3);
+          compGroup.add(cathodeMesh);
+
+          // Axial leads
+          const lead1 = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 3.5, 8), tinMat);
+          lead1.rotation.z = Math.PI / 2;
+          lead1.position.set(-3.8, 0, 1.3);
+          compGroup.add(lead1);
+
+          const lead2 = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 3.5, 8), tinMat);
+          lead2.rotation.z = Math.PI / 2;
+          lead2.position.set(3.8, 0, 1.3);
+          compGroup.add(lead2);
+        } else if (pkg.includes('Axial') || (fp.reference.startsWith('R') && isTHT)) {
+          // Through-Hole Axial Resistor DIN0207
+          const rBodyGeo = new THREE.CylinderGeometry(1.2, 1.2, 6.0, 16);
+          const tanMat = new THREE.MeshStandardMaterial({ color: 0xd4b886, roughness: 0.5 });
+          const rBodyMesh = new THREE.Mesh(rBodyGeo, tanMat);
+          rBodyMesh.rotation.z = Math.PI / 2;
+          rBodyMesh.position.set(0, 0, 1.2);
+          compGroup.add(rBodyMesh);
+
+          // Color bands (Brown, Black, Red for 1k)
+          const b1 = new THREE.Mesh(new THREE.CylinderGeometry(1.22, 1.22, 0.4, 16), new THREE.MeshStandardMaterial({ color: 0x854d0e }));
+          b1.rotation.z = Math.PI / 2;
+          b1.position.set(-1.8, 0, 1.2);
+          compGroup.add(b1);
+
+          const b2 = new THREE.Mesh(new THREE.CylinderGeometry(1.22, 1.22, 0.4, 16), icBlackMat);
+          b2.rotation.z = Math.PI / 2;
+          b2.position.set(-0.8, 0, 1.2);
+          compGroup.add(b2);
+
+          const b3 = new THREE.Mesh(new THREE.CylinderGeometry(1.22, 1.22, 0.4, 16), new THREE.MeshStandardMaterial({ color: 0xef4444 }));
+          b3.rotation.z = Math.PI / 2;
+          b3.position.set(0.2, 0, 1.2);
+          compGroup.add(b3);
+        } else if (pkg.includes('PinHeader') || pkg.includes('Header')) {
+          // Pin Header (Black base + Gold Pins)
+          const baseGeo = new THREE.BoxGeometry(2.5, 5.0, 2.5);
+          const baseMesh = new THREE.Mesh(baseGeo, icBlackMat);
+          baseMesh.position.set(0, 0, 1.25);
+          compGroup.add(baseMesh);
+
+          const pin1 = new THREE.Mesh(new THREE.BoxGeometry(0.64, 0.64, 6.0), goldMat);
+          pin1.position.set(0, -1.27, 3.0);
+          compGroup.add(pin1);
+
+          const pin2 = new THREE.Mesh(new THREE.BoxGeometry(0.64, 0.64, 6.0), goldMat);
+          pin2.position.set(0, 1.27, 3.0);
+          compGroup.add(pin2);
+        } else if (pkg.includes('TerminalBlock')) {
+          // Phoenix Screw Terminal Block (Green Body + Screws)
+          const tbMat = new THREE.MeshStandardMaterial({ color: 0x15803d, roughness: 0.3 });
+          const tbGeo = new THREE.BoxGeometry(10.0, 8.0, 10.0);
+          const tbMesh = new THREE.Mesh(tbGeo, tbMat);
+          tbMesh.position.set(0, 0, 5.0);
+          compGroup.add(tbMesh);
+        } else if (pkg.includes('Disc') || (fp.reference.startsWith('C') && isTHT && fp.value.includes('nF'))) {
+          // Ceramic Disc Capacitor (Orange / Tan Disc)
+          const discGeo = new THREE.CylinderGeometry(2.5, 2.5, 1.8, 16);
+          const discMat = new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.4 });
+          const discMesh = new THREE.Mesh(discGeo, discMat);
+          discMesh.rotation.z = Math.PI / 2;
+          discMesh.position.set(0, 0, 3.0);
+          compGroup.add(discMesh);
+        } else if (pkg.includes('Radial') || pkg.includes('CP_') || (fp.reference.startsWith('C') && (fp.value.includes('uF') && parseInt(fp.value) >= 10))) {
+          // Aluminum Electrolytic Radial Can
+          const canGeo = new THREE.CylinderGeometry(3.15, 3.15, 7.5, 16);
+          const canMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.6, roughness: 0.3 });
+          const canMesh = new THREE.Mesh(canGeo, canMat);
+          canMesh.rotation.x = Math.PI / 2;
+          canMesh.position.set(0, 0, 3.75);
+          compGroup.add(canMesh);
+
+          // Vent top
+          const topGeo = new THREE.CircleGeometry(3.0, 16);
+          const topMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.8 });
+          const topMesh = new THREE.Mesh(topGeo, topMat);
+          topMesh.position.set(0, 0, 7.51);
+          compGroup.add(topMesh);
+        } else if (pkg.includes('Diode') || (fp.reference.startsWith('D') && !fp.value.toUpperCase().includes('LED'))) {
+          // SMD Diode (SMA / SOD-123) with Cathode Polarity Band
+          const dGeo = new THREE.BoxGeometry(3.6, 2.2, 1.4);
+          const dMesh = new THREE.Mesh(dGeo, icBlackMat);
+          dMesh.position.set(0, 0, 0.7);
+          compGroup.add(dMesh);
+
+          // Cathode white stripe
+          const bandGeo = new THREE.BoxGeometry(0.5, 2.22, 1.42);
+          const bandMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
+          const bandMesh = new THREE.Mesh(bandGeo, bandMat);
+          bandMesh.position.set(-1.1, 0, 0.7);
+          compGroup.add(bandMesh);
+        } else if (pkg.includes('Fuse') || fp.reference.startsWith('F')) {
+          // Polyfuse / Resettable Fuse SMD or Cartridge
+          const fuseGeo = new THREE.BoxGeometry(4.5, 3.2, 1.0);
+          const fuseMat = new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.3 });
+          const fuseMesh = new THREE.Mesh(fuseGeo, fuseMat);
+          fuseMesh.position.set(0, 0, 0.5);
+          compGroup.add(fuseMesh);
         } else {
-          // Generic SMD Block
-          const genGeo = new THREE.BoxGeometry(Math.max(2, fp.courtyard.maxX - fp.courtyard.minX), Math.max(2, fp.courtyard.maxY - fp.courtyard.minY), 1.0);
-          const genMesh = new THREE.Mesh(genGeo, icBlackMat);
-          genMesh.position.set(0, 0, 0.5);
+          // Missing 3D Package Indicator (Translucent Wireframe / Warning Box)
+          const genGeo = new THREE.BoxGeometry(
+            Math.max(2, fp.courtyard.maxX - fp.courtyard.minX),
+            Math.max(2, fp.courtyard.maxY - fp.courtyard.minY),
+            1.2
+          );
+          const warnMat = new THREE.MeshStandardMaterial({
+            color: 0xf59e0b,
+            wireframe: true,
+            emissive: 0xb45309,
+            emissiveIntensity: 0.4,
+          });
+          const genMesh = new THREE.Mesh(genGeo, warnMat);
+          genMesh.position.set(0, 0, 0.6);
           compGroup.add(genMesh);
         }
 

@@ -1,16 +1,20 @@
 /**
- * Apex EDA - Object Properties Inspector Panel
- * Displays and edits properties for selected schematic symbols and PCB footprints/tracks/vias.
+ * FloZ ECA - Object Properties Inspector Panel
+ * Context-aware properties inspector for schematic symbols, pins, wires, nets, and PCB footprints.
  */
 
 import React from 'react';
 import { ApexProject } from '../core/types';
-import { Sliders, Tag, Layers, Cpu, Hash } from 'lucide-react';
+import { NetConnectivitySolver } from '../schematic/connectivity';
+import { SchematicHelper } from '../schematic/helper';
+import { libraryRegistry } from '../library/libraryRegistry';
+import { Sliders, Tag, Layers, Cpu, Hash, Zap, Activity } from 'lucide-react';
 
 interface Props {
   project: ApexProject;
   selectedSymbolId?: string;
   selectedFootprintId?: string;
+  selectedWireId?: string;
   onUpdateProject: (updater: (prev: ApexProject) => ApexProject, actionName?: string) => void;
 }
 
@@ -18,29 +22,36 @@ export const PropertiesPanel: React.FC<Props> = ({
   project,
   selectedSymbolId,
   selectedFootprintId,
+  selectedWireId,
   onUpdateProject,
 }) => {
-  // Find selected schematic symbol or PCB footprint
   const activeSheet =
     project.schematic.sheets.find((s) => s.id === project.schematic.activeSheetId) ||
     project.schematic.sheets[0];
 
   const selectedSymbol = activeSheet.symbols.find((s) => s.id === selectedSymbolId);
   const selectedFootprint = project.pcb.footprints.find((f) => f.id === selectedFootprintId);
+  const selectedWire = activeSheet.wires.find((w) => w.id === selectedWireId);
 
-  if (!selectedSymbol && !selectedFootprint) {
+  const symDef = selectedSymbol ? libraryRegistry.getSymbolById(selectedSymbol.symbolDefId) : null;
+  // Compute live connectivity
+  const connectivity = NetConnectivitySolver.solveSheet(activeSheet);
+
+  if (!selectedSymbol && !selectedFootprint && !selectedWire) {
     return (
-      <div className="w-64 h-full bg-cad-panel border-l border-cad-border flex flex-col items-center justify-center p-4 text-center text-cad-textMuted select-none">
+      <div className="w-full h-full bg-cad-panel border-l border-cad-border flex flex-col items-center justify-center p-4 text-center text-cad-textMuted select-none">
         <Sliders size={24} className="opacity-40 mb-2" />
-        <span className="text-xs font-medium">No Object Selected</span>
-        <span className="text-[11px] mt-1 opacity-70">Click on any component symbol, footprint, or track to inspect properties.</span>
+        <span className="text-xs font-semibold text-white">No Object Selected</span>
+        <span className="text-[11px] mt-1 opacity-70">
+          Click on any schematic symbol, pin, wire, or PCB footprint to inspect and edit properties.
+        </span>
       </div>
     );
   }
 
   return (
-    <div className="w-64 h-full bg-cad-panel border-l border-cad-border flex flex-col select-none overflow-y-auto">
-      {/* Panel Header */}
+    <div className="w-full h-full bg-cad-panel border-l border-cad-border flex flex-col select-none overflow-y-auto">
+      {/* Header */}
       <div className="h-10 bg-cad-header border-b border-cad-border px-3 flex items-center justify-between">
         <span className="text-xs font-bold text-white uppercase font-mono tracking-wider flex items-center gap-1.5">
           <Sliders size={14} className="text-blue-400" />
@@ -48,13 +59,18 @@ export const PropertiesPanel: React.FC<Props> = ({
         </span>
       </div>
 
-      {/* Schematic Symbol Inspector */}
+      {/* 1. Schematic Symbol Inspector */}
       {selectedSymbol && (
         <div className="p-3 space-y-4">
           <div className="flex items-center space-x-2">
-            <Cpu size={18} className="text-blue-400" />
+            <div className="p-2 bg-blue-600/20 text-blue-400 rounded-lg border border-blue-500/30">
+              <Cpu size={18} />
+            </div>
             <div>
-              <div className="text-sm font-bold text-white">{selectedSymbol.reference}</div>
+              <div className="text-sm font-bold text-white">
+                {selectedSymbol.reference}
+                {selectedSymbol.unitSuffix ? ` (${selectedSymbol.unitSuffix})` : ''}
+              </div>
               <div className="text-[11px] text-cad-textMuted font-mono">{selectedSymbol.value}</div>
             </div>
           </div>
@@ -83,6 +99,48 @@ export const PropertiesPanel: React.FC<Props> = ({
                 className="w-full bg-cad-bg border border-cad-border rounded px-2.5 py-1 text-white font-mono"
               />
             </div>
+
+            {symDef && symDef.units && symDef.units.length > 1 && (
+              <div>
+                <label className="text-[11px] text-cad-textMuted block mb-1 font-semibold text-blue-400">
+                  Component Unit ({symDef.units.length} Units Available)
+                </label>
+                <select
+                  value={selectedSymbol.unit}
+                  onChange={(e) => {
+                    const uNum = parseInt(e.target.value, 10);
+                    const targetUnit = symDef.units?.find((u) => u.unit === uNum);
+                    if (!targetUnit) return;
+                    onUpdateProject((prev) => ({
+                      ...prev,
+                      schematic: {
+                        ...prev.schematic,
+                        sheets: prev.schematic.sheets.map((s) => ({
+                          ...s,
+                          symbols: s.symbols.map((sym) =>
+                            sym.id === selectedSymbol.id
+                              ? {
+                                  ...sym,
+                                  unit: uNum,
+                                  unitSuffix: targetUnit.name,
+                                  pins: JSON.parse(JSON.stringify(targetUnit.pins)),
+                                }
+                              : sym
+                          ),
+                        })),
+                      },
+                    }));
+                  }}
+                  className="w-full bg-cad-bg border border-blue-500/50 rounded px-2 py-1 text-white font-mono text-xs focus:outline-none focus:border-blue-400"
+                >
+                  {symDef.units.map((u) => (
+                    <option key={u.unit} value={u.unit}>
+                      Unit {u.name || u.unit} (Pins: {u.pins.map((p) => p.number).join(', ') || 'None'})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             <div>
               <label className="text-[11px] text-cad-textMuted block mb-1">Value / Model</label>
@@ -130,18 +188,88 @@ export const PropertiesPanel: React.FC<Props> = ({
             </div>
 
             <div>
-              <label className="text-[10px] text-cad-textMuted block mb-0.5">Rotation</label>
+              <label className="text-[10px] text-cad-textMuted block mb-0.5">Rotation Angle</label>
               <div className="bg-cad-bg p-1.5 rounded border border-cad-border text-white text-xs font-mono">{selectedSymbol.rotation}°</div>
+            </div>
+
+            {/* Pins Table */}
+            <div>
+              <label className="text-[10px] text-cad-textMuted block mb-1 uppercase font-mono tracking-wider">
+                Pin Connectivity ({selectedSymbol.pins.length} Pins)
+              </label>
+              <div className="border border-cad-border rounded max-h-40 overflow-y-auto text-[11px] font-mono">
+                <table className="w-full text-left">
+                  <thead className="bg-cad-subpanel text-cad-textMuted border-b border-cad-border text-[9px]">
+                    <tr>
+                      <th className="px-2 py-1">Pin</th>
+                      <th className="px-2 py-1">Name</th>
+                      <th className="px-2 py-1">Net</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-cad-border bg-cad-bg/40">
+                    {selectedSymbol.pins.map((p) => {
+                      // Find connected net
+                      let netName = 'Unconnected';
+                      for (const [nName, node] of Object.entries(connectivity.netGraph.nets)) {
+                        if (node.pins.some((pinRef) => pinRef.symbolRef === selectedSymbol.reference && pinRef.pinNumber === p.number)) {
+                          netName = nName;
+                          break;
+                        }
+                      }
+
+                      return (
+                        <tr key={p.id}>
+                          <td className="px-2 py-0.5 font-bold text-white">{p.number}</td>
+                          <td className="px-2 py-0.5 text-slate-300">{p.name}</td>
+                          <td className={`px-2 py-0.5 truncate ${netName === 'Unconnected' ? 'text-amber-400/80 italic' : 'text-blue-400'}`}>
+                            {netName}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* PCB Footprint Inspector */}
+      {/* 2. Wire Inspector */}
+      {selectedWire && !selectedSymbol && !selectedFootprint && (
+        <div className="p-3 space-y-4">
+          <div className="flex items-center space-x-2">
+            <div className="p-2 bg-emerald-600/20 text-emerald-400 rounded-lg border border-emerald-500/30">
+              <Zap size={18} />
+            </div>
+            <div>
+              <div className="text-sm font-bold text-white">Electrical Wire Segment</div>
+              <div className="text-[11px] text-cad-textMuted font-mono">
+                Length: {Math.hypot(selectedWire.x2 - selectedWire.x1, selectedWire.y2 - selectedWire.y1).toFixed(2)} mm
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-2 text-xs font-mono">
+            <div className="bg-cad-bg p-2 rounded border border-cad-border">
+              <span className="text-cad-textMuted text-[10px] block">Start Coordinate:</span>
+              <span className="text-white">({selectedWire.x1.toFixed(2)}, {selectedWire.y1.toFixed(2)}) mm</span>
+            </div>
+            <div className="bg-cad-bg p-2 rounded border border-cad-border">
+              <span className="text-cad-textMuted text-[10px] block">End Coordinate:</span>
+              <span className="text-white">({selectedWire.x2.toFixed(2)}, {selectedWire.y2.toFixed(2)}) mm</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 3. PCB Footprint Inspector */}
       {selectedFootprint && !selectedSymbol && (
         <div className="p-3 space-y-4">
           <div className="flex items-center space-x-2">
-            <Layers size={18} className="text-amber-400" />
+            <div className="p-2 bg-amber-600/20 text-amber-400 rounded-lg border border-amber-500/30">
+              <Layers size={18} />
+            </div>
             <div>
               <div className="text-sm font-bold text-white">{selectedFootprint.reference}</div>
               <div className="text-[11px] text-cad-textMuted font-mono">{selectedFootprint.value}</div>

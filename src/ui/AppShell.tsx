@@ -26,9 +26,13 @@ import { LibraryImportAnalyzer, ImportAnalysisSummary } from '../library/importA
 import { PropertiesPanel } from './PropertiesPanel';
 import { ERCPanel } from '../erc/ERCPanel';
 import { DRCPanel } from '../drc/DRCPanel';
+import { FloZAIPanel } from '../ai/FloZAIPanel';
 import { ManufacturingModal } from '../manufacturing/ManufacturingModal';
 import { ProjectManager } from './ProjectManager';
 import { AboutModal } from './AboutModal';
+import { ProjectHealthModal } from './ProjectHealthModal';
+import { MissingAssetsModal } from './MissingAssetsModal';
+import { AssetResolver } from '../library/assetResolver';
 
 // Icons
 import {
@@ -52,6 +56,11 @@ import {
   CheckCircle2,
   Info,
   Package,
+  Sparkles,
+  Sun,
+  Moon,
+  ShieldCheck,
+  AlertCircle,
 } from 'lucide-react';
 
 export type WorkspaceTab =
@@ -69,10 +78,53 @@ export const AppShell: React.FC = () => {
     return autosaved || createDemoProject();
   });
 
+  // Theme Management (Dark / Light)
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
+    try {
+      return (localStorage.getItem('floz-eda-theme') as 'dark' | 'light') || 'dark';
+    } catch {
+      return 'dark';
+    }
+  });
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('floz-eda-theme', theme);
+  }, [theme]);
+
   // Undo/Redo Engine
   const [transactionMgr] = useState(() => new TransactionManager<ApexProject>(100));
   const [activeTab, setActiveTab] = useState<WorkspaceTab>('schematic');
-  const [rightPanel, setRightPanel] = useState<'properties' | 'erc' | 'drc'>('properties');
+  const [rightPanel, setRightPanel] = useState<'properties' | 'erc' | 'drc' | 'ai'>('properties');
+  const [rightPanelCollapsed, setRightPanelCollapsed] = useState<boolean>(false);
+
+  // Resizable Right Sidebar Width (Draggable Splitter)
+  const [rightPanelWidth, setRightPanelWidth] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem('floz_right_panel_width');
+      if (saved) return Math.min(850, Math.max(300, parseInt(saved, 10)));
+    } catch {}
+    return 420;
+  });
+  const [isDraggingRightSplitter, setIsDraggingRightSplitter] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (!isDraggingRightSplitter) return;
+    const handleMouseMove = (e: MouseEvent) => {
+      const newWidth = Math.min(850, Math.max(300, window.innerWidth - e.clientX));
+      setRightPanelWidth(newWidth);
+    };
+    const handleMouseUp = () => {
+      setIsDraggingRightSplitter(false);
+      localStorage.setItem('floz_right_panel_width', rightPanelWidth.toString());
+    };
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDraggingRightSplitter, rightPanelWidth]);
 
   // Modals & Dialogs
   const [showSymbolChooser, setShowSymbolChooser] = useState<boolean>(false);
@@ -81,6 +133,8 @@ export const AppShell: React.FC = () => {
   const [showMfgModal, setShowMfgModal] = useState<boolean>(false);
   const [showProjectManager, setShowProjectManager] = useState<boolean>(false);
   const [showAboutModal, setShowAboutModal] = useState<boolean>(false);
+  const [showHealthModal, setShowHealthModal] = useState<boolean>(false);
+  const [showMissingAssetsModal, setShowMissingAssetsModal] = useState<boolean>(false);
 
   // Drag & drop import analysis modal
   const [dropImportAnalysis, setDropImportAnalysis] = useState<ImportAnalysisSummary | null>(null);
@@ -314,6 +368,40 @@ export const AppShell: React.FC = () => {
             Assign Footprints
           </button>
 
+          {/* Missing Assets Manager */}
+          {(() => {
+            const scan = AssetResolver.scanProject(project);
+            return (
+              <button
+                onClick={() => setShowMissingAssetsModal(true)}
+                title="Manage and resolve missing component symbols and footprints"
+                className={`px-2.5 py-1 rounded text-[11px] font-semibold flex items-center gap-1.5 border transition-colors ${
+                  scan.missingCount > 0
+                    ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 hover:bg-amber-500/30'
+                    : 'bg-cad-subpanel text-slate-200 border-cad-border hover:bg-cad-border'
+                }`}
+              >
+                <AlertCircle size={12} className={scan.missingCount > 0 ? 'text-amber-400' : 'text-slate-400'} />
+                <span>Assets</span>
+                {scan.missingCount > 0 && (
+                  <span className="px-1.5 py-0.2 bg-amber-500 text-slate-950 font-bold text-[9px] rounded-full">
+                    {scan.missingCount}
+                  </span>
+                )}
+              </button>
+            );
+          })()}
+
+          {/* Project Health & Diagnostics Dashboard */}
+          <button
+            onClick={() => setShowHealthModal(true)}
+            title="Open Project Health & Verification Dashboard"
+            className="px-2.5 py-1 bg-cad-subpanel hover:bg-cad-border text-slate-200 rounded text-[11px] font-semibold flex items-center gap-1.5 border border-cad-border transition-colors"
+          >
+            <ShieldCheck size={12} className="text-emerald-400" />
+            Health
+          </button>
+
           <button
             onClick={() => setShowMfgModal(true)}
             className="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-[11px] font-semibold flex items-center gap-1.5 shadow-sm transition-colors"
@@ -323,9 +411,30 @@ export const AppShell: React.FC = () => {
           </button>
 
           <button
+            onClick={() => {
+              setRightPanel('ai');
+              setRightPanelCollapsed(false);
+            }}
+            title="FloZ AI - Electronic Design Assistant"
+            className="px-2.5 py-1 bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 rounded text-[11px] font-semibold flex items-center gap-1.5 border border-blue-500/40 shadow-sm transition-colors"
+          >
+            <Sparkles size={12} className="text-blue-400" />
+            FloZ AI
+          </button>
+
+          {/* Theme Switcher Toggle */}
+          <button
+            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Theme`}
+            className="p-1.5 hover:bg-cad-subpanel rounded text-cad-textMuted hover:text-white border border-transparent hover:border-cad-border transition-colors ml-1"
+          >
+            {theme === 'dark' ? <Sun size={13} className="text-amber-400" /> : <Moon size={13} className="text-blue-400" />}
+          </button>
+
+          <button
             onClick={() => setShowAboutModal(true)}
             title="About FloZ ECA"
-            className="p-1 hover:bg-cad-subpanel rounded text-cad-textMuted hover:text-white ml-1"
+            className="p-1 hover:bg-cad-subpanel rounded text-cad-textMuted hover:text-white ml-0.5"
           >
             <Info size={14} />
           </button>
@@ -365,31 +474,68 @@ export const AppShell: React.FC = () => {
         {/* Right Dock Switcher */}
         <div className="flex items-center space-x-1 bg-cad-subpanel p-0.5 rounded border border-cad-border">
           <button
-            onClick={() => setRightPanel('properties')}
-            title="Properties Inspector"
+            onClick={() => {
+              if (rightPanel === 'properties' && !rightPanelCollapsed) {
+                setRightPanelCollapsed(true);
+              } else {
+                setRightPanel('properties');
+                setRightPanelCollapsed(false);
+              }
+            }}
+            title="Properties Inspector (Toggle)"
             className={`p-1 rounded ${
-              rightPanel === 'properties' ? 'bg-blue-600 text-white' : 'text-cad-textMuted hover:text-white'
+              !rightPanelCollapsed && rightPanel === 'properties' ? 'bg-blue-600 text-white' : 'text-cad-textMuted hover:text-white'
             }`}
           >
             <Sliders size={13} />
           </button>
           <button
-            onClick={() => setRightPanel('erc')}
-            title="Electrical Rules Check"
+            onClick={() => {
+              if (rightPanel === 'erc' && !rightPanelCollapsed) {
+                setRightPanelCollapsed(true);
+              } else {
+                setRightPanel('erc');
+                setRightPanelCollapsed(false);
+              }
+            }}
+            title="Electrical Rules Check (Toggle)"
             className={`p-1 rounded ${
-              rightPanel === 'erc' ? 'bg-amber-600 text-white' : 'text-cad-textMuted hover:text-white'
+              !rightPanelCollapsed && rightPanel === 'erc' ? 'bg-amber-600 text-white' : 'text-cad-textMuted hover:text-white'
             }`}
           >
             <AlertTriangle size={13} />
           </button>
           <button
-            onClick={() => setRightPanel('drc')}
-            title="Design Rules Check"
+            onClick={() => {
+              if (rightPanel === 'drc' && !rightPanelCollapsed) {
+                setRightPanelCollapsed(true);
+              } else {
+                setRightPanel('drc');
+                setRightPanelCollapsed(false);
+              }
+            }}
+            title="Design Rules Check (Toggle)"
             className={`p-1 rounded ${
-              rightPanel === 'drc' ? 'bg-blue-600 text-white' : 'text-cad-textMuted hover:text-white'
+              !rightPanelCollapsed && rightPanel === 'drc' ? 'bg-blue-600 text-white' : 'text-cad-textMuted hover:text-white'
             }`}
           >
             <ShieldAlert size={13} />
+          </button>
+          <button
+            onClick={() => {
+              if (rightPanel === 'ai' && !rightPanelCollapsed) {
+                setRightPanelCollapsed(true);
+              } else {
+                setRightPanel('ai');
+                setRightPanelCollapsed(false);
+              }
+            }}
+            title="FloZ AI - Electronic Design Assistant (Toggle)"
+            className={`p-1 rounded ${
+              !rightPanelCollapsed && rightPanel === 'ai' ? 'bg-blue-600 text-white' : 'text-blue-400 hover:text-white'
+            }`}
+          >
+            <Sparkles size={13} />
           </button>
         </div>
       </nav>
@@ -410,7 +556,10 @@ export const AppShell: React.FC = () => {
             <PCBEditor
               project={project}
               onUpdateProject={updateProject}
-              onRunDRC={() => setRightPanel('drc')}
+              onRunDRC={() => {
+                setRightPanel('drc');
+                setRightPanelCollapsed(false);
+              }}
             />
           )}
 
@@ -423,9 +572,24 @@ export const AppShell: React.FC = () => {
           {activeTab === 'calculator' && <Calculators />}
         </div>
 
-        {/* Right Dock Panel */}
-        {activeTab !== 'simulation' && activeTab !== 'gerbview' && activeTab !== 'calculator' && (
-          <aside className="w-72 h-full flex flex-col">
+        {/* Right Dock Panel (Fluidly Resizable Width) */}
+        {!rightPanelCollapsed && activeTab !== 'simulation' && activeTab !== 'gerbview' && activeTab !== 'calculator' && (
+          <aside
+            style={{ width: `${rightPanel === 'ai' ? rightPanelWidth : Math.min(380, rightPanelWidth)}px` }}
+            className="h-full flex flex-col relative shrink-0 select-none bg-cad-panel border-l border-cad-border"
+          >
+            {/* Draggable Left Border Splitter Handle */}
+            <div
+              onMouseDown={(e) => {
+                e.preventDefault();
+                setIsDraggingRightSplitter(true);
+              }}
+              title="Drag left/right to resize sidebar"
+              className="absolute top-0 bottom-0 -left-1.5 w-3 cursor-col-resize z-40 group flex items-center justify-center hover:bg-blue-500/20 transition-colors"
+            >
+              <div className="w-0.5 h-14 rounded bg-cad-border group-hover:bg-blue-400 group-hover:w-1 transition-all" />
+            </div>
+
             {rightPanel === 'properties' && (
               <PropertiesPanel
                 project={project}
@@ -436,6 +600,19 @@ export const AppShell: React.FC = () => {
             )}
             {rightPanel === 'erc' && <ERCPanel project={project} />}
             {rightPanel === 'drc' && <DRCPanel project={project} />}
+            {rightPanel === 'ai' && (
+              <FloZAIPanel
+                project={project}
+                selectedSymbolId={selectedSymbolId}
+                selectedFootprintId={selectedFootprintId}
+                onUpdateProject={updateProject}
+                panelWidth={rightPanelWidth}
+                onSetPanelWidth={(w) => {
+                  setRightPanelWidth(w);
+                  localStorage.setItem('floz_right_panel_width', w.toString());
+                }}
+              />
+            )}
           </aside>
         )}
       </main>
@@ -533,6 +710,25 @@ export const AppShell: React.FC = () => {
         <AboutModal
           isOpen={showAboutModal}
           onClose={() => setShowAboutModal(false)}
+        />
+      )}
+
+      {showHealthModal && (
+        <ProjectHealthModal
+          isOpen={showHealthModal}
+          onClose={() => setShowHealthModal(false)}
+          project={project}
+          onUpdateProject={updateProject}
+          onNavigateTab={(tab) => setActiveTab(tab)}
+        />
+      )}
+
+      {showMissingAssetsModal && (
+        <MissingAssetsModal
+          isOpen={showMissingAssetsModal}
+          onClose={() => setShowMissingAssetsModal(false)}
+          project={project}
+          onUpdateProject={updateProject}
         />
       )}
 

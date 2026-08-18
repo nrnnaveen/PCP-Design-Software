@@ -31,8 +31,10 @@ export class BOMGenerator {
         }
 
         const entry = groupMap.get(key)!;
-        entry.quantity++;
-        entry.designators.push(sym.reference);
+        if (!entry.designators.includes(sym.reference)) {
+          entry.quantity++;
+          entry.designators.push(sym.reference);
+        }
       });
     });
 

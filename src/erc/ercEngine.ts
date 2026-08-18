@@ -172,24 +172,26 @@ export class ERCEngine {
 
       // 2. Duplicate Reference Designator Check
       if (activeConfig.checkDuplicateReferences) {
-        const refMap: Map<string, string[]> = new Map();
+        const unitMap: Map<string, string[]> = new Map();
         sheet.symbols.forEach((sym) => {
           if (!sym.reference.startsWith('#')) {
-            if (!refMap.has(sym.reference)) refMap.set(sym.reference, []);
-            refMap.get(sym.reference)!.push(sym.id);
+            const key = `${sym.reference}#u${sym.unit || 1}`;
+            if (!unitMap.has(key)) unitMap.set(key, []);
+            unitMap.get(key)!.push(sym.id);
           }
         });
 
-        refMap.forEach((ids, ref) => {
+        unitMap.forEach((ids, key) => {
           if (ids.length > 1) {
             const sym = sheet.symbols.find((s) => s.id === ids[0])!;
+            const unitSuffix = sym.unitSuffix ? ` (Unit ${sym.unitSuffix})` : (sym.unit && sym.unit > 1 ? ` (Unit ${sym.unit})` : '');
             violations.push({
-              id: `erc_dup_${ref}`,
+              id: `erc_dup_${key}`,
               code: 'ERC001',
               severity: 'error',
               source: 'ERC',
-              title: `Duplicate Reference '${ref}'`,
-              description: `Multiple components share reference '${ref}'. Run auto-annotation to renumber.`,
+              title: `Duplicate Reference '${sym.reference}'${unitSuffix}`,
+              description: `Multiple component instances share reference '${sym.reference}'${unitSuffix}. Run auto-annotation to renumber.`,
               sheetId: sheet.id,
               x: sym.x,
               y: sym.y,

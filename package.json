@@ -1,13 +1,16 @@
 {
-  "name": "apex-eda",
+  "name": "floz-eca",
   "private": true,
   "version": "1.0.0",
+  "description": "FloZ ECA — Electronic Circuit Architect",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "test": "vitest run"
+    "test": "vitest run",
+    "desktop:dev": "vite",
+    "desktop:build": "tsc && vite build"
   },
   "dependencies": {
     "jszip": "^3.10.1",

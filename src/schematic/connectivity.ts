@@ -1,5 +1,5 @@
 /**
- * Apex EDA - Dynamic Schematic Net Connectivity Solver
+ * FloZ ECA - Dynamic Schematic Net Connectivity Solver
  * Solves electrical graph topology from geometric intersections, junctions, labels, and pins.
  */
 
@@ -10,6 +10,7 @@ import {
   NetPinRef,
   Point2D,
 } from '../core/types';
+import { SchematicHelper } from './helper';
 
 export interface ConnectivityAnalysisResult {
   netGraph: NetGraph;
@@ -19,14 +20,14 @@ export interface ConnectivityAnalysisResult {
 }
 
 export class NetConnectivitySolver {
-  private static ptKey(x: number, y: number, tolerance = 0.1): string {
+  public static ptKey(x: number, y: number, tolerance = 0.15): string {
     const rx = Math.round(x / tolerance) * tolerance;
     const ry = Math.round(y / tolerance) * tolerance;
     return `${rx.toFixed(2)},${ry.toFixed(2)}`;
   }
 
   public static solveSheet(sheet: SchematicSheet): ConnectivityAnalysisResult {
-    // 1. Calculate absolute positions of all symbol pins
+    // 1. Calculate authoritative absolute positions of all symbol pins
     interface ResolvedPin {
       symbolId: string;
       symbolRef: string;
@@ -40,20 +41,8 @@ export class NetConnectivitySolver {
     const allPins: ResolvedPin[] = [];
     sheet.symbols.forEach((sym) => {
       sym.pins.forEach((pin) => {
-        // Rotate and mirror pin offset relative to symbol position
-        let px = pin.x;
-        let py = pin.y;
-
-        if (sym.mirrorX) px = -px;
-
-        const rad = (sym.rotation * Math.PI) / 180;
-        const rx = px * Math.cos(rad) - py * Math.sin(rad);
-        const ry = px * Math.sin(rad) + py * Math.cos(rad);
-
-        // Absolute pin connection point
-        const absX = sym.x + rx;
-        const absY = sym.y + ry;
-        const key = this.ptKey(absX, absY);
+        const pinPos = SchematicHelper.getSymbolPinWorldPosition(sym, pin);
+        const key = this.ptKey(pinPos.x, pinPos.y);
 
         allPins.push({
           symbolId: sym.id,
@@ -61,7 +50,7 @@ export class NetConnectivitySolver {
           pinNumber: pin.number,
           pinName: pin.name,
           electricalType: pin.electricalType,
-          point: { x: absX, y: absY },
+          point: pinPos,
           key,
         });
       });
@@ -90,6 +79,33 @@ export class NetConnectivitySolver {
       const k1 = this.ptKey(wire.x1, wire.y1);
       const k2 = this.ptKey(wire.x2, wire.y2);
       union(k1, k2);
+    });
+
+    // 3b. Connect wires that intersect at explicit junctions
+    sheet.junctions.forEach((junc) => {
+      const jKey = this.ptKey(junc.x, junc.y);
+      sheet.wires.forEach((wire) => {
+        // Check if junction lies on wire segment
+        const isStart = Math.hypot(wire.x1 - junc.x, wire.y1 - junc.y) < 0.2;
+        const isEnd = Math.hypot(wire.x2 - junc.x, wire.y2 - junc.y) < 0.2;
+        if (isStart || isEnd) {
+          union(jKey, this.ptKey(wire.x1, wire.y1));
+        } else {
+          // Check if colinear along segment
+          const minX = Math.min(wire.x1, wire.x2) - 0.2;
+          const maxX = Math.max(wire.x1, wire.x2) + 0.2;
+          const minY = Math.min(wire.y1, wire.y2) - 0.2;
+          const maxY = Math.max(wire.y1, wire.y2) + 0.2;
+
+          if (junc.x >= minX && junc.x <= maxX && junc.y >= minY && junc.y <= maxY) {
+            const cross = Math.abs((wire.y2 - wire.y1) * junc.x - (wire.x2 - wire.x1) * junc.y + wire.x2 * wire.y1 - wire.y2 * wire.x1);
+            const len = Math.hypot(wire.x2 - wire.x1, wire.y2 - wire.y1);
+            if (len > 0 && cross / len < 0.2) {
+              union(jKey, this.ptKey(wire.x1, wire.y1));
+            }
+          }
+        }
+      });
     });
 
     // 4. Map labels & power symbols to points

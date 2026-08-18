@@ -8,7 +8,22 @@
   --cad-subpanel: #20262e;
   --cad-header: #111418;
   --cad-border: #2a313c;
+  --cad-text: #e2e8f0;
+  --cad-text-muted: #94a3b8;
   --cad-accent: #2563eb;
+  --cad-canvas-bg: #14171c;
+}
+
+[data-theme="light"] {
+  --cad-bg: #f8fafc;
+  --cad-panel: #ffffff;
+  --cad-subpanel: #f1f5f9;
+  --cad-header: #e2e8f0;
+  --cad-border: #cbd5e1;
+  --cad-text: #0f172a;
+  --cad-text-muted: #64748b;
+  --cad-accent: #2563eb;
+  --cad-canvas-bg: #ffffff;
 }
 
 * {
@@ -19,11 +34,12 @@ body {
   margin: 0;
   padding: 0;
   background-color: var(--cad-bg);
-  color: #e2e8f0;
+  color: var(--cad-text);
   user-select: none;
   -webkit-user-select: none;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   overflow: hidden;
+  transition: background-color 0.15s ease, color 0.15s ease;
 }
 
 /* Custom CAD scrollbars */
@@ -32,14 +48,14 @@ body {
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #14171c;
+  background: var(--cad-bg);
 }
 ::-webkit-scrollbar-thumb {
-  background: #2a313c;
+  background: var(--cad-border);
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #3b82f6;
+  background: var(--cad-accent);
 }
 
 /* Canvas styling */

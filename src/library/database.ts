@@ -348,6 +348,23 @@ export const BUILTIN_SYMBOLS: SymbolDefinition[] = [
     ],
   },
   {
+    id: 'conn_header_1x2',
+    name: 'Conn_01x02_Pin_Header',
+    library: 'Connector_Generic',
+    description: 'Generic Connector, Single Row, 01x02, 2.54mm Pitch (5V/GND Input)',
+    category: 'Connectors',
+    keywords: ['header', 'pin', '2pin', 'connector', '01x02', 'terminal', '5v_in', 'power_in'],
+    defaultPrefix: 'J',
+    defaultFootprint: 'Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical',
+    pins: [
+      { id: 'p1', number: '1', name: 'Pin_1', electricalType: 'power_out', x: 8, y: -4, length: 4, orientation: 0, visible: true },
+      { id: 'p2', number: '2', name: 'Pin_2', electricalType: 'power_out', x: 8, y: 4, length: 4, orientation: 0, visible: true },
+    ],
+    shapes: [
+      { type: 'rectangle', strokeWidth: 0.3, x: 0, y: 0, width: 10, height: 14, filled: false },
+    ],
+  },
+  {
     id: 'conn_header_1x4',
     name: 'Conn_01x04_Pin_Header',
     library: 'Connector_Generic',
@@ -441,6 +458,368 @@ export const BUILTIN_SYMBOLS: SymbolDefinition[] = [
     ],
     shapes: [
       { type: 'polygon', strokeWidth: 0.3, points: [{ x: 0, y: 0 }, { x: -2, y: 2 }, { x: 0, y: 4 }, { x: 2, y: 2 }], filled: false },
+    ],
+  },
+  {
+    id: 'comp_fuse',
+    name: 'Fuse',
+    library: 'Device',
+    description: 'Resettable PTC Fuse / Overcurrent Protection',
+    category: 'Protection',
+    keywords: ['fuse', 'polyfuse', 'ptc', 'protection'],
+    defaultPrefix: 'F',
+    defaultFootprint: 'Fuse:Fuse_1206_3216Metric',
+    pins: [
+      { id: 'p1', number: '1', name: '1', electricalType: 'passive', x: -6, y: 0, length: 4, orientation: 180, visible: true },
+      { id: 'p2', number: '2', name: '2', electricalType: 'passive', x: 6, y: 0, length: 4, orientation: 0, visible: true },
+    ],
+    shapes: [
+      { type: 'rectangle', strokeWidth: 0.25, x: 0, y: 0, width: 8, height: 3, filled: false },
+      { type: 'line', strokeWidth: 0.25, points: [{ x: -4, y: 0 }, { x: 4, y: 0 }] },
+    ],
+  },
+  {
+    id: 'comp_cap_electrolytic',
+    name: 'CP_Electrolytic',
+    library: 'Device',
+    description: 'Polarized Aluminum Electrolytic Capacitor',
+    category: 'Passives',
+    keywords: ['capacitor', 'electrolytic', 'bulk', 'filter'],
+    defaultPrefix: 'C',
+    defaultFootprint: 'Capacitor_SMD:CP_Elec_6.3x5.4',
+    pins: [
+      { id: 'p1', number: '1', name: '+', electricalType: 'passive', x: 0, y: -5, length: 5, orientation: 90, visible: true },
+      { id: 'p2', number: '2', name: '-', electricalType: 'passive', x: 0, y: 5, length: 5, orientation: 270, visible: true },
+    ],
+    shapes: [
+      { type: 'line', strokeWidth: 0.4, points: [{ x: -3.5, y: -1 }, { x: 3.5, y: -1 }] },
+      { type: 'arc', strokeWidth: 0.35, x: 0, y: 1, radius: 3.5, startAngle: 0, endAngle: Math.PI },
+    ],
+  },
+  {
+    id: 'comp_diode_schottky',
+    name: 'D_Schottky_1N5819',
+    library: 'Device',
+    description: '1N5819 Schottky Barrier Rectifier Diode',
+    category: 'Semiconductors',
+    keywords: ['diode', 'schottky', '1n5819', 'ss14', 'rectifier'],
+    defaultPrefix: 'D',
+    defaultFootprint: 'Diode_SMD:D_SOD-123',
+    pins: [
+      { id: 'p1', number: '1', name: 'A', electricalType: 'passive', x: -6, y: 0, length: 4, orientation: 180, visible: true },
+      { id: 'p2', number: '2', name: 'K', electricalType: 'passive', x: 6, y: 0, length: 4, orientation: 0, visible: true },
+    ],
+    shapes: [
+      { type: 'polygon', strokeWidth: 0.25, points: [{ x: -2, y: -2.5 }, { x: -2, y: 2.5 }, { x: 2, y: 0 }], filled: true },
+      { type: 'line', strokeWidth: 0.35, points: [{ x: 2, y: -2.5 }, { x: 2, y: 2.5 }] },
+    ],
+  },
+  {
+    id: 'sw_push_button',
+    name: 'SW_Push_Tactile',
+    library: 'Switch',
+    description: 'Push Button / Tactile Switch SPST-NO',
+    category: 'Switches',
+    keywords: ['switch', 'push', 'button', 'tactile', 'spst', 'reset'],
+    defaultPrefix: 'SW',
+    defaultFootprint: 'Button_Switch_SMD:SW_Push_SPST_NO_6x6mm_H5mm',
+    pins: [
+      { id: 'p1', number: '1', name: '1', electricalType: 'passive', x: -6, y: 0, length: 4, orientation: 180, visible: true },
+      { id: 'p2', number: '2', name: '2', electricalType: 'passive', x: 6, y: 0, length: 4, orientation: 0, visible: true },
+    ],
+    shapes: [
+      { type: 'line', strokeWidth: 0.3, points: [{ x: -3, y: 0 }, { x: -1, y: 0 }] },
+      { type: 'line', strokeWidth: 0.3, points: [{ x: 1, y: 0 }, { x: 3, y: 0 }] },
+      { type: 'line', strokeWidth: 0.35, points: [{ x: -1, y: -2 }, { x: 1, y: -2 }] },
+      { type: 'line', strokeWidth: 0.25, points: [{ x: 0, y: -2 }, { x: 0, y: -4 }] },
+    ],
+  },
+  // --- MULTI-UNIT SYMBOLS ---
+  {
+    id: '4xxx_4010',
+    name: '4010',
+    library: '4xxx',
+    description: 'Hex Non-Inverting Buffer / CMOS Converter',
+    category: 'Logic',
+    keywords: ['4010', 'cd4010', 'buffer', 'cmos', 'hex', 'non-inverting', 'multi-unit'],
+    defaultPrefix: 'U',
+    defaultFootprint: 'Package_DIP:DIP-16_W7.62mm',
+    unitCount: 7,
+    pins: [
+      { id: 'p1', number: '1', name: 'VDD', electricalType: 'power_in', x: 0, y: -5, length: 5, orientation: 90, visible: true },
+      { id: 'p2', number: '2', name: 'OUT_A', electricalType: 'output', x: 5, y: 0, length: 5, orientation: 0, visible: true },
+      { id: 'p3', number: '3', name: 'IN_A', electricalType: 'input', x: -5, y: 0, length: 5, orientation: 180, visible: true },
+      { id: 'p4', number: '4', name: 'OUT_B', electricalType: 'output', x: 5, y: 0, length: 5, orientation: 0, visible: true },
+      { id: 'p5', number: '5', name: 'IN_B', electricalType: 'input', x: -5, y: 0, length: 5, orientation: 180, visible: true },
+      { id: 'p6', number: '6', name: 'OUT_C', electricalType: 'output', x: 5, y: 0, length: 5, orientation: 0, visible: true },
+      { id: 'p7', number: '7', name: 'IN_C', electricalType: 'input', x: -5, y: 0, length: 5, orientation: 180, visible: true },
+      { id: 'p8', number: '8', name: 'VSS', electricalType: 'power_in', x: 0, y: 5, length: 5, orientation: 270, visible: true },
+      { id: 'p9', number: '9', name: 'IN_D', electricalType: 'input', x: -5, y: 0, length: 5, orientation: 180, visible: true },
+      { id: 'p10', number: '10', name: 'OUT_D', electricalType: 'output', x: 5, y: 0, length: 5, orientation: 0, visible: true },
+      { id: 'p11', number: '11', name: 'IN_E', electricalType: 'input', x: -5, y: 0, length: 5, orientation: 180, visible: true },
+      { id: 'p12', number: '12', name: 'OUT_E', electricalType: 'output', x: 5, y: 0, length: 5, orientation: 0, visible: true },
+      { id: 'p13', number: '13', name: 'NC', electricalType: 'not_connected', x: 0, y: 0, length: 0, orientation: 0, visible: false },
+      { id: 'p14', number: '14', name: 'IN_F', electricalType: 'input', x: -5, y: 0, length: 5, orientation: 180, visible: true },
+      { id: 'p15', number: '15', name: 'OUT_F', electricalType: 'output', x: 5, y: 0, length: 5, orientation: 0, visible: true },
+      { id: 'p16', number: '16', name: 'VCC', electricalType: 'power_in', x: 0, y: -5, length: 5, orientation: 90, visible: true },
+    ],
+    shapes: [
+      { type: 'polygon', strokeWidth: 0.25, points: [{ x: -5, y: -4 }, { x: -5, y: 4 }, { x: 5, y: 0 }], filled: false },
+    ],
+    units: [
+      {
+        unit: 1,
+        name: 'A',
+        pins: [
+          { id: 'u1_p3', number: '3', name: 'IN_A', electricalType: 'input', x: -5, y: 0, length: 5, orientation: 180, visible: true },
+          { id: 'u1_p2', number: '2', name: 'OUT_A', electricalType: 'output', x: 5, y: 0, length: 5, orientation: 0, visible: true },
+        ],
+        shapes: [
+          { type: 'polygon', strokeWidth: 0.25, points: [{ x: -5, y: -4 }, { x: -5, y: 4 }, { x: 5, y: 0 }], filled: false },
+        ],
+      },
+      {
+        unit: 2,
+        name: 'B',
+        pins: [
+          { id: 'u2_p5', number: '5', name: 'IN_B', electricalType: 'input', x: -5, y: 0, length: 5, orientation: 180, visible: true },
+          { id: 'u2_p4', number: '4', name: 'OUT_B', electricalType: 'output', x: 5, y: 0, length: 5, orientation: 0, visible: true },
+        ],
+        shapes: [
+          { type: 'polygon', strokeWidth: 0.25, points: [{ x: -5, y: -4 }, { x: -5, y: 4 }, { x: 5, y: 0 }], filled: false },
+        ],
+      },
+      {
+        unit: 3,
+        name: 'C',
+        pins: [
+          { id: 'u3_p7', number: '7', name: 'IN_C', electricalType: 'input', x: -5, y: 0, length: 5, orientation: 180, visible: true },
+          { id: 'u3_p6', number: '6', name: 'OUT_C', electricalType: 'output', x: 5, y: 0, length: 5, orientation: 0, visible: true },
+        ],
+        shapes: [
+          { type: 'polygon', strokeWidth: 0.25, points: [{ x: -5, y: -4 }, { x: -5, y: 4 }, { x: 5, y: 0 }], filled: false },
+        ],
+      },
+      {
+        unit: 4,
+        name: 'D',
+        pins: [
+          { id: 'u4_p9', number: '9', name: 'IN_D', electricalType: 'input', x: -5, y: 0, length: 5, orientation: 180, visible: true },
+          { id: 'u4_p10', number: '10', name: 'OUT_D', electricalType: 'output', x: 5, y: 0, length: 5, orientation: 0, visible: true },
+        ],
+        shapes: [
+          { type: 'polygon', strokeWidth: 0.25, points: [{ x: -5, y: -4 }, { x: -5, y: 4 }, { x: 5, y: 0 }], filled: false },
+        ],
+      },
+      {
+        unit: 5,
+        name: 'E',
+        pins: [
+          { id: 'u5_p11', number: '11', name: 'IN_E', electricalType: 'input', x: -5, y: 0, length: 5, orientation: 180, visible: true },
+          { id: 'u5_p12', number: '12', name: 'OUT_E', electricalType: 'output', x: 5, y: 0, length: 5, orientation: 0, visible: true },
+        ],
+        shapes: [
+          { type: 'polygon', strokeWidth: 0.25, points: [{ x: -5, y: -4 }, { x: -5, y: 4 }, { x: 5, y: 0 }], filled: false },
+        ],
+      },
+      {
+        unit: 6,
+        name: 'F',
+        pins: [
+          { id: 'u6_p14', number: '14', name: 'IN_F', electricalType: 'input', x: -5, y: 0, length: 5, orientation: 180, visible: true },
+          { id: 'u6_p15', number: '15', name: 'OUT_F', electricalType: 'output', x: 5, y: 0, length: 5, orientation: 0, visible: true },
+        ],
+        shapes: [
+          { type: 'polygon', strokeWidth: 0.25, points: [{ x: -5, y: -4 }, { x: -5, y: 4 }, { x: 5, y: 0 }], filled: false },
+        ],
+      },
+      {
+        unit: 7,
+        name: 'Power',
+        isPower: true,
+        pins: [
+          { id: 'u7_p1', number: '1', name: 'VDD', electricalType: 'power_in', x: 0, y: -5, length: 5, orientation: 90, visible: true },
+          { id: 'u7_p16', number: '16', name: 'VCC', electricalType: 'power_in', x: 0, y: -5, length: 5, orientation: 90, visible: true },
+          { id: 'u7_p8', number: '8', name: 'VSS', electricalType: 'power_in', x: 0, y: 5, length: 5, orientation: 270, visible: true },
+        ],
+        shapes: [
+          { type: 'rectangle', strokeWidth: 0.25, x: 0, y: 0, width: 8, height: 10 },
+        ],
+      },
+    ],
+  },
+  {
+    id: '74xx_7400',
+    name: '7400',
+    library: '74xx',
+    description: 'Quad 2-input NAND gate',
+    category: 'Logic',
+    keywords: ['7400', '74ls00', '74hc00', 'nand', 'quad', 'multi-unit'],
+    defaultPrefix: 'U',
+    defaultFootprint: 'Package_DIP:DIP-14_W7.62mm',
+    unitCount: 5,
+    pins: [
+      { id: 'p1', number: '1', name: '1A', electricalType: 'input', x: -6, y: -2, length: 4, orientation: 180, visible: true },
+      { id: 'p2', number: '2', name: '1B', electricalType: 'input', x: -6, y: 2, length: 4, orientation: 180, visible: true },
+      { id: 'p3', number: '3', name: '1Y', electricalType: 'output', x: 6, y: 0, length: 4, orientation: 0, visible: true },
+      { id: 'p4', number: '4', name: '2A', electricalType: 'input', x: -6, y: -2, length: 4, orientation: 180, visible: true },
+      { id: 'p5', number: '5', name: '2B', electricalType: 'input', x: -6, y: 2, length: 4, orientation: 180, visible: true },
+      { id: 'p6', number: '6', name: '2Y', electricalType: 'output', x: 6, y: 0, length: 4, orientation: 0, visible: true },
+      { id: 'p7', number: '7', name: 'GND', electricalType: 'power_in', x: 0, y: 5, length: 5, orientation: 270, visible: true },
+      { id: 'p8', number: '8', name: '3Y', electricalType: 'output', x: 6, y: 0, length: 4, orientation: 0, visible: true },
+      { id: 'p9', number: '9', name: '3A', electricalType: 'input', x: -6, y: -2, length: 4, orientation: 180, visible: true },
+      { id: 'p10', number: '10', name: '3B', electricalType: 'input', x: -6, y: 2, length: 4, orientation: 180, visible: true },
+      { id: 'p11', number: '11', name: '4Y', electricalType: 'output', x: 6, y: 0, length: 4, orientation: 0, visible: true },
+      { id: 'p12', number: '12', name: '4A', electricalType: 'input', x: -6, y: -2, length: 4, orientation: 180, visible: true },
+      { id: 'p13', number: '13', name: '4B', electricalType: 'input', x: -6, y: 2, length: 4, orientation: 180, visible: true },
+      { id: 'p14', number: '14', name: 'VCC', electricalType: 'power_in', x: 0, y: -5, length: 5, orientation: 90, visible: true },
+    ],
+    shapes: [
+      { type: 'line', strokeWidth: 0.25, points: [{ x: -2, y: -4 }, { x: 1, y: -4 }] },
+      { type: 'line', strokeWidth: 0.25, points: [{ x: -2, y: 4 }, { x: 1, y: 4 }] },
+      { type: 'line', strokeWidth: 0.25, points: [{ x: -2, y: -4 }, { x: -2, y: 4 }] },
+      { type: 'arc', strokeWidth: 0.25, x: 1, y: 0, radius: 4, startAngle: -Math.PI / 2, endAngle: Math.PI / 2 },
+      { type: 'circle', strokeWidth: 0.25, x: 5.5, y: 0, radius: 0.6 },
+    ],
+    units: [
+      {
+        unit: 1,
+        name: 'A',
+        pins: [
+          { id: 'u1_p1', number: '1', name: '1A', electricalType: 'input', x: -6, y: -2, length: 4, orientation: 180, visible: true },
+          { id: 'u1_p2', number: '2', name: '1B', electricalType: 'input', x: -6, y: 2, length: 4, orientation: 180, visible: true },
+          { id: 'u1_p3', number: '3', name: '1Y', electricalType: 'output', x: 6, y: 0, length: 4, orientation: 0, visible: true },
+        ],
+        shapes: [
+          { type: 'line', strokeWidth: 0.25, points: [{ x: -2, y: -4 }, { x: 1, y: -4 }] },
+          { type: 'line', strokeWidth: 0.25, points: [{ x: -2, y: 4 }, { x: 1, y: 4 }] },
+          { type: 'line', strokeWidth: 0.25, points: [{ x: -2, y: -4 }, { x: -2, y: 4 }] },
+          { type: 'arc', strokeWidth: 0.25, x: 1, y: 0, radius: 4, startAngle: -Math.PI / 2, endAngle: Math.PI / 2 },
+          { type: 'circle', strokeWidth: 0.25, x: 5.5, y: 0, radius: 0.6 },
+        ],
+      },
+      {
+        unit: 2,
+        name: 'B',
+        pins: [
+          { id: 'u2_p4', number: '4', name: '2A', electricalType: 'input', x: -6, y: -2, length: 4, orientation: 180, visible: true },
+          { id: 'u2_p5', number: '5', name: '2B', electricalType: 'input', x: -6, y: 2, length: 4, orientation: 180, visible: true },
+          { id: 'u2_p6', number: '6', name: '2Y', electricalType: 'output', x: 6, y: 0, length: 4, orientation: 0, visible: true },
+        ],
+        shapes: [
+          { type: 'line', strokeWidth: 0.25, points: [{ x: -2, y: -4 }, { x: 1, y: -4 }] },
+          { type: 'line', strokeWidth: 0.25, points: [{ x: -2, y: 4 }, { x: 1, y: 4 }] },
+          { type: 'line', strokeWidth: 0.25, points: [{ x: -2, y: -4 }, { x: -2, y: 4 }] },
+          { type: 'arc', strokeWidth: 0.25, x: 1, y: 0, radius: 4, startAngle: -Math.PI / 2, endAngle: Math.PI / 2 },
+          { type: 'circle', strokeWidth: 0.25, x: 5.5, y: 0, radius: 0.6 },
+        ],
+      },
+      {
+        unit: 3,
+        name: 'C',
+        pins: [
+          { id: 'u3_p9', number: '9', name: '3A', electricalType: 'input', x: -6, y: -2, length: 4, orientation: 180, visible: true },
+          { id: 'u3_p10', number: '10', name: '3B', electricalType: 'input', x: -6, y: 2, length: 4, orientation: 180, visible: true },
+          { id: 'u3_p8', number: '8', name: '3Y', electricalType: 'output', x: 6, y: 0, length: 4, orientation: 0, visible: true },
+        ],
+        shapes: [
+          { type: 'line', strokeWidth: 0.25, points: [{ x: -2, y: -4 }, { x: 1, y: -4 }] },
+          { type: 'line', strokeWidth: 0.25, points: [{ x: -2, y: 4 }, { x: 1, y: 4 }] },
+          { type: 'line', strokeWidth: 0.25, points: [{ x: -2, y: -4 }, { x: -2, y: 4 }] },
+          { type: 'arc', strokeWidth: 0.25, x: 1, y: 0, radius: 4, startAngle: -Math.PI / 2, endAngle: Math.PI / 2 },
+          { type: 'circle', strokeWidth: 0.25, x: 5.5, y: 0, radius: 0.6 },
+        ],
+      },
+      {
+        unit: 4,
+        name: 'D',
+        pins: [
+          { id: 'u4_p12', number: '12', name: '4A', electricalType: 'input', x: -6, y: -2, length: 4, orientation: 180, visible: true },
+          { id: 'u4_p13', number: '13', name: '4B', electricalType: 'input', x: -6, y: 2, length: 4, orientation: 180, visible: true },
+          { id: 'u4_p11', number: '11', name: '4Y', electricalType: 'output', x: 6, y: 0, length: 4, orientation: 0, visible: true },
+        ],
+        shapes: [
+          { type: 'line', strokeWidth: 0.25, points: [{ x: -2, y: -4 }, { x: 1, y: -4 }] },
+          { type: 'line', strokeWidth: 0.25, points: [{ x: -2, y: 4 }, { x: 1, y: 4 }] },
+          { type: 'line', strokeWidth: 0.25, points: [{ x: -2, y: -4 }, { x: -2, y: 4 }] },
+          { type: 'arc', strokeWidth: 0.25, x: 1, y: 0, radius: 4, startAngle: -Math.PI / 2, endAngle: Math.PI / 2 },
+          { type: 'circle', strokeWidth: 0.25, x: 5.5, y: 0, radius: 0.6 },
+        ],
+      },
+      {
+        unit: 5,
+        name: 'Power',
+        isPower: true,
+        pins: [
+          { id: 'u5_p14', number: '14', name: 'VCC', electricalType: 'power_in', x: 0, y: -5, length: 5, orientation: 90, visible: true },
+          { id: 'u5_p7', number: '7', name: 'GND', electricalType: 'power_in', x: 0, y: 5, length: 5, orientation: 270, visible: true },
+        ],
+        shapes: [
+          { type: 'rectangle', strokeWidth: 0.25, x: 0, y: 0, width: 8, height: 10 },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'linear_lm358',
+    name: 'LM358',
+    library: 'Amplifier_Operational',
+    description: 'Dual Operational Amplifier',
+    category: 'Amplifiers',
+    keywords: ['lm358', 'opamp', 'dual', 'amplifier', 'multi-unit'],
+    defaultPrefix: 'U',
+    defaultFootprint: 'Package_DIP:DIP-8_W7.62mm',
+    unitCount: 3,
+    pins: [
+      { id: 'p1', number: '1', name: 'OUT_A', electricalType: 'output', x: 6, y: 0, length: 4, orientation: 0, visible: true },
+      { id: 'p2', number: '2', name: 'IN-_A', electricalType: 'input', x: -6, y: -2, length: 4, orientation: 180, visible: true },
+      { id: 'p3', number: '3', name: 'IN+_A', electricalType: 'input', x: -6, y: 2, length: 4, orientation: 180, visible: true },
+      { id: 'p4', number: '4', name: 'V-', electricalType: 'power_in', x: 0, y: 5, length: 5, orientation: 270, visible: true },
+      { id: 'p5', number: '5', name: 'IN+_B', electricalType: 'input', x: -6, y: 2, length: 4, orientation: 180, visible: true },
+      { id: 'p6', number: '6', name: 'IN-_B', electricalType: 'input', x: -6, y: -2, length: 4, orientation: 180, visible: true },
+      { id: 'p7', number: '7', name: 'OUT_B', electricalType: 'output', x: 6, y: 0, length: 4, orientation: 0, visible: true },
+      { id: 'p8', number: '8', name: 'V+', electricalType: 'power_in', x: 0, y: -5, length: 5, orientation: 90, visible: true },
+    ],
+    shapes: [
+      { type: 'polygon', strokeWidth: 0.25, points: [{ x: -4, y: -5 }, { x: -4, y: 5 }, { x: 5, y: 0 }], filled: false },
+    ],
+    units: [
+      {
+        unit: 1,
+        name: 'A',
+        pins: [
+          { id: 'u1_p2', number: '2', name: 'IN-', electricalType: 'input', x: -6, y: -2, length: 4, orientation: 180, visible: true },
+          { id: 'u1_p3', number: '3', name: 'IN+', electricalType: 'input', x: -6, y: 2, length: 4, orientation: 180, visible: true },
+          { id: 'u1_p1', number: '1', name: 'OUT', electricalType: 'output', x: 6, y: 0, length: 4, orientation: 0, visible: true },
+        ],
+        shapes: [
+          { type: 'polygon', strokeWidth: 0.25, points: [{ x: -4, y: -5 }, { x: -4, y: 5 }, { x: 5, y: 0 }], filled: false },
+        ],
+      },
+      {
+        unit: 2,
+        name: 'B',
+        pins: [
+          { id: 'u2_p6', number: '6', name: 'IN-', electricalType: 'input', x: -6, y: -2, length: 4, orientation: 180, visible: true },
+          { id: 'u2_p5', number: '5', name: 'IN+', electricalType: 'input', x: -6, y: 2, length: 4, orientation: 180, visible: true },
+          { id: 'u2_p7', number: '7', name: 'OUT', electricalType: 'output', x: 6, y: 0, length: 4, orientation: 0, visible: true },
+        ],
+        shapes: [
+          { type: 'polygon', strokeWidth: 0.25, points: [{ x: -4, y: -5 }, { x: -4, y: 5 }, { x: 5, y: 0 }], filled: false },
+        ],
+      },
+      {
+        unit: 3,
+        name: 'Power',
+        isPower: true,
+        pins: [
+          { id: 'u3_p8', number: '8', name: 'V+', electricalType: 'power_in', x: 0, y: -5, length: 5, orientation: 90, visible: true },
+          { id: 'u3_p4', number: '4', name: 'V-', electricalType: 'power_in', x: 0, y: 5, length: 5, orientation: 270, visible: true },
+        ],
+        shapes: [
+          { type: 'rectangle', strokeWidth: 0.25, x: 0, y: 0, width: 8, height: 10 },
+        ],
+      },
     ],
   },
 ];

@@ -70,6 +70,14 @@ export interface SymbolGraphicShape {
   fontSize?: number;
 }
 
+export interface SymbolUnitDefinition {
+  unit: number; // 1 = A, 2 = B, 3 = C, etc. (0 = shared across all units)
+  name?: string; // 'A', 'B', 'C', 'Power', etc.
+  pins: SchematicPin[];
+  shapes: SymbolGraphicShape[];
+  isPower?: boolean;
+}
+
 export interface SymbolDefinition {
   id: string;
   name: string;
@@ -86,6 +94,7 @@ export interface SymbolDefinition {
   isPower?: boolean;
   powerNetName?: string;
   unitCount?: number;
+  units?: SymbolUnitDefinition[];
 }
 
 export interface SchematicSymbolInstance {
@@ -99,6 +108,7 @@ export interface SchematicSymbolInstance {
   rotation: 0 | 90 | 180 | 270;
   mirrorX: boolean;
   unit: number;
+  unitSuffix?: string;
   locked?: boolean;
   fields: Record<string, string>;
   pins: SchematicPin[]; // populated with absolute/relative coordinates

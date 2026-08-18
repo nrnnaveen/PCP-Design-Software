@@ -809,3 +809,43 @@ export function createDemoProject(): ApexProject {
     },
   };
 }
+
+export function createEmptyProject(): ApexProject {
+  const base = createDemoProject();
+  return {
+    ...base,
+    metadata: {
+      ...base.metadata,
+      id: `proj_floz_${Date.now()}`,
+      name: 'New Circuit Project',
+      description: 'Clean Electronic Design Project',
+    },
+    schematic: {
+      activeSheetId: 'sheet_main',
+      sheets: [
+        {
+          ...base.schematic.sheets[0],
+          symbols: [],
+          wires: [],
+          junctions: [],
+          labels: [],
+          powerSymbols: [],
+        },
+      ],
+    },
+    pcb: {
+      ...base.pcb,
+      boardOutline: [],
+      footprints: [],
+      tracks: [],
+      vias: [],
+      zones: [],
+      keepouts: [],
+      graphics: [],
+      dimensions: [],
+    },
+    netGraph: {
+      nets: {},
+    },
+  };
+}
