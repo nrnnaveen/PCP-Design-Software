@@ -35,11 +35,12 @@ interface Props {
   project: ApexProject;
   onUpdateProject: (updater: (prev: ApexProject) => ApexProject, actionName?: string) => void;
   onRunDRC: () => void;
+  theme?: 'dark' | 'light';
 }
 
 type PCBTool = 'select' | 'route' | 'via' | 'zone' | 'measure';
 
-export const PCBEditor: React.FC<Props> = ({ project, onUpdateProject, onRunDRC }) => {
+export const PCBEditor: React.FC<Props> = ({ project, onUpdateProject, onRunDRC, theme = 'dark' }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   // Viewport Transform
@@ -64,7 +65,10 @@ export const PCBEditor: React.FC<Props> = ({ project, onUpdateProject, onRunDRC 
   const [dragOffset, setDragOffset] = useState<Point2D>({ x: 0, y: 0 });
 
   const [routeStart, setRouteStart] = useState<Point2D | null>(null);
+  const [routeStartPad, setRouteStartPad] = useState<{ footprint: PCBFootprintInstance; pad: any; worldPos: Point2D; netName: string } | null>(null);
+  const [hoverPad, setHoverPad] = useState<{ footprint: PCBFootprintInstance; pad: any; worldPos: Point2D; netName: string } | null>(null);
   const [routeNetName, setRouteNetName] = useState<string>('Default');
+  const [routeError, setRouteError] = useState<{ message: string; x: number; y: number } | null>(null);
   const [hoverPos, setHoverPos] = useState<Point2D>({ x: 0, y: 0 });
 
   // Measurement tool state
@@ -109,8 +113,10 @@ export const PCBEditor: React.FC<Props> = ({ project, onUpdateProject, onRunDRC 
     canvas.width = width;
     canvas.height = height;
 
-    // 1. Dark CAD Background & Dot Grid
-    ctx.fillStyle = '#111418';
+    const isLight = theme === 'light' || document.documentElement.getAttribute('data-theme') === 'light';
+
+    // 1. CAD Background & Dot Grid
+    ctx.fillStyle = isLight ? '#f8fafc' : '#111418';
     ctx.fillRect(0, 0, width, height);
 
     const startWorld = screenToWorld(0, 0);
@@ -120,7 +126,7 @@ export const PCBEditor: React.FC<Props> = ({ project, onUpdateProject, onRunDRC 
     const minGridY = Math.floor(startWorld.y / gridStep) * gridStep;
     const maxGridY = Math.ceil(endWorld.y / gridStep) * gridStep;
 
-    ctx.fillStyle = '#232934';
+    ctx.fillStyle = isLight ? '#cbd5e1' : '#232934';
     for (let gx = minGridX; gx <= maxGridX; gx += gridStep) {
       for (let gy = minGridY; gy <= maxGridY; gy += gridStep) {
         const sp = worldToScreen(gx, gy);
@@ -238,7 +244,7 @@ export const PCBEditor: React.FC<Props> = ({ project, onUpdateProject, onRunDRC 
       ctx.fill();
 
       // Drill hole
-      ctx.fillStyle = '#111418';
+      ctx.fillStyle = isLight ? '#f8fafc' : '#111418';
       ctx.beginPath();
       ctx.arc(sp.x, sp.y, drillR, 0, Math.PI * 2);
       ctx.fill();
@@ -276,7 +282,7 @@ export const PCBEditor: React.FC<Props> = ({ project, onUpdateProject, onRunDRC 
 
         // Drill hole for through-hole pads
         if (pad.type === 'through_hole' && pad.drillDiameter) {
-          ctx.fillStyle = '#111418';
+          ctx.fillStyle = isLight ? '#f8fafc' : '#111418';
           ctx.beginPath();
           ctx.arc(0, 0, (pad.drillDiameter / 2) * zoom, 0, Math.PI * 2);
           ctx.fill();
@@ -296,7 +302,7 @@ export const PCBEditor: React.FC<Props> = ({ project, onUpdateProject, onRunDRC 
 
       // Silkscreen Outlines
       if (layerVisibility['F.Silkscreen']) {
-        ctx.strokeStyle = '#f8fafc';
+        ctx.strokeStyle = isLight ? '#0f172a' : '#f8fafc';
         ctx.lineWidth = Math.max(1, 0.15 * zoom);
         fp.shapes.forEach((shape) => {
           if (shape.layer === 'F.Silkscreen' && shape.type === 'rect' && shape.width && shape.height) {
@@ -324,20 +330,30 @@ export const PCBEditor: React.FC<Props> = ({ project, onUpdateProject, onRunDRC 
 
       // Reference Label
       const sp = worldToScreen(fp.x, fp.y);
-      ctx.fillStyle = '#38bdf8';
+      ctx.fillStyle = isLight ? '#0284c7' : '#38bdf8';
       ctx.font = `600 ${Math.max(9, 2.2 * zoom)}px Inter, sans-serif`;
       ctx.textAlign = 'center';
       ctx.fillText(fp.reference, sp.x, sp.y - 12 * (zoom / 6));
     });
 
-    // 9. Interactive Route in Progress (45-degree octilinear preview)
+    // 9. Interactive Route in Progress (45-degree octilinear preview with short-circuit prevention)
     if (routeStart && activeTool === 'route') {
-      const snappedEnd = { x: snapToGrid(hoverPos.x), y: snapToGrid(hoverPos.y) };
-      const segments = InteractiveRouter.compute45DegreePath(routeStart, snappedEnd);
+      const targetPos = hoverPad ? hoverPad.worldPos : { x: snapToGrid(hoverPos.x), y: snapToGrid(hoverPos.y) };
+      const segments = InteractiveRouter.compute45DegreePath(routeStart, targetPos);
 
-      ctx.strokeStyle = activeLayer === 'F.Cu' ? '#f97316' : '#60a5fa';
-      ctx.lineWidth = Math.max(2, 0.35 * zoom);
-      ctx.setLineDash([3, 3]);
+      const isShortCircuit = hoverPad && hoverPad.netName !== routeNetName && routeNetName !== 'Default' && hoverPad.netName !== 'Default';
+      const isValidTarget = hoverPad && hoverPad.netName === routeNetName;
+
+      ctx.strokeStyle = isShortCircuit
+        ? '#ef4444' // Red for Short Circuit / Invalid Net
+        : isValidTarget
+        ? '#22c55e' // Green for Valid Same-Net Pad
+        : activeLayer === 'F.Cu'
+        ? '#f97316' // Standard Orange for F.Cu
+        : '#60a5fa'; // Standard Blue for B.Cu
+
+      ctx.lineWidth = Math.max(2.5, 0.4 * zoom);
+      ctx.setLineDash(isShortCircuit ? [4, 4] : [3, 3]);
 
       segments.forEach((seg) => {
         const p1 = worldToScreen(seg.x1, seg.y1);
@@ -348,9 +364,40 @@ export const PCBEditor: React.FC<Props> = ({ project, onUpdateProject, onRunDRC 
         ctx.stroke();
       });
       ctx.setLineDash([]);
+
+      // Target Pad Lock & Clearance Halo
+      if (hoverPad) {
+        const hp = worldToScreen(hoverPad.worldPos.x, hoverPad.worldPos.y);
+        ctx.beginPath();
+        ctx.arc(hp.x, hp.y, 8 * (zoom / 6), 0, Math.PI * 2);
+        ctx.strokeStyle = isShortCircuit ? '#ef4444' : '#22c55e';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Canvas Tooltip Badge
+        if (isShortCircuit) {
+          const tooltip = `❌ Short: Cannot connect "${routeNetName}" to "${hoverPad.netName}"`;
+          ctx.fillStyle = 'rgba(239, 68, 68, 0.9)';
+          ctx.font = `bold ${Math.max(10, 1.8 * zoom)}px 'JetBrains Mono', monospace`;
+          const textW = ctx.measureText(tooltip).width;
+          ctx.fillRect(hp.x - textW / 2 - 6, hp.y - 24, textW + 12, 18);
+          ctx.fillStyle = '#ffffff';
+          ctx.textAlign = 'center';
+          ctx.fillText(tooltip, hp.x, hp.y - 11);
+        } else if (isValidTarget) {
+          const tooltip = `✓ Connect Net "${routeNetName}"`;
+          ctx.fillStyle = 'rgba(34, 197, 94, 0.9)';
+          ctx.font = `bold ${Math.max(10, 1.8 * zoom)}px 'JetBrains Mono', monospace`;
+          const textW = ctx.measureText(tooltip).width;
+          ctx.fillRect(hp.x - textW / 2 - 6, hp.y - 24, textW + 12, 18);
+          ctx.fillStyle = '#ffffff';
+          ctx.textAlign = 'center';
+          ctx.fillText(tooltip, hp.x, hp.y - 11);
+        }
+      }
     }
 
-    // 10. Measurement Ruler Overlay
+    // 10. Measurement Tool Ruler Overlay
     if (measureStart && activeTool === 'measure') {
       const p1 = worldToScreen(measureStart.x, measureStart.y);
       const p2 = worldToScreen(hoverPos.x, hoverPos.y);
@@ -371,7 +418,7 @@ export const PCBEditor: React.FC<Props> = ({ project, onUpdateProject, onRunDRC 
         (p1.y + p2.y) / 2 - 10
       );
     }
-  }, [pcb, zoom, pan, activeTool, activeLayer, layerVisibility, selectedFootprintId, routeStart, hoverPos, measureStart, gridStep, screenToWorld, worldToScreen, ratsnestLines]);
+  }, [pcb, zoom, pan, activeTool, activeLayer, layerVisibility, selectedFootprintId, routeStart, hoverPos, measureStart, gridStep, screenToWorld, worldToScreen, ratsnestLines, theme]);
 
   // Mouse Handlers
   const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -401,11 +448,39 @@ export const PCBEditor: React.FC<Props> = ({ project, onUpdateProject, onRunDRC 
         setSelectedFootprintId(null);
       }
     } else if (activeTool === 'route') {
+      const hitPad = InteractiveRouter.findPadAtPosition(pcb, wp, activeLayer);
+
       if (!routeStart) {
-        setRouteStart(snapped);
+        // Start Route from Pad or Grid
+        if (hitPad) {
+          setRouteStart(hitPad.worldPos);
+          setRouteStartPad(hitPad);
+          setRouteNetName(hitPad.netName);
+        } else {
+          setRouteStart(snapped);
+          setRouteStartPad(null);
+          setRouteNetName('Default');
+        }
+        setRouteError(null);
       } else {
+        // Target endpoint
+        const targetPos = hitPad ? hitPad.worldPos : snapped;
+
+        // SHORT CIRCUIT DETECTION
+        if (hitPad) {
+          const validation = InteractiveRouter.validateConnection(routeNetName, hitPad.netName);
+          if (!validation.valid) {
+            setRouteError({
+              message: `Short Circuit Blocked: Cannot connect Net "${routeNetName}" to Net "${hitPad.netName}". Route cancelled.`,
+              x: hitPad.worldPos.x,
+              y: hitPad.worldPos.y,
+            });
+            return; // REJECT ROUTE CREATION — PREVENTS SHORT CIRCUITS
+          }
+        }
+
         // Complete 45-degree track segments
-        const segments = InteractiveRouter.compute45DegreePath(routeStart, snapped);
+        const segments = InteractiveRouter.compute45DegreePath(routeStart, targetPos);
         const newTracks: PCBTrackSegment[] = segments.map((seg, i) => ({
           id: `trk_${Date.now()}_${i}`,
           netId: `net_${routeNetName.toLowerCase()}`,
@@ -426,7 +501,16 @@ export const PCBEditor: React.FC<Props> = ({ project, onUpdateProject, onRunDRC 
           },
         }), 'Route Track');
 
-        setRouteStart(snapped); // chain route
+        setRouteError(null);
+
+        if (hitPad) {
+          // Finished route to pad
+          setRouteStart(null);
+          setRouteStartPad(null);
+        } else {
+          // Chain route from current point
+          setRouteStart(snapped);
+        }
       }
     } else if (activeTool === 'via') {
       const newVia: PCBVia = {
@@ -466,6 +550,28 @@ export const PCBEditor: React.FC<Props> = ({ project, onUpdateProject, onRunDRC 
     const sy = e.clientY - rect.top;
     const wp = screenToWorld(sx, sy);
     setHoverPos(wp);
+
+    if (activeTool === 'route') {
+      const hit = InteractiveRouter.findPadAtPosition(pcb, wp, activeLayer);
+      setHoverPad(hit);
+
+      if (routeStart && hit) {
+        const validation = InteractiveRouter.validateConnection(routeNetName, hit.netName);
+        if (!validation.valid) {
+          setRouteError({
+            message: `❌ Cannot connect ${routeNetName} to ${hit.netName}`,
+            x: hit.worldPos.x,
+            y: hit.worldPos.y,
+          });
+        } else {
+          setRouteError(null);
+        }
+      } else {
+        setRouteError(null);
+      }
+    } else {
+      setHoverPad(null);
+    }
 
     if (isDragging) {
       if (e.buttons === 4 || e.altKey) {
@@ -662,17 +768,42 @@ export const PCBEditor: React.FC<Props> = ({ project, onUpdateProject, onRunDRC 
           <span>Y: {hoverPos.y.toFixed(2)} mm</span>
           <span>Grid: {gridStep} mm</span>
           <div className="h-4 w-px bg-cad-border" />
-          <button onClick={() => setZoom((z) => Math.min(30, z * 1.2))} className="p-1 hover:text-white">
+          <button onClick={() => setZoom((z) => Math.min(30, z * 1.2))} className="p-1 hover:text-cad-text">
             <ZoomIn size={14} />
           </button>
-          <button onClick={() => setZoom((z) => Math.max(1.5, z * 0.8))} className="p-1 hover:text-white">
+          <button onClick={() => setZoom((z) => Math.max(1.5, z * 0.8))} className="p-1 hover:text-cad-text">
             <ZoomOut size={14} />
           </button>
-          <button onClick={() => { setPan({ x: 300, y: 250 }); setZoom(6.0); }} className="p-1 hover:text-white">
+          <button onClick={() => { setPan({ x: 300, y: 250 }); setZoom(6.0); }} className="p-1 hover:text-cad-text">
             <Maximize2 size={14} />
           </button>
         </div>
       </div>
+
+      {/* Interactive Routing Status / Short Circuit Error Banners */}
+      {routeError && (
+        <div className="absolute top-12 left-4 right-4 z-20 bg-red-600/90 text-white px-4 py-2 rounded-lg text-xs font-mono flex items-center justify-between shadow-lg backdrop-blur border border-red-400 animate-fadeIn">
+          <div className="flex items-center gap-2">
+            <span className="font-bold">SHORT CIRCUIT PREVENTED:</span>
+            <span>{routeError.message}</span>
+          </div>
+          <button
+            onClick={() => setRouteError(null)}
+            className="px-2 py-0.5 bg-black/30 hover:bg-black/50 rounded font-semibold text-[11px]"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+
+      {routeStart && !routeError && (
+        <div className="absolute top-12 left-4 z-20 bg-cad-panel/90 border border-blue-500/50 text-cad-text px-3 py-1.5 rounded-lg text-xs font-mono flex items-center gap-3 shadow-md backdrop-blur">
+          <span className="flex items-center gap-1.5 text-blue-500 dark:text-blue-400 font-bold">
+            <RouteIcon size={13} /> Routing Net: {routeNetName}
+          </span>
+          <span className="text-cad-textMuted text-[11px]">(Click target pad to finish, Esc to cancel)</span>
+        </div>
+      )}
 
       {/* 2D Canvas */}
       <canvas

@@ -11,9 +11,10 @@ import { Layers, Eye, EyeOff, RotateCcw, Box, Camera, Download } from 'lucide-re
 interface Props {
   project: ApexProject;
   onSelectComponent?: (reference: string) => void;
+  theme?: 'dark' | 'light';
 }
 
-export const Board3DViewer: React.FC<Props> = ({ project, onSelectComponent }) => {
+export const Board3DViewer: React.FC<Props> = ({ project, onSelectComponent, theme = 'dark' }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
@@ -30,9 +31,11 @@ export const Board3DViewer: React.FC<Props> = ({ project, onSelectComponent }) =
     const width = container.clientWidth;
     const height = container.clientHeight;
 
+    const isLight = theme === 'light' || document.documentElement.getAttribute('data-theme') === 'light';
+
     // 1. Scene & Camera Setup
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x14171c);
+    scene.background = new THREE.Color(isLight ? 0xf8fafc : 0x14171c);
     sceneRef.current = scene;
 
     const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
@@ -504,10 +507,10 @@ export const Board3DViewer: React.FC<Props> = ({ project, onSelectComponent }) =
       canvasDom.removeEventListener('wheel', onWheel);
       renderer.dispose();
     };
-  }, [project, soldermaskColor, showComponents, showSilkscreen, isTransparent]);
+  }, [project, soldermaskColor, showComponents, showSilkscreen, isTransparent, theme]);
 
   return (
-    <div className="relative w-full h-full bg-[#111418] flex flex-col select-none">
+    <div className="relative w-full h-full bg-cad-bg flex flex-col select-none">
       {/* 3D Top Control Bar */}
       <div className="h-10 bg-cad-panel border-b border-cad-border px-3 flex items-center justify-between z-10">
         <div className="flex items-center space-x-2">

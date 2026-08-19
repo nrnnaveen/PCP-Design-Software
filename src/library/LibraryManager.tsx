@@ -286,26 +286,36 @@ export const LibraryManager: React.FC<Props> = ({ isOpen, onClose }) => {
                         Symbols ({selectedLibrary.symbols.length})
                       </div>
                       <div className="space-y-1">
-                        {selectedLibrary.symbols.map((sym) => (
-                          <div
-                            key={sym.id}
-                            onClick={() => {
-                              setSelectedSymbol(sym);
-                              setSelectedFootprint(undefined);
-                            }}
-                            className={`p-2 rounded cursor-pointer border transition-colors flex items-center justify-between ${
-                              selectedSymbol?.id === sym.id
-                                ? 'bg-blue-600/20 border-blue-500/50'
-                                : 'bg-cad-subpanel hover:bg-cad-border border-transparent'
-                            }`}
-                          >
-                            <div className="flex items-center gap-2 truncate">
-                              <Cpu size={13} className="text-blue-400 shrink-0" />
-                              <span className="text-xs font-semibold text-white truncate">{sym.name}</span>
+                        {selectedLibrary.symbols.map((sym) => {
+                          const hasUnits = Boolean(sym.units && sym.units.length > 1);
+                          return (
+                            <div
+                              key={sym.id}
+                              onClick={() => {
+                                setSelectedSymbol(sym);
+                                setSelectedFootprint(undefined);
+                              }}
+                              className={`p-2 rounded cursor-pointer border transition-colors flex items-center justify-between ${
+                                selectedSymbol?.id === sym.id
+                                  ? 'bg-blue-600/20 border-blue-500/50'
+                                  : 'bg-cad-subpanel hover:bg-cad-border border-transparent'
+                              }`}
+                            >
+                              <div className="flex items-center gap-2 truncate">
+                                <Cpu size={13} className="text-blue-400 shrink-0" />
+                                <span className="text-xs font-semibold text-white truncate">{sym.name}</span>
+                              </div>
+                              <div className="flex items-center gap-1.5">
+                                {hasUnits && (
+                                  <span className="text-[9px] px-1.5 py-0.2 bg-blue-500/20 text-blue-400 rounded font-mono font-semibold">
+                                    {sym.units!.length} Units
+                                  </span>
+                                )}
+                                <span className="text-[10px] text-cad-textMuted font-mono">{sym.pins.length} pins</span>
+                              </div>
                             </div>
-                            <span className="text-[10px] text-cad-textMuted font-mono">{sym.pins.length} pins</span>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     </div>
                   )}
@@ -354,6 +364,11 @@ export const LibraryManager: React.FC<Props> = ({ isOpen, onClose }) => {
                     <span className="text-xs px-2 py-0.5 bg-cad-border text-cad-textMuted rounded font-mono">
                       {selectedSymbol ? 'SYMBOL' : 'FOOTPRINT'}
                     </span>
+                    {selectedSymbol?.units && selectedSymbol.units.length > 1 && (
+                      <span className="text-xs px-2 py-0.5 bg-blue-500/20 text-blue-400 border border-blue-500/30 rounded font-mono">
+                        {selectedSymbol.units.length} Logical Units
+                      </span>
+                    )}
                   </h3>
                   <p className="text-xs text-cad-textMuted mt-0.5 font-mono">
                     {selectedSymbol?.description || selectedFootprint?.description}
@@ -368,12 +383,35 @@ export const LibraryManager: React.FC<Props> = ({ isOpen, onClose }) => {
                 {/* Properties Summary Table */}
                 <div className="bg-cad-panel border border-cad-border p-3 rounded-lg text-xs font-mono space-y-2">
                   {selectedSymbol && (
-                    <div className="grid grid-cols-2 gap-2 text-[11px]">
-                      <div>Default Prefix: <span className="text-white font-bold">{selectedSymbol.defaultPrefix}</span></div>
-                      <div>Default Footprint: <span className="text-blue-400">{selectedSymbol.defaultFootprint || 'None'}</span></div>
-                      <div>Category: <span className="text-slate-300">{selectedSymbol.category}</span></div>
-                      <div>Pins: <span className="text-emerald-400 font-bold">{selectedSymbol.pins.length}</span></div>
-                    </div>
+                    <>
+                      <div className="grid grid-cols-2 gap-2 text-[11px]">
+                        <div>Default Prefix: <span className="text-white font-bold">{selectedSymbol.defaultPrefix}</span></div>
+                        <div>Default Footprint: <span className="text-blue-400">{selectedSymbol.defaultFootprint || 'None'}</span></div>
+                        <div>Category: <span className="text-slate-300">{selectedSymbol.category}</span></div>
+                        <div>Total Pins: <span className="text-emerald-400 font-bold">{selectedSymbol.pins.length}</span></div>
+                      </div>
+
+                      {selectedSymbol.units && selectedSymbol.units.length > 1 && (
+                        <div className="pt-2 border-t border-cad-border">
+                          <div className="text-[10px] uppercase font-bold text-blue-400 mb-1.5 flex items-center justify-between">
+                            <span>Logical Units Breakdown ({selectedSymbol.units.length} Units)</span>
+                            <span className="text-slate-400 font-normal">Select unit in canvas toolbar above</span>
+                          </div>
+                          <div className="space-y-1 max-h-32 overflow-y-auto">
+                            {selectedSymbol.units.map((u) => (
+                              <div key={u.unit} className="flex items-center justify-between bg-cad-bg/60 p-1.5 rounded border border-cad-border text-[10px]">
+                                <span className={`font-bold ${u.isPower ? 'text-amber-400' : 'text-blue-300'}`}>
+                                  Unit {u.name || u.unit} {u.isPower ? '(Power)' : ''}
+                                </span>
+                                <span className="text-slate-300 font-mono">
+                                  {u.pins.length} pins: {u.pins.map((p) => `${p.number}:${p.name}`).join(', ') || 'None'}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </>
                   )}
 
                   {selectedFootprint && (

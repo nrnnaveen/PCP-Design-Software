@@ -13,6 +13,7 @@ import { eventBus } from '../core/eventBus';
 
 // Editors & Panels
 import { SchematicEditor } from '../schematic/SchematicEditor';
+import { SchematicHelper } from '../schematic/helper';
 import { PCBEditor } from '../pcb/PCBEditor';
 import { Board3DViewer } from '../three3d/Board3DViewer';
 import { SimulationPanel } from '../simulation/SimulationPanel';
@@ -32,6 +33,10 @@ import { ProjectManager } from './ProjectManager';
 import { AboutModal } from './AboutModal';
 import { ProjectHealthModal } from './ProjectHealthModal';
 import { MissingAssetsModal } from './MissingAssetsModal';
+import { SettingsModal } from './SettingsModal';
+import { LiveCircuitLab } from '../simulation/LiveCircuitLab';
+import { AuthModal } from './AuthModal';
+import { AuthService, User } from '../core/auth';
 import { AssetResolver } from '../library/assetResolver';
 
 // Icons
@@ -61,6 +66,9 @@ import {
   Moon,
   ShieldCheck,
   AlertCircle,
+  LayoutDashboard,
+  Settings as SettingsIcon,
+  User as UserIcon,
 } from 'lucide-react';
 
 export type WorkspaceTab =
@@ -71,6 +79,40 @@ export type WorkspaceTab =
   | 'gerbview'
   | 'calculator';
 
+function parseInitialRoute(): { tab: WorkspaceTab; showDashboard: boolean } {
+  try {
+    const pathname = window.location.pathname.toLowerCase().replace(/\/+$/, '') || '/';
+    const hash = window.location.hash.toLowerCase().replace(/^#\/?/, '');
+    const path = pathname !== '/' ? pathname : hash ? `/${hash}` : '/';
+
+    // Direct dashboard paths or root '/' defaults to Dashboard
+    if (path === '/' || path === '/dashboard' || path === '/projects') {
+      return { tab: 'schematic', showDashboard: true };
+    }
+    if (path.startsWith('/workspace/pcb') || path === '/pcb') {
+      return { tab: 'pcb', showDashboard: false };
+    }
+    if (path.startsWith('/workspace/3d') || path === '/3d') {
+      return { tab: '3d', showDashboard: false };
+    }
+    if (path.startsWith('/workspace/simulation') || path === '/simulation') {
+      return { tab: 'simulation', showDashboard: false };
+    }
+    if (path.startsWith('/workspace/gerbview') || path === '/gerbview') {
+      return { tab: 'gerbview', showDashboard: false };
+    }
+    if (path.startsWith('/workspace/calculator') || path === '/calculator') {
+      return { tab: 'calculator', showDashboard: false };
+    }
+    if (path.startsWith('/workspace')) {
+      return { tab: 'schematic', showDashboard: false };
+    }
+    return { tab: 'schematic', showDashboard: true };
+  } catch {
+    return { tab: 'schematic', showDashboard: true };
+  }
+}
+
 export const AppShell: React.FC = () => {
   // 1. Authoritative Project State
   const [project, setProject] = useState<ApexProject>(() => {
@@ -78,10 +120,64 @@ export const AppShell: React.FC = () => {
     return autosaved || createDemoProject();
   });
 
+  // Routing State: Dashboard is the default landing page on startup
+  const initialRoute = parseInitialRoute();
+  const [activeTab, setActiveTab] = useState<WorkspaceTab>(initialRoute.tab);
+  const [showProjectManager, setShowProjectManager] = useState<boolean>(initialRoute.showDashboard);
+
+  // User Authentication & Modals State
+  const [user, setUser] = useState<User>(() => AuthService.getUser());
+  const [showSettingsModal, setShowSettingsModal] = useState<boolean>(false);
+  const [showCircuitLab, setShowCircuitLab] = useState<boolean>(false);
+  const [showAuthModal, setShowAuthModal] = useState<boolean>(false);
+
+  useEffect(() => {
+    const unsub = AuthService.subscribe((u) => setUser(u));
+    return unsub;
+  }, []);
+
+  // Sync route on popstate
+  useEffect(() => {
+    const handlePopState = () => {
+      const route = parseInitialRoute();
+      setActiveTab(route.tab);
+      setShowProjectManager(route.showDashboard);
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  const navigateToTab = (tab: WorkspaceTab) => {
+    setActiveTab(tab);
+    setShowProjectManager(false);
+    const targetUrl = `/workspace/${tab}`;
+    if (window.location.pathname !== targetUrl) {
+      window.history.pushState(null, '', targetUrl);
+    }
+  };
+
+  const openDashboard = () => {
+    setShowProjectManager(true);
+    if (window.location.pathname !== '/dashboard') {
+      window.history.pushState(null, '', '/dashboard');
+    }
+  };
+
+  const closeDashboard = () => {
+    setShowProjectManager(false);
+    const targetUrl = `/workspace/${activeTab}`;
+    if (window.location.pathname !== targetUrl && window.location.pathname !== '/workspace') {
+      window.history.pushState(null, '', targetUrl);
+    }
+  };
+
   // Theme Management (Dark / Light)
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
     try {
-      return (localStorage.getItem('floz-eda-theme') as 'dark' | 'light') || 'dark';
+      const saved = localStorage.getItem('floz-eda-theme') as 'dark' | 'light';
+      if (saved === 'light' || saved === 'dark') return saved;
+      return 'dark';
     } catch {
       return 'dark';
     }
@@ -89,12 +185,18 @@ export const AppShell: React.FC = () => {
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
+    if (theme === 'light') {
+      document.documentElement.classList.remove('dark');
+      document.documentElement.classList.add('light');
+    } else {
+      document.documentElement.classList.remove('light');
+      document.documentElement.classList.add('dark');
+    }
     localStorage.setItem('floz-eda-theme', theme);
   }, [theme]);
 
   // Undo/Redo Engine
   const [transactionMgr] = useState(() => new TransactionManager<ApexProject>(100));
-  const [activeTab, setActiveTab] = useState<WorkspaceTab>('schematic');
   const [rightPanel, setRightPanel] = useState<'properties' | 'erc' | 'drc' | 'ai'>('properties');
   const [rightPanelCollapsed, setRightPanelCollapsed] = useState<boolean>(false);
 
@@ -131,7 +233,6 @@ export const AppShell: React.FC = () => {
   const [showFootprintAssignment, setShowFootprintAssignment] = useState<boolean>(false);
   const [showLibraryManager, setShowLibraryManager] = useState<boolean>(false);
   const [showMfgModal, setShowMfgModal] = useState<boolean>(false);
-  const [showProjectManager, setShowProjectManager] = useState<boolean>(false);
   const [showAboutModal, setShowAboutModal] = useState<boolean>(false);
   const [showHealthModal, setShowHealthModal] = useState<boolean>(false);
   const [showMissingAssetsModal, setShowMissingAssetsModal] = useState<boolean>(false);
@@ -280,31 +381,42 @@ export const AppShell: React.FC = () => {
         <div className="flex items-center space-x-3">
           {/* Logo & Product Title */}
           <div
-            onClick={() => setShowProjectManager(true)}
+            onClick={openDashboard}
             className="flex items-center space-x-2 cursor-pointer hover:opacity-80 transition-opacity"
+            title="Open Project Dashboard"
           >
             <div className="w-5 h-5 rounded bg-blue-600 flex items-center justify-center text-white font-bold text-xs shadow-sm">
               F
             </div>
-            <span className="font-bold text-white tracking-wide">FloZ ECA</span>
+            <span className="font-bold text-cad-text tracking-wide">FloZ ECA</span>
           </div>
 
           <div className="h-3.5 w-px bg-cad-border" />
 
           {/* Project Title Readout */}
           <div className="flex items-center space-x-1.5 font-mono text-[11px]">
-            <span className="text-white font-semibold">{project.metadata.name}</span>
+            <span className="text-cad-text font-semibold">{project.metadata.name}</span>
             <span className="text-cad-textMuted text-[10px]">v{project.metadata.version}</span>
           </div>
+
+          {/* Dashboard Navigation Button */}
+          <button
+            onClick={openDashboard}
+            title="Open Projects Dashboard"
+            className="px-2 py-0.5 bg-cad-subpanel hover:bg-cad-border text-cad-text rounded text-[11px] font-semibold flex items-center gap-1.5 border border-cad-border transition-colors shadow-sm"
+          >
+            <LayoutDashboard size={12} className="text-blue-500 dark:text-blue-400" />
+            Dashboard
+          </button>
 
           <div className="h-3.5 w-px bg-cad-border" />
 
           {/* Quick Actions */}
           <div className="flex items-center space-x-1">
             <button
-              onClick={() => setShowProjectManager(true)}
+              onClick={openDashboard}
               title="Project Manager"
-              className="p-1 hover:bg-cad-subpanel rounded text-cad-textMuted hover:text-white"
+              className="p-1 hover:bg-cad-subpanel rounded text-cad-textMuted hover:text-cad-text transition-colors"
             >
               <FolderOpen size={14} />
             </button>
@@ -315,7 +427,7 @@ export const AppShell: React.FC = () => {
                 showToast('Project Exported');
               }}
               title="Save Project (Ctrl+S)"
-              className="p-1 hover:bg-cad-subpanel rounded text-cad-textMuted hover:text-white"
+              className="p-1 hover:bg-cad-subpanel rounded text-cad-textMuted hover:text-cad-text transition-colors"
             >
               <Save size={14} />
             </button>
@@ -324,7 +436,7 @@ export const AppShell: React.FC = () => {
               onClick={handleUndo}
               disabled={!transactionMgr.canUndo()}
               title="Undo (Ctrl+Z)"
-              className="p-1 hover:bg-cad-subpanel rounded disabled:opacity-30 text-cad-textMuted hover:text-white"
+              className="p-1 hover:bg-cad-subpanel rounded disabled:opacity-30 text-cad-textMuted hover:text-cad-text transition-colors"
             >
               <Undo2 size={14} />
             </button>
@@ -333,7 +445,7 @@ export const AppShell: React.FC = () => {
               onClick={handleRedo}
               disabled={!transactionMgr.canRedo()}
               title="Redo (Ctrl+Y)"
-              className="p-1 hover:bg-cad-subpanel rounded disabled:opacity-30 text-cad-textMuted hover:text-white"
+              className="p-1 hover:bg-cad-subpanel rounded disabled:opacity-30 text-cad-textMuted hover:text-cad-text transition-colors"
             >
               <Redo2 size={14} />
             </button>
@@ -345,26 +457,26 @@ export const AppShell: React.FC = () => {
           <button
             onClick={handleSyncPCB}
             title="Update PCB from Schematic (F8)"
-            className="px-2.5 py-1 bg-cad-subpanel hover:bg-cad-border text-slate-200 rounded text-[11px] font-semibold flex items-center gap-1.5 border border-cad-border shadow-sm transition-colors"
+            className="px-2.5 py-1 bg-cad-subpanel hover:bg-cad-border text-cad-text rounded text-[11px] font-semibold flex items-center gap-1.5 border border-cad-border shadow-sm transition-colors"
           >
-            <RefreshCw size={12} className="text-blue-400" />
+            <RefreshCw size={12} className="text-blue-500 dark:text-blue-400" />
             Sync PCB (F8)
           </button>
 
           <button
             onClick={() => setShowLibraryManager(true)}
             title="Open Component Library Manager"
-            className="px-2.5 py-1 bg-cad-subpanel hover:bg-cad-border text-slate-200 rounded text-[11px] font-semibold flex items-center gap-1.5 border border-cad-border transition-colors"
+            className="px-2.5 py-1 bg-cad-subpanel hover:bg-cad-border text-cad-text rounded text-[11px] font-semibold flex items-center gap-1.5 border border-cad-border transition-colors"
           >
-            <Layers size={12} className="text-emerald-400" />
+            <Layers size={12} className="text-emerald-500 dark:text-emerald-400" />
             Libraries
           </button>
 
           <button
             onClick={() => setShowFootprintAssignment(true)}
-            className="px-2.5 py-1 bg-cad-subpanel hover:bg-cad-border text-slate-200 rounded text-[11px] font-semibold flex items-center gap-1.5 border border-cad-border"
+            className="px-2.5 py-1 bg-cad-subpanel hover:bg-cad-border text-cad-text rounded text-[11px] font-semibold flex items-center gap-1.5 border border-cad-border transition-colors"
           >
-            <Cpu size={12} className="text-amber-400" />
+            <Cpu size={12} className="text-amber-500 dark:text-amber-400" />
             Assign Footprints
           </button>
 
@@ -377,11 +489,11 @@ export const AppShell: React.FC = () => {
                 title="Manage and resolve missing component symbols and footprints"
                 className={`px-2.5 py-1 rounded text-[11px] font-semibold flex items-center gap-1.5 border transition-colors ${
                   scan.missingCount > 0
-                    ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 hover:bg-amber-500/30'
-                    : 'bg-cad-subpanel text-slate-200 border-cad-border hover:bg-cad-border'
+                    ? 'bg-amber-500/20 text-amber-600 dark:text-amber-300 border-amber-500/40 hover:bg-amber-500/30 font-bold'
+                    : 'bg-cad-subpanel text-cad-text border-cad-border hover:bg-cad-border'
                 }`}
               >
-                <AlertCircle size={12} className={scan.missingCount > 0 ? 'text-amber-400' : 'text-slate-400'} />
+                <AlertCircle size={12} className={scan.missingCount > 0 ? 'text-amber-500 dark:text-amber-400' : 'text-cad-textMuted'} />
                 <span>Assets</span>
                 {scan.missingCount > 0 && (
                   <span className="px-1.5 py-0.2 bg-amber-500 text-slate-950 font-bold text-[9px] rounded-full">
@@ -392,13 +504,23 @@ export const AppShell: React.FC = () => {
             );
           })()}
 
+          {/* Live Circuit Lab */}
+          <button
+            onClick={() => setShowCircuitLab(true)}
+            title="Open Live Circuit Lab (Code & Embedded Testing)"
+            className="px-2.5 py-1 bg-cad-subpanel hover:bg-cad-border text-cad-text rounded text-[11px] font-semibold flex items-center gap-1.5 border border-cad-border transition-colors"
+          >
+            <Activity size={12} className="text-emerald-500 dark:text-emerald-400" />
+            Circuit Lab
+          </button>
+
           {/* Project Health & Diagnostics Dashboard */}
           <button
             onClick={() => setShowHealthModal(true)}
             title="Open Project Health & Verification Dashboard"
-            className="px-2.5 py-1 bg-cad-subpanel hover:bg-cad-border text-slate-200 rounded text-[11px] font-semibold flex items-center gap-1.5 border border-cad-border transition-colors"
+            className="px-2.5 py-1 bg-cad-subpanel hover:bg-cad-border text-cad-text rounded text-[11px] font-semibold flex items-center gap-1.5 border border-cad-border transition-colors"
           >
-            <ShieldCheck size={12} className="text-emerald-400" />
+            <ShieldCheck size={12} className="text-emerald-500 dark:text-emerald-400" />
             Health
           </button>
 
@@ -416,25 +538,50 @@ export const AppShell: React.FC = () => {
               setRightPanelCollapsed(false);
             }}
             title="FloZ AI - Electronic Design Assistant"
-            className="px-2.5 py-1 bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 rounded text-[11px] font-semibold flex items-center gap-1.5 border border-blue-500/40 shadow-sm transition-colors"
+            className="px-2.5 py-1 bg-blue-600/20 hover:bg-blue-600/30 text-blue-600 dark:text-blue-300 rounded text-[11px] font-semibold flex items-center gap-1.5 border border-blue-500/40 shadow-sm transition-colors"
           >
-            <Sparkles size={12} className="text-blue-400" />
+            <Sparkles size={12} className="text-blue-500 dark:text-blue-400" />
             FloZ AI
           </button>
 
-          {/* Theme Switcher Toggle */}
+          {/* User Account / Guest Button */}
+          <button
+            onClick={() => {
+              if (user.isGuest) {
+                setShowAuthModal(true);
+              } else {
+                setShowSettingsModal(true);
+              }
+            }}
+            title={user.isGuest ? 'Guest Mode (Click to Sign In)' : `Logged in as ${user.name}`}
+            className="px-2 py-0.5 bg-cad-subpanel hover:bg-cad-border text-cad-text rounded text-[11px] font-semibold flex items-center gap-1.5 border border-cad-border transition-colors"
+          >
+            <UserIcon size={12} className={user.isGuest ? 'text-amber-500 dark:text-amber-400' : 'text-emerald-500 dark:text-emerald-400'} />
+            <span>{user.isGuest ? 'Guest' : user.name}</span>
+          </button>
+
+          {/* Settings Button */}
+          <button
+            onClick={() => setShowSettingsModal(true)}
+            title="Application Preferences & Settings"
+            className="p-1.5 hover:bg-cad-subpanel rounded text-cad-textMuted hover:text-cad-text border border-transparent hover:border-cad-border transition-colors"
+          >
+            <SettingsIcon size={13} />
+          </button>
+
+          {/* Theme Switcher Toggle (Moon/Sun) */}
           <button
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
             title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Theme`}
-            className="p-1.5 hover:bg-cad-subpanel rounded text-cad-textMuted hover:text-white border border-transparent hover:border-cad-border transition-colors ml-1"
+            className="p-1.5 hover:bg-cad-subpanel rounded text-cad-textMuted hover:text-cad-text border border-transparent hover:border-cad-border transition-colors"
           >
-            {theme === 'dark' ? <Sun size={13} className="text-amber-400" /> : <Moon size={13} className="text-blue-400" />}
+            {theme === 'dark' ? <Sun size={13} className="text-amber-400" /> : <Moon size={13} className="text-blue-500" />}
           </button>
 
           <button
             onClick={() => setShowAboutModal(true)}
             title="About FloZ ECA"
-            className="p-1 hover:bg-cad-subpanel rounded text-cad-textMuted hover:text-white ml-0.5"
+            className="p-1 hover:bg-cad-subpanel rounded text-cad-textMuted hover:text-cad-text transition-colors"
           >
             <Info size={14} />
           </button>
@@ -457,14 +604,14 @@ export const AppShell: React.FC = () => {
             return (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id as WorkspaceTab)}
+                onClick={() => navigateToTab(tab.id as WorkspaceTab)}
                 className={`px-3 py-1.5 rounded-t-md font-semibold text-xs flex items-center gap-1.5 transition-colors border-t-2 ${
                   isActive
-                    ? 'bg-cad-bg text-white border-blue-500 shadow-sm'
-                    : 'text-cad-textMuted hover:text-white border-transparent hover:bg-cad-subpanel'
+                    ? 'bg-cad-bg text-cad-text border-blue-500 shadow-sm'
+                    : 'text-cad-textMuted hover:text-cad-text border-transparent hover:bg-cad-subpanel'
                 }`}
               >
-                <Icon size={14} className={isActive ? 'text-blue-400' : undefined} />
+                <Icon size={14} className={isActive ? 'text-blue-500 dark:text-blue-400' : undefined} />
                 {tab.label}
               </button>
             );
@@ -484,7 +631,7 @@ export const AppShell: React.FC = () => {
             }}
             title="Properties Inspector (Toggle)"
             className={`p-1 rounded ${
-              !rightPanelCollapsed && rightPanel === 'properties' ? 'bg-blue-600 text-white' : 'text-cad-textMuted hover:text-white'
+              !rightPanelCollapsed && rightPanel === 'properties' ? 'bg-blue-600 text-white' : 'text-cad-textMuted hover:text-cad-text'
             }`}
           >
             <Sliders size={13} />
@@ -498,9 +645,9 @@ export const AppShell: React.FC = () => {
                 setRightPanelCollapsed(false);
               }
             }}
-            title="Electrical Rules Check (Toggle)"
+            title="ERC - Electrical Rules Checker (Toggle)"
             className={`p-1 rounded ${
-              !rightPanelCollapsed && rightPanel === 'erc' ? 'bg-amber-600 text-white' : 'text-cad-textMuted hover:text-white'
+              !rightPanelCollapsed && rightPanel === 'erc' ? 'bg-blue-600 text-white' : 'text-cad-textMuted hover:text-cad-text'
             }`}
           >
             <AlertTriangle size={13} />
@@ -514,9 +661,9 @@ export const AppShell: React.FC = () => {
                 setRightPanelCollapsed(false);
               }
             }}
-            title="Design Rules Check (Toggle)"
+            title="DRC - Design Rules Checker (Toggle)"
             className={`p-1 rounded ${
-              !rightPanelCollapsed && rightPanel === 'drc' ? 'bg-blue-600 text-white' : 'text-cad-textMuted hover:text-white'
+              !rightPanelCollapsed && rightPanel === 'drc' ? 'bg-blue-600 text-white' : 'text-cad-textMuted hover:text-cad-text'
             }`}
           >
             <ShieldAlert size={13} />
@@ -532,7 +679,7 @@ export const AppShell: React.FC = () => {
             }}
             title="FloZ AI - Electronic Design Assistant (Toggle)"
             className={`p-1 rounded ${
-              !rightPanelCollapsed && rightPanel === 'ai' ? 'bg-blue-600 text-white' : 'text-blue-400 hover:text-white'
+              !rightPanelCollapsed && rightPanel === 'ai' ? 'bg-blue-600 text-white' : 'text-blue-500 dark:text-blue-400 hover:text-cad-text'
             }`}
           >
             <Sparkles size={13} />
@@ -549,6 +696,7 @@ export const AppShell: React.FC = () => {
               project={project}
               onUpdateProject={updateProject}
               onOpenSymbolChooser={() => setShowSymbolChooser(true)}
+              theme={theme}
             />
           )}
 
@@ -560,10 +708,11 @@ export const AppShell: React.FC = () => {
                 setRightPanel('drc');
                 setRightPanelCollapsed(false);
               }}
+              theme={theme}
             />
           )}
 
-          {activeTab === '3d' && <Board3DViewer project={project} />}
+          {activeTab === '3d' && <Board3DViewer project={project} theme={theme} />}
 
           {activeTab === 'simulation' && <SimulationPanel project={project} />}
 
@@ -620,7 +769,7 @@ export const AppShell: React.FC = () => {
       {/* 4. Bottom Status Bar */}
       <footer className="h-6 bg-cad-header border-t border-cad-border px-3 flex items-center justify-between text-[11px] text-cad-textMuted font-mono select-none">
         <div className="flex items-center space-x-4">
-          <span className="flex items-center gap-1 text-slate-300">
+          <span className="flex items-center gap-1 text-cad-text">
             <div className="w-2 h-2 rounded-full bg-emerald-400" /> Ready
           </span>
           <span>Units: {project.metadata.units}</span>
@@ -630,42 +779,45 @@ export const AppShell: React.FC = () => {
         </div>
 
         <div className="flex items-center space-x-4">
-          <span className="text-slate-400">FloZ ECA Engine v1.0.0 — Electronic Circuit Architect</span>
+          <span className="text-cad-textMuted">FloZ ECA Engine v1.0.0 — Electronic Circuit Architect</span>
         </div>
       </footer>
 
       {/* Toast Popup */}
       {toastMsg && (
-        <div className="fixed bottom-10 left-1/2 -translate-x-1/2 bg-cad-panel border border-blue-500/50 text-white px-4 py-2 rounded-lg shadow-2xl text-xs font-mono flex items-center gap-2 z-50 animate-bounce">
-          <CheckCircle2 size={14} className="text-emerald-400" />
+        <div className="fixed bottom-10 right-6 bg-blue-600 text-white px-4 py-2 rounded-lg shadow-xl text-xs font-semibold z-50 flex items-center gap-2 animate-bounce">
+          <CheckCircle2 size={16} />
           {toastMsg}
         </div>
       )}
 
-      {/* Modals */}
+      {/* Modal Dialogs */}
       <SymbolChooser
         isOpen={showSymbolChooser}
         onClose={() => setShowSymbolChooser(false)}
         onSelectSymbol={(symDef) => {
-          const newSym = {
-            id: `sym_${Date.now()}`,
-            symbolDefId: symDef.id,
-            reference: `${symDef.defaultPrefix}?`,
-            value: symDef.name,
-            footprint: symDef.defaultFootprint || '',
-            x: 100,
-            y: 80,
-            rotation: 0 as any,
-            mirrorX: false,
-            unit: 1,
-            fields: { Description: symDef.description },
-            pins: JSON.parse(JSON.stringify(symDef.pins)),
-          };
-
           updateProject((prev) => {
             const sheet =
               prev.schematic.sheets.find((s) => s.id === prev.schematic.activeSheetId) ||
               prev.schematic.sheets[0];
+            const nextRef = SchematicHelper.getNextReference(symDef.defaultPrefix, sheet.symbols);
+            const firstUnit = symDef.units && symDef.units.length > 0 ? symDef.units[0] : null;
+            const pins = firstUnit ? firstUnit.pins : symDef.pins;
+            const newSym = {
+              id: `sym_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+              symbolDefId: symDef.id,
+              reference: nextRef,
+              value: symDef.name,
+              footprint: symDef.defaultFootprint || '',
+              x: 100,
+              y: 80,
+              rotation: 0 as any,
+              mirrorX: false,
+              unit: 1,
+              unitSuffix: firstUnit?.name,
+              fields: { Description: symDef.description },
+              pins: JSON.parse(JSON.stringify(pins)),
+            };
             return {
               ...prev,
               schematic: {
@@ -700,9 +852,52 @@ export const AppShell: React.FC = () => {
       {showProjectManager && (
         <ProjectManager
           currentProject={project}
-          onOpenProject={(p) => setProject(p)}
-          onClose={() => setShowProjectManager(false)}
-          onOpenLibraryManager={() => setShowLibraryManager(true)}
+          onOpenProject={(p) => {
+            setProject(p);
+            closeDashboard();
+          }}
+          onClose={closeDashboard}
+          onOpenLibraryManager={() => {
+            closeDashboard();
+            setShowLibraryManager(true);
+          }}
+          onOpenSettings={() => setShowSettingsModal(true)}
+          onOpenCircuitLab={() => setShowCircuitLab(true)}
+          onOpenAuthModal={() => setShowAuthModal(true)}
+        />
+      )}
+
+      {showSettingsModal && (
+        <SettingsModal
+          isOpen={showSettingsModal}
+          onClose={() => setShowSettingsModal(false)}
+          project={project}
+          onUpdateProject={updateProject}
+          theme={theme}
+          onSetTheme={setTheme}
+          onOpenAuthModal={() => {
+            setShowSettingsModal(false);
+            setShowAuthModal(true);
+          }}
+        />
+      )}
+
+      {showCircuitLab && (
+        <LiveCircuitLab
+          project={project}
+          isOpen={showCircuitLab}
+          onClose={() => setShowCircuitLab(false)}
+        />
+      )}
+
+      {showAuthModal && (
+        <AuthModal
+          isOpen={showAuthModal}
+          onClose={() => setShowAuthModal(false)}
+          onAuthSuccess={(u) => {
+            setUser(u);
+            showToast(`Signed in as ${u.name}`);
+          }}
         />
       )}
 
@@ -719,7 +914,7 @@ export const AppShell: React.FC = () => {
           onClose={() => setShowHealthModal(false)}
           project={project}
           onUpdateProject={updateProject}
-          onNavigateTab={(tab) => setActiveTab(tab)}
+          onNavigateTab={(tab) => navigateToTab(tab)}
         />
       )}
 

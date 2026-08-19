@@ -1,11 +1,14 @@
 /**
  * Apex EDA - Interactive 45-Degree Octilinear PCB Router
- * Computes 45° multi-segment track paths, collision detection, and clearance halos.
+ * Computes 45° multi-segment track paths, pad hit testing, same-net validation,
+ * collision detection, and clearance halos.
  */
 
 import {
   PCBData,
   PCBTrackSegment,
+  PCBPad,
+  PCBFootprintInstance,
   Point2D,
   PCBLayerId,
   DesignRules,
@@ -25,6 +28,13 @@ export interface CollisionViolation {
   obstacleNet: string;
   distance: number;
   requiredClearance: number;
+}
+
+export interface PadHitInfo {
+  footprint: PCBFootprintInstance;
+  pad: PCBPad;
+  worldPos: Point2D;
+  netName: string;
 }
 
 export class InteractiveRouter {
@@ -73,6 +83,66 @@ export class InteractiveRouter {
     }
 
     return segments;
+  }
+
+  /**
+   * Hits tests all footprint pads on the board against a world-space point.
+   */
+  public static findPadAtPosition(
+    pcb: PCBData,
+    point: Point2D,
+    layer?: PCBLayerId,
+    hitRadius = 1.5
+  ): PadHitInfo | null {
+    for (const fp of pcb.footprints) {
+      const rad = (fp.rotation * Math.PI) / 180;
+      const cosR = Math.cos(rad);
+      const sinR = Math.sin(rad);
+
+      for (const pad of fp.pads) {
+        if (layer && !pad.layers.includes(layer) && pad.type !== 'through_hole') {
+          continue;
+        }
+
+        const rx = pad.x * cosR - pad.y * sinR;
+        const ry = pad.x * sinR + pad.y * cosR;
+        const padAbs: Point2D = { x: fp.x + rx, y: fp.y + ry };
+
+        const padEffectiveRadius = Math.max(pad.width, pad.height, hitRadius) / 2 + 0.5;
+        const dist = Math.hypot(point.x - padAbs.x, point.y - padAbs.y);
+
+        if (dist <= padEffectiveRadius) {
+          return {
+            footprint: fp,
+            pad,
+            worldPos: padAbs,
+            netName: pad.netName || 'Default',
+          };
+        }
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Validates whether two pads / net endpoints can be electrically connected.
+   */
+  public static validateConnection(
+    sourceNet: string,
+    targetNet: string
+  ): { valid: boolean; reason?: string } {
+    const cleanSource = (sourceNet || 'Default').trim();
+    const cleanTarget = (targetNet || 'Default').trim();
+
+    if (cleanSource === cleanTarget || cleanSource === 'Default' || cleanTarget === 'Default') {
+      return { valid: true };
+    }
+
+    return {
+      valid: false,
+      reason: `Cannot connect net "${cleanSource}" to net "${cleanTarget}" (Short Circuit Prevention).`,
+    };
   }
 
   /**

@@ -2,28 +2,49 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --cad-bg: #14171c;
-  --cad-panel: #1a1e24;
-  --cad-subpanel: #20262e;
-  --cad-header: #111418;
-  --cad-border: #2a313c;
+:root,
+[data-theme="dark"],
+.dark {
+  --cad-bg: #0f1217;
+  --cad-panel: #161b22;
+  --cad-subpanel: #1f2631;
+  --cad-header: #0d1015;
+  --cad-border: #2c3644;
+  --cad-border-light: #3d4a5d;
+  --cad-accent: #2563eb;
+  --cad-accent-hover: #1d4ed8;
   --cad-text: #e2e8f0;
   --cad-text-muted: #94a3b8;
-  --cad-accent: #2563eb;
-  --cad-canvas-bg: #14171c;
+  --cad-text-heading: #ffffff;
+  --cad-active: #3b82f6;
+  --cad-grid: #232a36;
+  --cad-canvas-bg: #111418;
+  --cad-silk-top: #f8fafc;
+  --cad-input-bg: #0f1217;
+  --cad-input-border: #2c3644;
+  --cad-input-text: #ffffff;
 }
 
-[data-theme="light"] {
+[data-theme="light"],
+.light {
   --cad-bg: #f8fafc;
   --cad-panel: #ffffff;
   --cad-subpanel: #f1f5f9;
   --cad-header: #e2e8f0;
   --cad-border: #cbd5e1;
-  --cad-text: #0f172a;
-  --cad-text-muted: #64748b;
+  --cad-border-light: #94a3b8;
   --cad-accent: #2563eb;
-  --cad-canvas-bg: #ffffff;
+  --cad-accent-hover: #1d4ed8;
+  --cad-text: #0f172a;
+  --cad-text-muted: #475569;
+  --cad-text-heading: #020617;
+  --cad-active: #2563eb;
+  --cad-grid: #cbd5e1;
+  --cad-canvas-bg: #f8fafc;
+  --cad-silk-top: #0f172a;
+  --cad-input-bg: #ffffff;
+  --cad-input-border: #cbd5e1;
+  --cad-input-text: #0f172a;
 }
 
 * {

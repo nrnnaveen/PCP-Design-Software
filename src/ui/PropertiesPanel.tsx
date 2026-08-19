@@ -41,7 +41,7 @@ export const PropertiesPanel: React.FC<Props> = ({
     return (
       <div className="w-full h-full bg-cad-panel border-l border-cad-border flex flex-col items-center justify-center p-4 text-center text-cad-textMuted select-none">
         <Sliders size={24} className="opacity-40 mb-2" />
-        <span className="text-xs font-semibold text-white">No Object Selected</span>
+        <span className="text-xs font-semibold text-cad-text">No Object Selected</span>
         <span className="text-[11px] mt-1 opacity-70">
           Click on any schematic symbol, pin, wire, or PCB footprint to inspect and edit properties.
         </span>
@@ -50,11 +50,11 @@ export const PropertiesPanel: React.FC<Props> = ({
   }
 
   return (
-    <div className="w-full h-full bg-cad-panel border-l border-cad-border flex flex-col select-none overflow-y-auto">
+    <div className="w-full h-full bg-cad-panel border-l border-cad-border flex flex-col select-none overflow-y-auto text-cad-text">
       {/* Header */}
       <div className="h-10 bg-cad-header border-b border-cad-border px-3 flex items-center justify-between">
-        <span className="text-xs font-bold text-white uppercase font-mono tracking-wider flex items-center gap-1.5">
-          <Sliders size={14} className="text-blue-400" />
+        <span className="text-xs font-bold text-cad-text uppercase font-mono tracking-wider flex items-center gap-1.5">
+          <Sliders size={14} className="text-blue-500 dark:text-blue-400" />
           Properties Inspector
         </span>
       </div>
@@ -63,11 +63,11 @@ export const PropertiesPanel: React.FC<Props> = ({
       {selectedSymbol && (
         <div className="p-3 space-y-4">
           <div className="flex items-center space-x-2">
-            <div className="p-2 bg-blue-600/20 text-blue-400 rounded-lg border border-blue-500/30">
+            <div className="p-2 bg-blue-600/20 text-blue-500 dark:text-blue-400 rounded-lg border border-blue-500/30">
               <Cpu size={18} />
             </div>
             <div>
-              <div className="text-sm font-bold text-white">
+              <div className="text-sm font-bold text-cad-text">
                 {selectedSymbol.reference}
                 {selectedSymbol.unitSuffix ? ` (${selectedSymbol.unitSuffix})` : ''}
               </div>
@@ -96,13 +96,13 @@ export const PropertiesPanel: React.FC<Props> = ({
                     },
                   }));
                 }}
-                className="w-full bg-cad-bg border border-cad-border rounded px-2.5 py-1 text-white font-mono"
+                className="w-full bg-cad-bg border border-cad-border rounded px-2.5 py-1 text-cad-text font-mono"
               />
             </div>
 
             {symDef && symDef.units && symDef.units.length > 1 && (
               <div>
-                <label className="text-[11px] text-cad-textMuted block mb-1 font-semibold text-blue-400">
+                <label className="text-[11px] text-cad-textMuted block mb-1 font-semibold text-blue-500 dark:text-blue-400">
                   Component Unit ({symDef.units.length} Units Available)
                 </label>
                 <select
@@ -131,10 +131,10 @@ export const PropertiesPanel: React.FC<Props> = ({
                       },
                     }));
                   }}
-                  className="w-full bg-cad-bg border border-blue-500/50 rounded px-2 py-1 text-white font-mono text-xs focus:outline-none focus:border-blue-400"
+                  className="w-full bg-cad-bg border border-blue-500/50 rounded px-2 py-1 text-cad-text font-mono text-xs focus:outline-none focus:border-blue-400"
                 >
                   {symDef.units.map((u) => (
-                    <option key={u.unit} value={u.unit}>
+                    <option key={u.unit} value={u.unit} className="bg-cad-panel text-cad-text">
                       Unit {u.name || u.unit} (Pins: {u.pins.map((p) => p.number).join(', ') || 'None'})
                     </option>
                   ))}
@@ -162,7 +162,7 @@ export const PropertiesPanel: React.FC<Props> = ({
                     },
                   }));
                 }}
-                className="w-full bg-cad-bg border border-cad-border rounded px-2.5 py-1 text-white font-mono"
+                className="w-full bg-cad-bg border border-cad-border rounded px-2.5 py-1 text-cad-text font-mono"
               />
             </div>
 
@@ -172,24 +172,24 @@ export const PropertiesPanel: React.FC<Props> = ({
                 type="text"
                 value={selectedSymbol.footprint || ''}
                 readOnly
-                className="w-full bg-cad-bg border border-cad-border rounded px-2.5 py-1 text-slate-300 font-mono text-[11px] truncate"
+                className="w-full bg-cad-bg border border-cad-border rounded px-2.5 py-1 text-cad-text font-mono text-[11px] truncate opacity-90"
               />
             </div>
 
             <div className="grid grid-cols-2 gap-2 font-mono">
               <div>
                 <label className="text-[10px] text-cad-textMuted block mb-0.5">X (mm)</label>
-                <div className="bg-cad-bg p-1.5 rounded border border-cad-border text-white text-xs">{selectedSymbol.x}</div>
+                <div className="bg-cad-bg p-1.5 rounded border border-cad-border text-cad-text text-xs">{selectedSymbol.x}</div>
               </div>
               <div>
                 <label className="text-[10px] text-cad-textMuted block mb-0.5">Y (mm)</label>
-                <div className="bg-cad-bg p-1.5 rounded border border-cad-border text-white text-xs">{selectedSymbol.y}</div>
+                <div className="bg-cad-bg p-1.5 rounded border border-cad-border text-cad-text text-xs">{selectedSymbol.y}</div>
               </div>
             </div>
 
             <div>
               <label className="text-[10px] text-cad-textMuted block mb-0.5">Rotation Angle</label>
-              <div className="bg-cad-bg p-1.5 rounded border border-cad-border text-white text-xs font-mono">{selectedSymbol.rotation}°</div>
+              <div className="bg-cad-bg p-1.5 rounded border border-cad-border text-cad-text text-xs font-mono">{selectedSymbol.rotation}°</div>
             </div>
 
             {/* Pins Table */}
@@ -218,10 +218,10 @@ export const PropertiesPanel: React.FC<Props> = ({
                       }
 
                       return (
-                        <tr key={p.id}>
-                          <td className="px-2 py-0.5 font-bold text-white">{p.number}</td>
-                          <td className="px-2 py-0.5 text-slate-300">{p.name}</td>
-                          <td className={`px-2 py-0.5 truncate ${netName === 'Unconnected' ? 'text-amber-400/80 italic' : 'text-blue-400'}`}>
+                        <tr key={p.id} className="hover:bg-cad-subpanel/50">
+                          <td className="px-2 py-0.5 font-bold text-cad-text">{p.number}</td>
+                          <td className="px-2 py-0.5 text-cad-text">{p.name}</td>
+                          <td className={`px-2 py-0.5 truncate ${netName === 'Unconnected' ? 'text-amber-500 dark:text-amber-400 italic' : 'text-blue-500 dark:text-blue-400 font-semibold'}`}>
                             {netName}
                           </td>
                         </tr>
@@ -239,11 +239,11 @@ export const PropertiesPanel: React.FC<Props> = ({
       {selectedWire && !selectedSymbol && !selectedFootprint && (
         <div className="p-3 space-y-4">
           <div className="flex items-center space-x-2">
-            <div className="p-2 bg-emerald-600/20 text-emerald-400 rounded-lg border border-emerald-500/30">
+            <div className="p-2 bg-emerald-600/20 text-emerald-500 dark:text-emerald-400 rounded-lg border border-emerald-500/30">
               <Zap size={18} />
             </div>
             <div>
-              <div className="text-sm font-bold text-white">Electrical Wire Segment</div>
+              <div className="text-sm font-bold text-cad-text">Electrical Wire Segment</div>
               <div className="text-[11px] text-cad-textMuted font-mono">
                 Length: {Math.hypot(selectedWire.x2 - selectedWire.x1, selectedWire.y2 - selectedWire.y1).toFixed(2)} mm
               </div>
@@ -253,11 +253,11 @@ export const PropertiesPanel: React.FC<Props> = ({
           <div className="space-y-2 text-xs font-mono">
             <div className="bg-cad-bg p-2 rounded border border-cad-border">
               <span className="text-cad-textMuted text-[10px] block">Start Coordinate:</span>
-              <span className="text-white">({selectedWire.x1.toFixed(2)}, {selectedWire.y1.toFixed(2)}) mm</span>
+              <span className="text-cad-text font-semibold">({selectedWire.x1.toFixed(2)}, {selectedWire.y1.toFixed(2)}) mm</span>
             </div>
             <div className="bg-cad-bg p-2 rounded border border-cad-border">
               <span className="text-cad-textMuted text-[10px] block">End Coordinate:</span>
-              <span className="text-white">({selectedWire.x2.toFixed(2)}, {selectedWire.y2.toFixed(2)}) mm</span>
+              <span className="text-cad-text font-semibold">({selectedWire.x2.toFixed(2)}, {selectedWire.y2.toFixed(2)}) mm</span>
             </div>
           </div>
         </div>
@@ -267,11 +267,11 @@ export const PropertiesPanel: React.FC<Props> = ({
       {selectedFootprint && !selectedSymbol && (
         <div className="p-3 space-y-4">
           <div className="flex items-center space-x-2">
-            <div className="p-2 bg-amber-600/20 text-amber-400 rounded-lg border border-amber-500/30">
+            <div className="p-2 bg-amber-600/20 text-amber-500 dark:text-amber-400 rounded-lg border border-amber-500/30">
               <Layers size={18} />
             </div>
             <div>
-              <div className="text-sm font-bold text-white">{selectedFootprint.reference}</div>
+              <div className="text-sm font-bold text-cad-text">{selectedFootprint.reference}</div>
               <div className="text-[11px] text-cad-textMuted font-mono">{selectedFootprint.value}</div>
             </div>
           </div>
@@ -279,14 +279,14 @@ export const PropertiesPanel: React.FC<Props> = ({
           <div className="space-y-2.5 text-xs">
             <div>
               <label className="text-[11px] text-cad-textMuted block mb-1">Footprint Package</label>
-              <div className="bg-cad-bg p-2 rounded border border-cad-border font-mono text-[11px] text-slate-200 break-all">
+              <div className="bg-cad-bg p-2 rounded border border-cad-border font-mono text-[11px] text-cad-text break-all">
                 {selectedFootprint.footprintDefId}
               </div>
             </div>
 
             <div>
               <label className="text-[11px] text-cad-textMuted block mb-1">Board Layer</label>
-              <div className="bg-cad-bg p-2 rounded border border-cad-border font-mono text-xs text-white">
+              <div className="bg-cad-bg p-2 rounded border border-cad-border font-mono text-xs text-cad-text font-semibold">
                 {selectedFootprint.layer}
               </div>
             </div>
@@ -294,22 +294,22 @@ export const PropertiesPanel: React.FC<Props> = ({
             <div className="grid grid-cols-2 gap-2 font-mono">
               <div>
                 <label className="text-[10px] text-cad-textMuted block mb-0.5">X (mm)</label>
-                <div className="bg-cad-bg p-1.5 rounded border border-cad-border text-white text-xs">{selectedFootprint.x.toFixed(2)}</div>
+                <div className="bg-cad-bg p-1.5 rounded border border-cad-border text-cad-text text-xs font-semibold">{selectedFootprint.x.toFixed(2)}</div>
               </div>
               <div>
                 <label className="text-[10px] text-cad-textMuted block mb-0.5">Y (mm)</label>
-                <div className="bg-cad-bg p-1.5 rounded border border-cad-border text-white text-xs">{selectedFootprint.y.toFixed(2)}</div>
+                <div className="bg-cad-bg p-1.5 rounded border border-cad-border text-cad-text text-xs font-semibold">{selectedFootprint.y.toFixed(2)}</div>
               </div>
             </div>
 
             <div>
               <label className="text-[10px] text-cad-textMuted block mb-0.5">Rotation Angle</label>
-              <div className="bg-cad-bg p-1.5 rounded border border-cad-border text-white text-xs font-mono">{selectedFootprint.rotation}°</div>
+              <div className="bg-cad-bg p-1.5 rounded border border-cad-border text-cad-text text-xs font-mono font-semibold">{selectedFootprint.rotation}°</div>
             </div>
 
             <div>
               <label className="text-[10px] text-cad-textMuted block mb-0.5">Number of Pads</label>
-              <div className="bg-cad-bg p-1.5 rounded border border-cad-border text-white text-xs font-mono">{selectedFootprint.pads.length} Pads</div>
+              <div className="bg-cad-bg p-1.5 rounded border border-cad-border text-cad-text text-xs font-mono font-semibold">{selectedFootprint.pads.length} Pads</div>
             </div>
           </div>
         </div>

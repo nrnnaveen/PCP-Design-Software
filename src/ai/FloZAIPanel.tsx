@@ -293,17 +293,17 @@ Ask any question about your design, or click a suggestion below:`,
       {/* 1. Header */}
       <div className="h-10 bg-cad-header border-b border-cad-border px-3 flex items-center justify-between">
         <div className="flex items-center space-x-2">
-          <div className="p-1 rounded bg-blue-600/20 text-blue-400 border border-blue-500/30">
+          <div className="p-1 rounded bg-blue-600/20 text-blue-500 dark:text-blue-400 border border-blue-500/30">
             <Sparkles size={14} />
           </div>
           <div>
             <div className="flex items-center gap-1.5">
-              <span className="font-bold text-white uppercase font-mono tracking-wider text-[11px]">
+              <span className="font-bold text-cad-text uppercase font-mono tracking-wider text-[11px]">
                 FloZ AI
               </span>
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
             </div>
-            <span className="text-[9px] text-slate-400 font-mono block -mt-0.5">
+            <span className="text-[9px] text-cad-textMuted font-mono block -mt-0.5">
               {settings.provider === 'openrouter'
                 ? 'OpenRouter'
                 : settings.provider === 'ollama'
@@ -321,7 +321,7 @@ Ask any question about your design, or click a suggestion below:`,
                 onClick={() => onSetPanelWidth(360)}
                 title="Compact Width (360px)"
                 className={`px-1.5 py-0.5 rounded ${
-                  (panelWidth || 420) <= 380 ? 'bg-blue-600 text-white font-bold' : 'text-slate-400 hover:text-white'
+                  (panelWidth || 420) <= 380 ? 'bg-blue-600 text-white font-bold' : 'text-cad-textMuted hover:text-cad-text'
                 }`}
               >
                 S
@@ -330,7 +330,7 @@ Ask any question about your design, or click a suggestion below:`,
                 onClick={() => onSetPanelWidth(480)}
                 title="Medium Width (480px)"
                 className={`px-1.5 py-0.5 rounded ${
-                  (panelWidth || 420) > 380 && (panelWidth || 420) <= 560 ? 'bg-blue-600 text-white font-bold' : 'text-slate-400 hover:text-white'
+                  (panelWidth || 420) > 380 && (panelWidth || 420) <= 560 ? 'bg-blue-600 text-white font-bold' : 'text-cad-textMuted hover:text-cad-text'
                 }`}
               >
                 M
@@ -339,7 +339,7 @@ Ask any question about your design, or click a suggestion below:`,
                 onClick={() => onSetPanelWidth(640)}
                 title="Wide Width (640px)"
                 className={`px-1.5 py-0.5 rounded ${
-                  (panelWidth || 420) > 560 ? 'bg-blue-600 text-white font-bold' : 'text-slate-400 hover:text-white'
+                  (panelWidth || 420) > 560 ? 'bg-blue-600 text-white font-bold' : 'text-cad-textMuted hover:text-cad-text'
                 }`}
               >
                 L
@@ -350,14 +350,14 @@ Ask any question about your design, or click a suggestion below:`,
           <button
             onClick={handleNewChat}
             title="New Chat Session"
-            className="p-1 hover:bg-cad-subpanel rounded text-cad-textMuted hover:text-white"
+            className="p-1 hover:bg-cad-subpanel rounded text-cad-textMuted hover:text-cad-text"
           >
             <Plus size={14} />
           </button>
           <button
             onClick={() => setShowSettingsModal(true)}
             title="AI Assistant Settings"
-            className="p-1 hover:bg-cad-subpanel rounded text-cad-textMuted hover:text-white"
+            className="p-1 hover:bg-cad-subpanel rounded text-cad-textMuted hover:text-cad-text"
           >
             <Settings size={14} />
           </button>
@@ -571,7 +571,7 @@ Ask any question about your design, or click a suggestion below:`,
               key={prompt}
               onClick={() => handleSendMessage(prompt)}
               disabled={isStreaming}
-              className="px-2 py-0.5 rounded bg-cad-bg hover:bg-cad-border text-slate-300 hover:text-white border border-cad-border transition-colors truncate"
+              className="px-2 py-0.5 rounded bg-cad-bg hover:bg-cad-border text-cad-text hover:text-blue-500 border border-cad-border transition-colors truncate font-medium"
             >
               {prompt}
             </button>
@@ -592,7 +592,7 @@ Ask any question about your design, or click a suggestion below:`,
               }
             }}
             disabled={isStreaming}
-            className="w-full bg-cad-bg border border-cad-border rounded-lg pl-3 pr-10 py-2 text-xs text-white font-mono placeholder:text-slate-500 focus:outline-none focus:border-blue-500"
+            className="w-full bg-cad-bg border border-cad-border rounded-lg pl-3 pr-10 py-2 text-xs text-cad-text font-mono placeholder:text-cad-textMuted focus:outline-none focus:border-blue-500 shadow-inner"
           />
           {isStreaming ? (
             <button

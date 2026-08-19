@@ -47,6 +47,7 @@ interface Props {
   project: ApexProject;
   onUpdateProject: (updater: (prev: ApexProject) => ApexProject, actionName?: string) => void;
   onOpenSymbolChooser: () => void;
+  theme?: 'dark' | 'light';
 }
 
 export type EditorTool = 'select' | 'pan' | 'wire' | 'junction' | 'label' | 'power' | 'delete' | 'place_symbol';
@@ -55,6 +56,7 @@ export const SchematicEditor: React.FC<Props> = ({
   project,
   onUpdateProject,
   onOpenSymbolChooser,
+  theme = 'dark',
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
@@ -401,8 +403,11 @@ export const SchematicEditor: React.FC<Props> = ({
     canvas.width = width;
     canvas.height = height;
 
-    // 1. Dark CAD Background & Dot Grid
-    ctx.fillStyle = '#14171c';
+    // Theme detection
+    const isLight = theme === 'light' || document.documentElement.getAttribute('data-theme') === 'light';
+
+    // 1. CAD Background & Dot Grid
+    ctx.fillStyle = isLight ? '#f8fafc' : '#14171c';
     ctx.fillRect(0, 0, width, height);
 
     const startWorld = screenToWorld(0, 0);
@@ -413,7 +418,7 @@ export const SchematicEditor: React.FC<Props> = ({
     const minGridY = Math.floor(startWorld.y / gridStep) * gridStep;
     const maxGridY = Math.ceil(endWorld.y / gridStep) * gridStep;
 
-    ctx.fillStyle = '#2a3240';
+    ctx.fillStyle = isLight ? '#cbd5e1' : '#2a3240';
     for (let gx = minGridX; gx <= maxGridX; gx += gridStep) {
       for (let gy = minGridY; gy <= maxGridY; gy += gridStep) {
         const sp = worldToScreen(gx, gy);
@@ -446,10 +451,10 @@ export const SchematicEditor: React.FC<Props> = ({
       }
 
       ctx.strokeStyle = isSelected
-        ? '#38bdf8'
+        ? (isLight ? '#0284c7' : '#38bdf8')
         : isNetHighlighted
         ? '#f59e0b'
-        : '#10b981';
+        : (isLight ? '#0369a1' : '#10b981');
       ctx.lineWidth = isSelected || isNetHighlighted ? Math.max(2.5, 0.6 * zoom) : Math.max(1.5, 0.4 * zoom);
       ctx.lineCap = 'round';
 
@@ -464,7 +469,7 @@ export const SchematicEditor: React.FC<Props> = ({
 
     // 3. Render Active Wire in Progress
     if (wireStart && activeTool === 'wire') {
-      ctx.strokeStyle = '#38bdf8';
+      ctx.strokeStyle = isLight ? '#0284c7' : '#38bdf8';
       ctx.lineWidth = Math.max(2.0, 0.45 * zoom);
       ctx.setLineDash([4, 4]);
 
@@ -482,7 +487,7 @@ export const SchematicEditor: React.FC<Props> = ({
     }
 
     // 4. Render Junctions
-    ctx.fillStyle = '#10b981';
+    ctx.fillStyle = isLight ? '#0369a1' : '#10b981';
     activeSheet.junctions.forEach((junc) => {
       const sp = worldToScreen(junc.x, junc.y);
       ctx.beginPath();
@@ -515,8 +520,8 @@ export const SchematicEditor: React.FC<Props> = ({
         }
       }
 
-      ctx.strokeStyle = isSelected ? '#38bdf8' : '#e2e8f0';
-      ctx.fillStyle = '#1a202c';
+      ctx.strokeStyle = isSelected ? (isLight ? '#0284c7' : '#38bdf8') : (isLight ? '#1e293b' : '#e2e8f0');
+      ctx.fillStyle = isLight ? '#ffffff' : '#1a202c';
       ctx.lineWidth = Math.max(1.5, 0.35 * zoom);
 
       shapes.forEach((shape) => {
@@ -525,6 +530,7 @@ export const SchematicEditor: React.FC<Props> = ({
           const h = shape.height * zoom;
           ctx.beginPath();
           ctx.rect(-w / 2, -h / 2, w, h);
+          if (shape.filled) ctx.fill();
           ctx.stroke();
         } else if (shape.type === 'line' && shape.points && shape.points.length >= 2) {
           ctx.beginPath();
@@ -545,7 +551,7 @@ export const SchematicEditor: React.FC<Props> = ({
           }
           ctx.closePath();
           if (shape.filled) {
-            ctx.fillStyle = isSelected ? '#38bdf8' : '#cbd5e1';
+            ctx.fillStyle = isSelected ? (isLight ? '#bae6fd' : '#38bdf8') : (isLight ? '#f1f5f9' : '#cbd5e1');
             ctx.fill();
           }
           ctx.stroke();
@@ -553,8 +559,7 @@ export const SchematicEditor: React.FC<Props> = ({
       });
 
       // Render Pins
-      ctx.strokeStyle = '#e05638';
-      ctx.fillStyle = '#94a3b8';
+      ctx.strokeStyle = isLight ? '#dc2626' : '#e05638';
       ctx.font = `${Math.max(9, 2.0 * zoom)}px 'JetBrains Mono', monospace`;
 
       sym.pins.forEach((pin) => {
@@ -576,7 +581,7 @@ export const SchematicEditor: React.FC<Props> = ({
           ctx.save();
           ctx.beginPath();
           ctx.arc(px + Math.cos(rad) * 1.5 * zoom, py + Math.sin(rad) * 1.5 * zoom, 1.2 * zoom, 0, Math.PI * 2);
-          ctx.fillStyle = '#1a202c';
+          ctx.fillStyle = isLight ? '#f8fafc' : '#1a202c';
           ctx.fill();
           ctx.stroke();
           ctx.restore();
@@ -590,9 +595,9 @@ export const SchematicEditor: React.FC<Props> = ({
 
         // Pin Number & Name
         if (pin.visible && zoom > 2.2) {
-          ctx.fillStyle = '#94a3b8';
+          ctx.fillStyle = isLight ? '#475569' : '#94a3b8';
           ctx.fillText(pin.number, px + 2, py - 3);
-          ctx.fillStyle = '#e2e8f0';
+          ctx.fillStyle = isLight ? '#0f172a' : '#e2e8f0';
           ctx.fillText(pin.name, px + (pinOrient === 180 ? -26 : 8), py + 3);
         }
       });
@@ -603,12 +608,12 @@ export const SchematicEditor: React.FC<Props> = ({
       const unitSuffix = sym.unitSuffix || (symDef && symDef.unitCount && symDef.unitCount > 1 ? (sym.unit > 0 && sym.unit <= 26 ? String.fromCharCode(64 + sym.unit) : `_${sym.unit}`) : '');
       const displayRef = `${sym.reference}${unitSuffix}`;
 
-      ctx.fillStyle = '#38bdf8';
+      ctx.fillStyle = isLight ? '#0284c7' : '#38bdf8';
       ctx.font = `600 ${Math.max(10, 3.2 * zoom)}px Inter, sans-serif`;
       ctx.fillText(displayRef, symScreen.x - 12, symScreen.y - 18 * (zoom / 4));
 
-      ctx.fillStyle = '#a78bfa';
-      ctx.font = `400 ${Math.max(9, 2.6 * zoom)}px Inter, sans-serif`;
+      ctx.fillStyle = isLight ? '#6d28d9' : '#a78bfa';
+      ctx.font = `500 ${Math.max(9, 2.6 * zoom)}px Inter, sans-serif`;
       ctx.fillText(sym.value, symScreen.x - 12, symScreen.y + 22 * (zoom / 4));
     });
 
@@ -766,6 +771,7 @@ export const SchematicEditor: React.FC<Props> = ({
     selectionBoxCurrent,
     screenToWorld,
     worldToScreen,
+    theme,
   ]);
 
   // Mouse Interaction Handlers

@@ -44,8 +44,8 @@ export const DRCPanel: React.FC<Props> = ({ project, onNavigateToCoords }) => {
       {/* Header */}
       <div className="h-10 bg-cad-header border-b border-cad-border px-3 flex items-center justify-between">
         <div className="flex items-center space-x-2">
-          <ShieldAlert size={15} className="text-blue-400" />
-          <span className="text-xs font-bold text-white uppercase font-mono tracking-wider">
+          <ShieldAlert size={15} className="text-blue-500 dark:text-blue-400" />
+          <span className="text-xs font-bold text-cad-text uppercase font-mono tracking-wider">
             Design Rules Check (DRC)
           </span>
         </div>
@@ -62,22 +62,22 @@ export const DRCPanel: React.FC<Props> = ({ project, onNavigateToCoords }) => {
       {/* Summary */}
       <div className="p-2.5 bg-cad-subpanel border-b border-cad-border flex items-center justify-between text-xs font-mono">
         <div className="flex items-center space-x-3">
-          <span className="flex items-center gap-1 text-red-400">
+          <span className="flex items-center gap-1 text-red-500 dark:text-red-400">
             <XCircle size={13} /> {errors.length} Errors
           </span>
-          <span className="flex items-center gap-1 text-amber-400">
+          <span className="flex items-center gap-1 text-amber-500 dark:text-amber-400">
             <AlertTriangle size={13} /> {warnings.length} Warnings
           </span>
         </div>
         {violations.length === 0 && (
-          <span className="flex items-center gap-1 text-emerald-400">
+          <span className="flex items-center gap-1 text-emerald-500 dark:text-emerald-400">
             <CheckCircle2 size={13} /> Clean
           </span>
         )}
       </div>
 
       {/* Violations List */}
-      <div className="flex-1 overflow-y-auto p-2 space-y-1.5">
+      <div className="flex-1 overflow-y-auto p-2 space-y-1.5 text-cad-text">
         {violations.map((v) => {
           const isSelected = selectedViolationId === v.id;
           return (
@@ -93,11 +93,11 @@ export const DRCPanel: React.FC<Props> = ({ project, onNavigateToCoords }) => {
               <div className="flex items-start justify-between">
                 <div className="flex items-center space-x-1.5">
                   {v.severity === 'error' ? (
-                    <XCircle size={13} className="text-red-400 shrink-0 mt-0.5" />
+                    <XCircle size={13} className="text-red-500 dark:text-red-400 shrink-0 mt-0.5" />
                   ) : (
-                    <AlertTriangle size={13} className="text-amber-400 shrink-0 mt-0.5" />
+                    <AlertTriangle size={13} className="text-amber-500 dark:text-amber-400 shrink-0 mt-0.5" />
                   )}
-                  <span className="font-bold text-xs text-white">{v.title}</span>
+                  <span className="font-bold text-xs text-cad-text">{v.title}</span>
                 </div>
                 <span className="text-[10px] font-mono px-1 bg-cad-border text-cad-textMuted rounded">
                   {v.code}

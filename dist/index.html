@@ -9,8 +9,23 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-    <script type="module" crossorigin src="/assets/index-BFD6jcwf.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-Dguzexqn.css">
+    <script>
+      (function() {
+        try {
+          var saved = localStorage.getItem('floz-eda-theme') || 'dark';
+          document.documentElement.setAttribute('data-theme', saved);
+          if (saved === 'light') {
+            document.documentElement.classList.remove('dark');
+            document.documentElement.classList.add('light');
+          } else {
+            document.documentElement.classList.remove('light');
+            document.documentElement.classList.add('dark');
+          }
+        } catch(e) {}
+      })();
+    </script>
+    <script type="module" crossorigin src="/assets/index-BflL_th9.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-BaaXQcLS.css">
   </head>
   <body class="bg-cad-bg text-cad-text font-sans antialiased overflow-hidden select-none m-0 p-0 h-screen w-screen">
     <div id="root" class="h-full w-full"></div>

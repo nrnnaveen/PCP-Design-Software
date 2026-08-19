@@ -1,31 +1,55 @@
 /**
  * FloZ ECA - Scalable Vector Component Preview Canvas
  * High-resolution vector preview renderer for schematic symbols and PCB footprints.
+ * Supports multi-unit symbols (e.g. 4010, 4539, 7400, LM358) with single-unit and grid views.
  */
 
-import React, { useRef, useEffect, useState } from 'react';
-import { SymbolDefinition, FootprintDefinition } from '../core/types';
-import { ZoomIn, ZoomOut, Maximize2, Grid } from 'lucide-react';
+import React, { useRef, useEffect, useState, useMemo } from 'react';
+import { SymbolDefinition, FootprintDefinition, SymbolUnitDefinition, SchematicPin, SymbolGraphicShape } from '../core/types';
+import { ZoomIn, ZoomOut, Maximize2, Grid, Layers } from 'lucide-react';
 
 interface Props {
   symbol?: SymbolDefinition;
   footprint?: FootprintDefinition;
+  activeUnitIndex?: number | 'all';
+  onSelectUnitIndex?: (index: number | 'all') => void;
+  theme?: 'dark' | 'light';
   className?: string;
 }
 
-export const ComponentPreviewCanvas: React.FC<Props> = ({ symbol, footprint, className }) => {
+export const ComponentPreviewCanvas: React.FC<Props> = ({
+  symbol,
+  footprint,
+  activeUnitIndex: controlledUnitIndex,
+  onSelectUnitIndex,
+  theme = 'dark',
+  className,
+}) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [zoom, setZoom] = useState<number>(6.0); // scale factor
   const [pan, setPan] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [showGrid, setShowGrid] = useState<boolean>(true);
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const [dragStart, setDragStart] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const [internalUnitIndex, setInternalUnitIndex] = useState<number | 'all'>(0);
+
+  const activeUnit = controlledUnitIndex !== undefined ? controlledUnitIndex : internalUnitIndex;
+
+  const handleUnitChange = (u: number | 'all') => {
+    setInternalUnitIndex(u);
+    onSelectUnitIndex?.(u);
+    setPan({ x: 0, y: 0 });
+    setZoom(u === 'all' ? 2.8 : (symbol ? 4.5 : 8.0));
+  };
+
+  const hasMultipleUnits = Boolean(symbol?.units && symbol.units.length > 1);
 
   // Auto-fit to center when component changes
   useEffect(() => {
-    setZoom(symbol ? 4.5 : 8.0);
+    setInternalUnitIndex(0);
+    setZoom(symbol ? (hasMultipleUnits ? 4.5 : 4.5) : 8.0);
     setPan({ x: 0, y: 0 });
-  }, [symbol, footprint]);
+  }, [symbol?.id, footprint?.id]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -41,13 +65,15 @@ export const ComponentPreviewCanvas: React.FC<Props> = ({ symbol, footprint, cla
     const centerX = width / 2 + pan.x;
     const centerY = height / 2 + pan.y;
 
-    // 1. Dark Background
-    ctx.fillStyle = '#111418';
+    const isLight = theme === 'light' || document.documentElement.getAttribute('data-theme') === 'light';
+
+    // 1. CAD Background
+    ctx.fillStyle = isLight ? '#f8fafc' : '#111418';
     ctx.fillRect(0, 0, width, height);
 
     // 2. Dot Grid
     if (showGrid) {
-      ctx.fillStyle = '#232934';
+      ctx.fillStyle = isLight ? '#cbd5e1' : '#232934';
       const gridSpacing = 2.54 * zoom;
       const startX = (centerX % gridSpacing) - gridSpacing;
       const startY = (centerY % gridSpacing) - gridSpacing;
@@ -62,16 +88,38 @@ export const ComponentPreviewCanvas: React.FC<Props> = ({ symbol, footprint, cla
     ctx.save();
     ctx.translate(centerX, centerY);
 
-    // ==========================================
-    // Render Schematic Symbol
-    // ==========================================
-    if (symbol) {
+    // Helper to render a specific symbol unit's shapes and pins
+    const renderUnitShapesAndPins = (
+      shapes: SymbolGraphicShape[],
+      pins: SchematicPin[],
+      offsetX = 0,
+      offsetY = 0,
+      unitLabel?: string
+    ) => {
+      ctx.save();
+      ctx.translate(offsetX * zoom, offsetY * zoom);
+
+      // Unit background card if rendering in grid mode
+      if (unitLabel) {
+        ctx.strokeStyle = '#334155';
+        ctx.lineWidth = 1;
+        ctx.fillStyle = 'rgba(30, 41, 59, 0.35)';
+        ctx.strokeRect(-18 * zoom, -14 * zoom, 36 * zoom, 28 * zoom);
+        ctx.fillRect(-18 * zoom, -14 * zoom, 36 * zoom, 28 * zoom);
+
+        // Unit Title
+        ctx.fillStyle = '#38bdf8';
+        ctx.font = `bold ${Math.max(10, 2.4 * zoom)}px "JetBrains Mono", monospace`;
+        ctx.textAlign = 'center';
+        ctx.fillText(unitLabel, 0, -15 * zoom);
+      }
+
       // Shapes
-      ctx.strokeStyle = '#e2e8f0';
-      ctx.fillStyle = '#1e293b';
+      ctx.strokeStyle = isLight ? '#1e293b' : '#e2e8f0';
+      ctx.fillStyle = isLight ? '#f1f5f9' : '#1e293b';
       ctx.lineWidth = Math.max(1.5, 0.3 * zoom);
 
-      symbol.shapes.forEach((shape) => {
+      shapes.forEach((shape) => {
         if (shape.type === 'rectangle' && shape.width && shape.height) {
           const w = shape.width * zoom;
           const h = shape.height * zoom;
@@ -98,7 +146,7 @@ export const ComponentPreviewCanvas: React.FC<Props> = ({ symbol, footprint, cla
           }
           ctx.closePath();
           if (shape.filled) {
-            ctx.fillStyle = '#94a3b8';
+            ctx.fillStyle = isLight ? '#cbd5e1' : '#94a3b8';
             ctx.fill();
           }
           ctx.stroke();
@@ -106,10 +154,10 @@ export const ComponentPreviewCanvas: React.FC<Props> = ({ symbol, footprint, cla
       });
 
       // Pins
-      ctx.strokeStyle = '#e05638';
+      ctx.strokeStyle = isLight ? '#dc2626' : '#e05638';
       ctx.lineWidth = Math.max(1.5, 0.25 * zoom);
 
-      symbol.pins.forEach((pin) => {
+      pins.forEach((pin) => {
         const px = pin.x * zoom;
         const py = pin.y * zoom;
         const rad = (pin.orientation * Math.PI) / 180;
@@ -122,6 +170,17 @@ export const ComponentPreviewCanvas: React.FC<Props> = ({ symbol, footprint, cla
         ctx.lineTo(endX, endY);
         ctx.stroke();
 
+        // Pin Inversion Bubble if applicable
+        if (pin.graphicStyle === 'inverted' || pin.graphicStyle === 'inverted_clock') {
+          ctx.save();
+          ctx.beginPath();
+          ctx.arc(px + Math.cos(rad) * 1.5 * zoom, py + Math.sin(rad) * 1.5 * zoom, 1.2 * zoom, 0, Math.PI * 2);
+          ctx.fillStyle = isLight ? '#f8fafc' : '#111418';
+          ctx.fill();
+          ctx.stroke();
+          ctx.restore();
+        }
+
         // Pin red connection dot
         ctx.fillStyle = '#ef4444';
         ctx.beginPath();
@@ -129,23 +188,70 @@ export const ComponentPreviewCanvas: React.FC<Props> = ({ symbol, footprint, cla
         ctx.fill();
 
         // Pin Number and Name
-        ctx.fillStyle = '#94a3b8';
-        ctx.font = '10px "JetBrains Mono", monospace';
+        ctx.fillStyle = isLight ? '#475569' : '#94a3b8';
+        ctx.font = `${Math.max(9, 2.0 * zoom)}px "JetBrains Mono", monospace`;
+        ctx.textAlign = 'left';
         ctx.fillText(pin.number, px + 2, py - 3);
 
-        ctx.fillStyle = '#ffffff';
-        ctx.fillText(pin.name, px + (pin.orientation === 180 ? -22 : 6), py + 3);
+        ctx.fillStyle = isLight ? '#0f172a' : '#ffffff';
+        ctx.fillText(pin.name, px + (pin.orientation === 180 ? -26 : 6), py + 3);
       });
 
-      // Center Origin Crosshair
-      ctx.strokeStyle = '#3b82f6';
+      // Origin crosshair
+      ctx.strokeStyle = isLight ? '#0284c7' : '#3b82f6';
       ctx.lineWidth = 1;
       ctx.beginPath();
-      ctx.moveTo(-6, 0);
-      ctx.lineTo(6, 0);
-      ctx.moveTo(0, -6);
-      ctx.lineTo(0, 6);
+      ctx.moveTo(-5, 0);
+      ctx.lineTo(5, 0);
+      ctx.moveTo(0, -5);
+      ctx.lineTo(0, 5);
       ctx.stroke();
+
+      ctx.restore();
+    };
+
+    // ==========================================
+    // Render Schematic Symbol
+    // ==========================================
+    if (symbol) {
+      if (hasMultipleUnits && symbol.units) {
+        if (activeUnit === 'all') {
+          // Render All Units in a clean grid
+          const units = symbol.units;
+          const cols = units.length <= 4 ? units.length : Math.ceil(Math.sqrt(units.length));
+          const rows = Math.ceil(units.length / cols);
+          const spacingX = 42;
+          const spacingY = 38;
+
+          units.forEach((u, idx) => {
+            const col = idx % cols;
+            const row = Math.floor(idx / cols);
+            const ox = (col - (cols - 1) / 2) * spacingX;
+            const oy = (row - (rows - 1) / 2) * spacingY;
+            const label = `Unit ${u.name || u.unit} (${u.pins.length} pins)`;
+
+            renderUnitShapesAndPins(u.shapes, u.pins, ox, oy, label);
+          });
+        } else {
+          // Render Single Selected Unit
+          const uIdx = typeof activeUnit === 'number' ? activeUnit : 0;
+          const targetUnit = symbol.units[uIdx] || symbol.units[0];
+          renderUnitShapesAndPins(targetUnit.shapes, targetUnit.pins, 0, 0);
+
+          // Top label for single unit view
+          ctx.fillStyle = isLight ? '#0284c7' : '#38bdf8';
+          ctx.font = 'bold 12px "JetBrains Mono", monospace';
+          ctx.textAlign = 'center';
+          ctx.fillText(
+            `Unit ${targetUnit.name || targetUnit.unit} — ${targetUnit.pins.length} Pins (${targetUnit.pins.map((p) => p.name).join(', ') || 'None'})`,
+            0,
+            -18 * (zoom / 4.5)
+          );
+        }
+      } else {
+        // Single Unit Symbol
+        renderUnitShapesAndPins(symbol.shapes, symbol.pins, 0, 0);
+      }
     }
 
     // ==========================================
@@ -154,17 +260,17 @@ export const ComponentPreviewCanvas: React.FC<Props> = ({ symbol, footprint, cla
     if (footprint) {
       // Courtyard Bounds
       if (footprint.courtyard) {
-        ctx.strokeStyle = '#94a3b8';
+        ctx.strokeStyle = isLight ? '#64748b' : '#94a3b8';
         ctx.lineWidth = 1;
         ctx.setLineDash([3, 3]);
         const cw = (footprint.courtyard.maxX - footprint.courtyard.minX) * zoom;
         const ch = (footprint.courtyard.maxY - footprint.courtyard.minY) * zoom;
-        ctx.strokeRect((-cw / 2), (-ch / 2), cw, ch);
+        ctx.strokeRect(-cw / 2, -ch / 2, cw, ch);
         ctx.setLineDash([]);
       }
 
       // Silkscreen Graphics
-      ctx.strokeStyle = '#f8fafc';
+      ctx.strokeStyle = isLight ? '#0f172a' : '#f8fafc';
       ctx.lineWidth = Math.max(1, 0.15 * zoom);
 
       footprint.shapes.forEach((shape) => {
@@ -208,7 +314,7 @@ export const ComponentPreviewCanvas: React.FC<Props> = ({ symbol, footprint, cla
 
         // Drill hole for through-hole pads
         if (pad.type === 'through_hole' && pad.drillDiameter) {
-          ctx.fillStyle = '#111418';
+          ctx.fillStyle = isLight ? '#f8fafc' : '#111418';
           ctx.beginPath();
           ctx.arc(px, py, (pad.drillDiameter / 2) * zoom, 0, Math.PI * 2);
           ctx.fill();
@@ -223,7 +329,7 @@ export const ComponentPreviewCanvas: React.FC<Props> = ({ symbol, footprint, cla
       });
 
       // Center Origin
-      ctx.strokeStyle = '#3b82f6';
+      ctx.strokeStyle = isLight ? '#0284c7' : '#3b82f6';
       ctx.lineWidth = 1;
       ctx.beginPath();
       ctx.moveTo(-8, 0);
@@ -234,11 +340,46 @@ export const ComponentPreviewCanvas: React.FC<Props> = ({ symbol, footprint, cla
     }
 
     ctx.restore();
-  }, [symbol, footprint, zoom, pan, showGrid]);
+  }, [symbol, footprint, zoom, pan, showGrid, activeUnit, hasMultipleUnits, theme]);
 
   return (
-    <div className={`relative w-full h-full bg-[#111418] rounded-lg overflow-hidden border border-cad-border flex flex-col ${className || ''}`}>
-      {/* Control overlay */}
+    <div className={`relative w-full h-full bg-cad-bg rounded-lg overflow-hidden border border-cad-border flex flex-col ${className || ''}`}>
+      {/* Unit Selector Toolbar for Multi-Unit Symbols */}
+      {hasMultipleUnits && symbol?.units && (
+        <div className="absolute top-2 left-2 flex items-center space-x-1 bg-cad-panel/90 backdrop-blur-md p-1 rounded-md border border-cad-border z-10 max-w-[calc(100%-140px)] overflow-x-auto">
+          <span className="text-[10px] font-mono text-cad-textMuted px-1.5 flex items-center gap-1">
+            <Layers size={11} className="text-blue-400" />
+            Unit:
+          </span>
+
+          {symbol.units.map((u, idx) => (
+            <button
+              key={u.unit}
+              onClick={() => handleUnitChange(idx)}
+              className={`px-2 py-0.5 rounded text-[10px] font-mono font-semibold transition-colors whitespace-nowrap ${
+                activeUnit === idx
+                  ? 'bg-blue-600 text-white shadow-sm'
+                  : 'bg-cad-subpanel text-slate-300 hover:bg-cad-border hover:text-white'
+              }`}
+            >
+              Unit {u.name || u.unit}
+            </button>
+          ))}
+
+          <button
+            onClick={() => handleUnitChange('all')}
+            className={`px-2 py-0.5 rounded text-[10px] font-mono font-semibold transition-colors whitespace-nowrap ${
+              activeUnit === 'all'
+                ? 'bg-emerald-600 text-white shadow-sm'
+                : 'bg-cad-subpanel text-emerald-400 hover:bg-cad-border'
+            }`}
+          >
+            All Units (Grid)
+          </button>
+        </div>
+      )}
+
+      {/* Viewport Controls */}
       <div className="absolute top-2 right-2 flex items-center space-x-1 bg-cad-panel/80 backdrop-blur-sm p-1 rounded-md border border-cad-border z-10">
         <button
           onClick={() => setShowGrid(!showGrid)}
@@ -250,10 +391,17 @@ export const ComponentPreviewCanvas: React.FC<Props> = ({ symbol, footprint, cla
         <button onClick={() => setZoom((z) => Math.min(30, z * 1.2))} title="Zoom In" className="p-1 hover:text-white text-cad-textMuted">
           <ZoomIn size={13} />
         </button>
-        <button onClick={() => setZoom((z) => Math.max(1, z * 0.8))} title="Zoom Out" className="p-1 hover:text-white text-cad-textMuted">
+        <button onClick={() => setZoom((z) => Math.max(0.5, z * 0.8))} title="Zoom Out" className="p-1 hover:text-white text-cad-textMuted">
           <ZoomOut size={13} />
         </button>
-        <button onClick={() => { setPan({ x: 0, y: 0 }); setZoom(symbol ? 4.5 : 8.0); }} title="Fit to Center" className="p-1 hover:text-white text-cad-textMuted">
+        <button
+          onClick={() => {
+            setPan({ x: 0, y: 0 });
+            setZoom(activeUnit === 'all' ? 2.8 : (symbol ? 4.5 : 8.0));
+          }}
+          title="Fit to Center"
+          className="p-1 hover:text-white text-cad-textMuted"
+        >
           <Maximize2 size={13} />
         </button>
       </div>
@@ -273,10 +421,11 @@ export const ComponentPreviewCanvas: React.FC<Props> = ({ symbol, footprint, cla
         onWheel={(e) => {
           e.preventDefault();
           const factor = e.deltaY < 0 ? 1.15 : 0.85;
-          setZoom((z) => Math.max(1.0, Math.min(40.0, z * factor)));
+          setZoom((z) => Math.max(0.5, Math.min(40.0, z * factor)));
         }}
         className="flex-1 w-full h-full cursor-grab active:cursor-grabbing"
       />
     </div>
   );
 };
+

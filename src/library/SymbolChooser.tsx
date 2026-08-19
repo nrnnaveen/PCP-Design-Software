@@ -109,6 +109,7 @@ export const SymbolChooser: React.FC<Props> = ({ isOpen, onClose, onSelectSymbol
           <div className="w-1/2 border-r border-cad-border overflow-y-auto p-2 space-y-1 bg-cad-bg/30">
             {filteredSymbols.map((sym) => {
               const isSelected = selectedSymbol?.id === sym.id;
+              const hasUnits = Boolean(sym.units && sym.units.length > 1);
               return (
                 <div
                   key={sym.id}
@@ -127,6 +128,11 @@ export const SymbolChooser: React.FC<Props> = ({ isOpen, onClose, onSelectSymbol
                       <span className="text-[10px] px-1.5 py-0.2 bg-cad-border text-cad-textMuted rounded font-mono">
                         {sym.library}
                       </span>
+                      {hasUnits && (
+                        <span className="text-[9px] px-1.5 py-0.2 bg-blue-500/20 text-blue-400 rounded font-mono font-semibold">
+                          {sym.units!.length} Units
+                        </span>
+                      )}
                     </div>
                     <p className="text-[11px] text-cad-textMuted mt-0.5 line-clamp-1">{sym.description}</p>
                   </div>
@@ -150,20 +156,25 @@ export const SymbolChooser: React.FC<Props> = ({ isOpen, onClose, onSelectSymbol
                   <h3 className="text-base font-bold text-white flex items-center gap-2">
                     {selectedSymbol.name}
                     <span className="text-xs font-normal text-cad-textMuted font-mono">[{selectedSymbol.defaultPrefix}?]</span>
+                    {selectedSymbol.units && selectedSymbol.units.length > 1 && (
+                      <span className="text-xs px-2 py-0.5 bg-blue-500/20 text-blue-400 border border-blue-500/30 rounded font-mono">
+                        {selectedSymbol.units.length} Units
+                      </span>
+                    )}
                   </h3>
                   <p className="text-xs text-slate-300 mt-0.5">{selectedSymbol.description}</p>
                   <p className="text-[11px] text-blue-400 mt-0.5 font-mono">Default Footprint: {selectedSymbol.defaultFootprint || 'None'}</p>
                 </div>
 
-                {/* Vector Canvas Preview */}
-                <div className="h-44">
+                {/* Vector Canvas Preview with Unit Selector Toolbar */}
+                <div className="h-48">
                   <ComponentPreviewCanvas symbol={selectedSymbol} className="h-full" />
                 </div>
 
                 {/* Pins Table */}
                 <div className="flex-1 min-h-[120px]">
                   <h4 className="text-[11px] font-semibold text-cad-textMuted uppercase tracking-wider mb-1 font-mono">
-                    Pin Configuration ({selectedSymbol.pins.length} Pins)
+                    Pin Configuration ({selectedSymbol.pins.length} Pins across {selectedSymbol.units?.length || 1} Unit{selectedSymbol.units && selectedSymbol.units.length > 1 ? 's' : ''})
                   </h4>
                   <div className="border border-cad-border rounded overflow-hidden max-h-36 overflow-y-auto">
                     <table className="w-full text-left text-xs font-mono">
