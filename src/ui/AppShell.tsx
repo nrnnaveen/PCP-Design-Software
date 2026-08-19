@@ -795,14 +795,15 @@ export const AppShell: React.FC = () => {
       <SymbolChooser
         isOpen={showSymbolChooser}
         onClose={() => setShowSymbolChooser(false)}
-        onSelectSymbol={(symDef) => {
+        onSelectSymbol={(symDef, unitIdx) => {
           updateProject((prev) => {
             const sheet =
               prev.schematic.sheets.find((s) => s.id === prev.schematic.activeSheetId) ||
               prev.schematic.sheets[0];
             const nextRef = SchematicHelper.getNextReference(symDef.defaultPrefix, sheet.symbols);
-            const firstUnit = symDef.units && symDef.units.length > 0 ? symDef.units[0] : null;
-            const pins = firstUnit ? firstUnit.pins : symDef.pins;
+            const uIndex = unitIdx !== undefined && unitIdx >= 0 ? unitIdx : 0;
+            const chosenUnit = symDef.units && symDef.units.length > 0 ? (symDef.units[uIndex] || symDef.units[0]) : null;
+            const pins = chosenUnit ? chosenUnit.pins : symDef.pins;
             const newSym = {
               id: `sym_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
               symbolDefId: symDef.id,
@@ -813,8 +814,8 @@ export const AppShell: React.FC = () => {
               y: 80,
               rotation: 0 as any,
               mirrorX: false,
-              unit: 1,
-              unitSuffix: firstUnit?.name,
+              unit: chosenUnit ? chosenUnit.unit : 1,
+              unitSuffix: chosenUnit?.name,
               fields: { Description: symDef.description },
               pins: JSON.parse(JSON.stringify(pins)),
             };
@@ -827,7 +828,7 @@ export const AppShell: React.FC = () => {
                 ),
               },
             };
-          }, `Place ${symDef.name}`);
+          }, `Place ${symDef.name}${symDef.units && symDef.units.length > 1 ? ` (Unit ${symDef.units[unitIdx || 0]?.name || ''})` : ''}`);
         }}
       />
 

@@ -9,6 +9,7 @@ import {
   SchematicPin,
   SchematicWireSegment,
   BoundingBox2D,
+  SymbolGraphicShape,
 } from '../core/types';
 
 export class SchematicHelper {
@@ -55,14 +56,85 @@ export class SchematicHelper {
   /**
    * Calculates world-space bounding box for a schematic symbol instance.
    */
-  public static getSymbolBoundingBox(sym: SchematicSymbolInstance): BoundingBox2D {
-    const hw = 12.0;
-    const hh = Math.max(12.0, (sym.pins.length * 3.5) / 2);
+  public static getSymbolBoundingBox(sym: SchematicSymbolInstance, customShapes?: SymbolGraphicShape[]): BoundingBox2D {
+    let minX = sym.x - 5;
+    let maxX = sym.x + 5;
+    let minY = sym.y - 5;
+    let maxY = sym.y + 5;
+
+    // 1. Include all pin world endpoints and leads
+    if (sym.pins && sym.pins.length > 0) {
+      sym.pins.forEach((pin) => {
+        const pinPos = this.getSymbolPinWorldPosition(sym, pin);
+        minX = Math.min(minX, pinPos.x - 1.5);
+        maxX = Math.max(maxX, pinPos.x + 1.5);
+        minY = Math.min(minY, pinPos.y - 1.5);
+        maxY = Math.max(maxY, pinPos.y + 1.5);
+      });
+    }
+
+    // 2. Include shapes if available
+    if (customShapes && customShapes.length > 0) {
+      const symRad = (sym.rotation * Math.PI) / 180;
+      const cos = Math.cos(symRad);
+      const sin = Math.sin(symRad);
+
+      const transformPt = (x: number, y: number): Point2D => {
+        let px = sym.mirrorX ? -x : x;
+        let py = y;
+        return {
+          x: sym.x + px * cos - py * sin,
+          y: sym.y + px * sin + py * cos,
+        };
+      };
+
+      customShapes.forEach((s) => {
+        if (s.type === 'rectangle' && s.width && s.height) {
+          const sx = s.x || 0;
+          const sy = s.y || 0;
+          const w2 = s.width / 2;
+          const h2 = s.height / 2;
+          const corners = [
+            transformPt(sx - w2, sy - h2),
+            transformPt(sx + w2, sy - h2),
+            transformPt(sx + w2, sy + h2),
+            transformPt(sx - w2, sy + h2),
+          ];
+          corners.forEach((c) => {
+            minX = Math.min(minX, c.x);
+            maxX = Math.max(maxX, c.x);
+            minY = Math.min(minY, c.y);
+            maxY = Math.max(maxY, c.y);
+          });
+        } else if ((s.type === 'line' || s.type === 'polygon' || s.type === 'bezier') && s.points) {
+          s.points.forEach((p: Point2D) => {
+            const tp = transformPt(p.x, p.y);
+            minX = Math.min(minX, tp.x);
+            maxX = Math.max(maxX, tp.x);
+            minY = Math.min(minY, tp.y);
+            maxY = Math.max(maxY, tp.y);
+          });
+        } else if (s.type === 'circle' && s.radius) {
+          const tp = transformPt(s.x || 0, s.y || 0);
+          minX = Math.min(minX, tp.x - s.radius);
+          maxX = Math.max(maxX, tp.x + s.radius);
+          minY = Math.min(minY, tp.y - s.radius);
+          maxY = Math.max(maxY, tp.y + s.radius);
+        } else if (s.type === 'arc' && s.radius) {
+          const tp = transformPt(s.x || 0, s.y || 0);
+          minX = Math.min(minX, tp.x - s.radius);
+          maxX = Math.max(maxX, tp.x + s.radius);
+          minY = Math.min(minY, tp.y - s.radius);
+          maxY = Math.max(maxY, tp.y + s.radius);
+        }
+      });
+    }
+
     return {
-      minX: sym.x - hw,
-      maxX: sym.x + hw,
-      minY: sym.y - hh,
-      maxY: sym.y + hh,
+      minX: Math.round(minX * 10) / 10,
+      maxX: Math.round(maxX * 10) / 10,
+      minY: Math.round(minY * 10) / 10,
+      maxY: Math.round(maxY * 10) / 10,
     };
   }
 

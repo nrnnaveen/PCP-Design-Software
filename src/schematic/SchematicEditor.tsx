@@ -526,10 +526,12 @@ export const SchematicEditor: React.FC<Props> = ({
 
       shapes.forEach((shape) => {
         if (shape.type === 'rectangle' && shape.width && shape.height) {
+          const sx = (shape.x || 0) * zoom;
+          const sy = (shape.y || 0) * zoom;
           const w = shape.width * zoom;
           const h = shape.height * zoom;
           ctx.beginPath();
-          ctx.rect(-w / 2, -h / 2, w, h);
+          ctx.rect(sx - w / 2, sy - h / 2, w, h);
           if (shape.filled) ctx.fill();
           ctx.stroke();
         } else if (shape.type === 'line' && shape.points && shape.points.length >= 2) {
@@ -538,10 +540,6 @@ export const SchematicEditor: React.FC<Props> = ({
           for (let i = 1; i < shape.points.length; i++) {
             ctx.lineTo(shape.points[i].x * zoom, shape.points[i].y * zoom);
           }
-          ctx.stroke();
-        } else if (shape.type === 'circle' && shape.radius) {
-          ctx.beginPath();
-          ctx.arc((shape.x || 0) * zoom, (shape.y || 0) * zoom, shape.radius * zoom, 0, Math.PI * 2);
           ctx.stroke();
         } else if (shape.type === 'polygon' && shape.points && shape.points.length >= 3) {
           ctx.beginPath();
@@ -555,6 +553,43 @@ export const SchematicEditor: React.FC<Props> = ({
             ctx.fill();
           }
           ctx.stroke();
+        } else if (shape.type === 'circle' && shape.radius) {
+          ctx.beginPath();
+          ctx.arc((shape.x || 0) * zoom, (shape.y || 0) * zoom, shape.radius * zoom, 0, Math.PI * 2);
+          if (shape.filled) ctx.fill();
+          ctx.stroke();
+        } else if (shape.type === 'arc' && shape.radius) {
+          ctx.beginPath();
+          ctx.arc(
+            (shape.x || 0) * zoom,
+            (shape.y || 0) * zoom,
+            shape.radius * zoom,
+            shape.startAngle || 0,
+            shape.endAngle || Math.PI,
+            shape.counterclockwise
+          );
+          if (shape.filled) ctx.fill();
+          ctx.stroke();
+        } else if (shape.type === 'bezier' && shape.points && shape.points.length >= 4) {
+          ctx.beginPath();
+          ctx.moveTo(shape.points[0].x * zoom, shape.points[0].y * zoom);
+          ctx.bezierCurveTo(
+            shape.points[1].x * zoom,
+            shape.points[1].y * zoom,
+            shape.points[2].x * zoom,
+            shape.points[2].y * zoom,
+            shape.points[3].x * zoom,
+            shape.points[3].y * zoom
+          );
+          ctx.stroke();
+        } else if (shape.type === 'text' && shape.text) {
+          ctx.save();
+          ctx.translate((shape.x || 0) * zoom, (shape.y || 0) * zoom);
+          if (shape.rotation) ctx.rotate((shape.rotation * Math.PI) / 180);
+          ctx.font = `${Math.max(8, (shape.fontSize || 1.27) * 2.0 * zoom)}px 'Inter', sans-serif`;
+          ctx.fillStyle = isLight ? '#334155' : '#cbd5e1';
+          ctx.fillText(shape.text, 0, 0);
+          ctx.restore();
         }
       });
 
@@ -567,10 +602,11 @@ export const SchematicEditor: React.FC<Props> = ({
         const py = pin.y * zoom;
         const pinOrient = pin.orientation || 0;
         const rad = (pinOrient * Math.PI) / 180;
-        const len = (pin.length !== undefined ? pin.length : 3.81) * zoom;
+        const len = (pin.length !== undefined ? pin.length : 2.54) * zoom;
         const endX = px + Math.cos(rad) * len;
         const endY = py + Math.sin(rad) * len;
 
+        // Pin Lead Line
         ctx.beginPath();
         ctx.moveTo(px, py);
         ctx.lineTo(endX, endY);
@@ -580,25 +616,62 @@ export const SchematicEditor: React.FC<Props> = ({
         if (pin.graphicStyle === 'inverted' || pin.graphicStyle === 'inverted_clock') {
           ctx.save();
           ctx.beginPath();
-          ctx.arc(px + Math.cos(rad) * 1.5 * zoom, py + Math.sin(rad) * 1.5 * zoom, 1.2 * zoom, 0, Math.PI * 2);
+          ctx.arc(px + Math.cos(rad) * 1.2 * zoom, py + Math.sin(rad) * 1.2 * zoom, 1.0 * zoom, 0, Math.PI * 2);
           ctx.fillStyle = isLight ? '#f8fafc' : '#1a202c';
           ctx.fill();
           ctx.stroke();
           ctx.restore();
         }
 
-        // Pin Connection Dot
+        // Pin Clock Triangle if applicable
+        if (pin.graphicStyle === 'clock' || pin.graphicStyle === 'inverted_clock') {
+          ctx.save();
+          const normRad = rad + Math.PI / 2;
+          const tipX = px + Math.cos(rad) * 1.8 * zoom;
+          const tipY = py + Math.sin(rad) * 1.8 * zoom;
+          const pLeftX = px + Math.cos(normRad) * 1.2 * zoom;
+          const pLeftY = py + Math.sin(normRad) * 1.2 * zoom;
+          const pRightX = px - Math.cos(normRad) * 1.2 * zoom;
+          const pRightY = py - Math.sin(normRad) * 1.2 * zoom;
+          ctx.beginPath();
+          ctx.moveTo(pLeftX, pLeftY);
+          ctx.lineTo(tipX, tipY);
+          ctx.lineTo(pRightX, pRightY);
+          ctx.stroke();
+          ctx.restore();
+        }
+
+        // Pin Connection Dot at the active lead endpoint
         ctx.fillStyle = '#ef4444';
         ctx.beginPath();
         ctx.arc(endX, endY, 2.5, 0, Math.PI * 2);
         ctx.fill();
 
-        // Pin Number & Name
+        // Pin Number & Name (Clean orientation-aware placement)
         if (pin.visible && zoom > 2.2) {
           ctx.fillStyle = isLight ? '#475569' : '#94a3b8';
-          ctx.fillText(pin.number, px + 2, py - 3);
+          // Number along lead
+          if (pinOrient === 180) {
+            ctx.fillText(pin.number, endX + 3, endY - 3);
+          } else if (pinOrient === 0) {
+            ctx.fillText(pin.number, endX - 14, endY - 3);
+          } else if (pinOrient === 270) {
+            ctx.fillText(pin.number, endX + 3, endY + 10);
+          } else {
+            ctx.fillText(pin.number, endX + 3, endY - 5);
+          }
+
+          // Name adjacent to body
           ctx.fillStyle = isLight ? '#0f172a' : '#e2e8f0';
-          ctx.fillText(pin.name, px + (pinOrient === 180 ? -26 : 8), py + 3);
+          if (pinOrient === 180) {
+            ctx.fillText(pin.name, px + 5, py + 3);
+          } else if (pinOrient === 0) {
+            ctx.fillText(pin.name, px - 24, py + 3);
+          } else if (pinOrient === 270) {
+            ctx.fillText(pin.name, px + 4, py + 12);
+          } else {
+            ctx.fillText(pin.name, px + 4, py - 4);
+          }
         }
       });
 
@@ -636,7 +709,9 @@ export const SchematicEditor: React.FC<Props> = ({
 
       ghostShapes.forEach((shape) => {
         if (shape.type === 'rectangle' && shape.width && shape.height) {
-          ctx.strokeRect((-shape.width / 2) * zoom, (-shape.height / 2) * zoom, shape.width * zoom, shape.height * zoom);
+          const sx = (shape.x || 0) * zoom;
+          const sy = (shape.y || 0) * zoom;
+          ctx.strokeRect(sx - (shape.width / 2) * zoom, sy - (shape.height / 2) * zoom, shape.width * zoom, shape.height * zoom);
         } else if (shape.type === 'polygon' && shape.points && shape.points.length >= 3) {
           ctx.beginPath();
           ctx.moveTo(shape.points[0].x * zoom, shape.points[0].y * zoom);
@@ -652,14 +727,22 @@ export const SchematicEditor: React.FC<Props> = ({
             ctx.lineTo(shape.points[i].x * zoom, shape.points[i].y * zoom);
           }
           ctx.stroke();
+        } else if (shape.type === 'circle' && shape.radius) {
+          ctx.beginPath();
+          ctx.arc((shape.x || 0) * zoom, (shape.y || 0) * zoom, shape.radius * zoom, 0, Math.PI * 2);
+          ctx.stroke();
+        } else if (shape.type === 'arc' && shape.radius) {
+          ctx.beginPath();
+          ctx.arc((shape.x || 0) * zoom, (shape.y || 0) * zoom, shape.radius * zoom, shape.startAngle || 0, shape.endAngle || Math.PI, shape.counterclockwise);
+          ctx.stroke();
         }
       });
 
       ghostPins.forEach((pin) => {
         const px = pin.x * zoom;
         const py = pin.y * zoom;
-        const rad = (pin.orientation * Math.PI) / 180;
-        const len = (pin.length || 3.81) * zoom;
+        const rad = ((pin.orientation || 0) * Math.PI) / 180;
+        const len = (pin.length || 2.54) * zoom;
         ctx.beginPath();
         ctx.moveTo(px, py);
         ctx.lineTo(px + Math.cos(rad) * len, py + Math.sin(rad) * len);

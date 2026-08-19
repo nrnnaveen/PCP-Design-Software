@@ -12,7 +12,7 @@ import { Search, X, Cpu, Radio, Zap, Layers, Filter } from 'lucide-react';
 interface Props {
   isOpen: boolean;
   onClose: () => void;
-  onSelectSymbol: (symbol: SymbolDefinition) => void;
+  onSelectSymbol: (symbol: SymbolDefinition, unitIndex?: number) => void;
 }
 
 export const SymbolChooser: React.FC<Props> = ({ isOpen, onClose, onSelectSymbol }) => {
@@ -20,6 +20,7 @@ export const SymbolChooser: React.FC<Props> = ({ isOpen, onClose, onSelectSymbol
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [selectedSymbol, setSelectedSymbol] = useState<SymbolDefinition>(() => allSymbols[0]);
+  const [selectedUnitIndex, setSelectedUnitIndex] = useState<number | 'all'>(0);
 
   // Keep synced with library registry
   useEffect(() => {
@@ -28,10 +29,15 @@ export const SymbolChooser: React.FC<Props> = ({ isOpen, onClose, onSelectSymbol
       setAllSymbols(syms);
       if (!selectedSymbol && syms.length > 0) {
         setSelectedSymbol(syms[0]);
+        setSelectedUnitIndex(0);
       }
     });
     return unsub;
   }, [selectedSymbol]);
+
+  useEffect(() => {
+    setSelectedUnitIndex(0);
+  }, [selectedSymbol?.id]);
 
   const categories = useMemo(() => {
     const cats = new Set<string>(['All']);
@@ -78,23 +84,21 @@ export const SymbolChooser: React.FC<Props> = ({ isOpen, onClose, onSelectSymbol
             <Search size={15} className="absolute left-3 top-2.5 text-cad-textMuted" />
             <input
               type="text"
-              placeholder="Search by symbol name, keyword (e.g. STM32, 10k, USB, OpAmp, imported)..."
+              placeholder="Search symbols by name, keyword, or function..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              autoFocus
-              className="w-full bg-cad-bg border border-cad-border rounded pl-9 pr-3 py-1.5 text-xs text-cad-text focus:outline-none focus:border-blue-500 font-mono"
+              className="w-full bg-cad-bg border border-cad-border rounded-lg pl-9 pr-3 py-1.5 text-xs text-white focus:outline-none focus:border-blue-500"
             />
           </div>
-
-          <div className="flex items-center gap-1 overflow-x-auto py-0.5 max-w-[400px]">
-            {categories.map((cat) => (
+          <div className="flex items-center gap-1.5 overflow-x-auto max-w-[400px]">
+            {categories.slice(0, 6).map((cat) => (
               <button
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}
-                className={`px-2.5 py-1 rounded text-[11px] whitespace-nowrap font-medium transition-colors ${
+                className={`px-2.5 py-1 rounded text-xs whitespace-nowrap transition-colors ${
                   selectedCategory === cat
-                    ? 'bg-blue-600 text-white shadow-sm'
-                    : 'bg-cad-bg text-cad-textMuted hover:text-white hover:bg-cad-border'
+                    ? 'bg-blue-600 text-white font-medium shadow-sm'
+                    : 'bg-cad-panel hover:bg-cad-border text-cad-textMuted hover:text-white'
                 }`}
               >
                 {cat}
@@ -103,40 +107,44 @@ export const SymbolChooser: React.FC<Props> = ({ isOpen, onClose, onSelectSymbol
           </div>
         </div>
 
-        {/* 2-Pane Content Area */}
+        {/* Main Content Area */}
         <div className="flex-1 flex overflow-hidden">
           {/* Left: Symbol List */}
-          <div className="w-1/2 border-r border-cad-border overflow-y-auto p-2 space-y-1 bg-cad-bg/30">
+          <div className="w-1/2 border-r border-cad-border overflow-y-auto divide-y divide-cad-border bg-cad-panel">
             {filteredSymbols.map((sym) => {
               const isSelected = selectedSymbol?.id === sym.id;
               const hasUnits = Boolean(sym.units && sym.units.length > 1);
+
               return (
                 <div
                   key={sym.id}
-                  onClick={() => setSelectedSymbol(sym)}
-                  onDoubleClick={() => {
-                    onSelectSymbol(sym);
-                    onClose();
+                  onClick={() => {
+                    setSelectedSymbol(sym);
+                    setSelectedUnitIndex(0);
                   }}
-                  className={`p-2 rounded cursor-pointer transition-colors flex items-start justify-between ${
-                    isSelected ? 'bg-blue-600/20 border border-blue-500/50' : 'hover:bg-cad-subpanel border border-transparent'
+                  className={`p-3 cursor-pointer transition-colors flex items-start justify-between ${
+                    isSelected ? 'bg-blue-600/20 border-l-4 border-blue-500' : 'hover:bg-cad-subpanel'
                   }`}
                 >
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold text-xs text-white">{sym.name}</span>
-                      <span className="text-[10px] px-1.5 py-0.2 bg-cad-border text-cad-textMuted rounded font-mono">
-                        {sym.library}
+                  <div className="flex-1 min-w-0 pr-2">
+                    <div className="flex items-center space-x-2">
+                      <span className="font-bold text-sm text-white truncate">{sym.name}</span>
+                      <span className="text-[10px] px-1.5 py-0.2 bg-cad-bg rounded text-cad-textMuted border border-cad-border font-mono">
+                        {sym.defaultPrefix}?
                       </span>
                       {hasUnits && (
-                        <span className="text-[9px] px-1.5 py-0.2 bg-blue-500/20 text-blue-400 rounded font-mono font-semibold">
+                        <span className="text-[10px] px-1.5 py-0.2 bg-blue-500/20 text-blue-300 rounded border border-blue-500/30 font-mono">
                           {sym.units!.length} Units
                         </span>
                       )}
                     </div>
-                    <p className="text-[11px] text-cad-textMuted mt-0.5 line-clamp-1">{sym.description}</p>
+                    <p className="text-xs text-cad-textMuted truncate mt-0.5">{sym.description}</p>
+                    <div className="flex items-center space-x-2 mt-1 text-[11px] text-cad-textMuted font-mono">
+                      <span>{sym.library}</span>
+                      <span>•</span>
+                      <span>{sym.pins.length} pins</span>
+                    </div>
                   </div>
-                  <span className="text-[10px] text-cad-textMuted font-mono whitespace-nowrap">{sym.pins.length} pins</span>
                 </div>
               );
             })}
@@ -156,19 +164,49 @@ export const SymbolChooser: React.FC<Props> = ({ isOpen, onClose, onSelectSymbol
                   <h3 className="text-base font-bold text-white flex items-center gap-2">
                     {selectedSymbol.name}
                     <span className="text-xs font-normal text-cad-textMuted font-mono">[{selectedSymbol.defaultPrefix}?]</span>
-                    {selectedSymbol.units && selectedSymbol.units.length > 1 && (
-                      <span className="text-xs px-2 py-0.5 bg-blue-500/20 text-blue-400 border border-blue-500/30 rounded font-mono">
-                        {selectedSymbol.units.length} Units
-                      </span>
-                    )}
                   </h3>
                   <p className="text-xs text-slate-300 mt-0.5">{selectedSymbol.description}</p>
                   <p className="text-[11px] text-blue-400 mt-0.5 font-mono">Default Footprint: {selectedSymbol.defaultFootprint || 'None'}</p>
                 </div>
 
+                {/* Multi-Unit Selector Toolbar */}
+                {selectedSymbol.units && selectedSymbol.units.length > 1 && (
+                  <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
+                    <span className="text-[11px] font-semibold text-cad-textMuted uppercase font-mono mr-1">Select Unit:</span>
+                    {selectedSymbol.units.map((u, idx) => (
+                      <button
+                        key={u.unit}
+                        onClick={() => setSelectedUnitIndex(idx)}
+                        className={`px-2 py-0.5 rounded text-xs font-mono transition-colors ${
+                          selectedUnitIndex === idx
+                            ? 'bg-blue-600 text-white font-bold shadow-sm'
+                            : 'bg-cad-panel hover:bg-cad-subpanel text-cad-text border border-cad-border'
+                        }`}
+                      >
+                        Unit {u.name || u.unit}
+                      </button>
+                    ))}
+                    <button
+                      onClick={() => setSelectedUnitIndex('all')}
+                      className={`px-2 py-0.5 rounded text-xs font-mono transition-colors ${
+                        selectedUnitIndex === 'all'
+                          ? 'bg-blue-600 text-white font-bold shadow-sm'
+                          : 'bg-cad-panel hover:bg-cad-subpanel text-cad-text border border-cad-border'
+                      }`}
+                    >
+                      All
+                    </button>
+                  </div>
+                )}
+
                 {/* Vector Canvas Preview with Unit Selector Toolbar */}
                 <div className="h-48">
-                  <ComponentPreviewCanvas symbol={selectedSymbol} className="h-full" />
+                  <ComponentPreviewCanvas
+                    symbol={selectedSymbol}
+                    activeUnitIndex={selectedUnitIndex}
+                    onSelectUnitIndex={(u) => setSelectedUnitIndex(u)}
+                    className="h-full"
+                  />
                 </div>
 
                 {/* Pins Table */}
@@ -224,13 +262,16 @@ export const SymbolChooser: React.FC<Props> = ({ isOpen, onClose, onSelectSymbol
           <button
             onClick={() => {
               if (selectedSymbol) {
-                onSelectSymbol(selectedSymbol);
+                const uIdx = typeof selectedUnitIndex === 'number' ? selectedUnitIndex : 0;
+                onSelectSymbol(selectedSymbol, uIdx);
                 onClose();
               }
             }}
             className="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-xs font-semibold text-white rounded shadow-sm"
           >
-            Place Symbol
+            {selectedSymbol?.units && selectedSymbol.units.length > 1 && typeof selectedUnitIndex === 'number'
+              ? `Place Unit ${selectedSymbol.units[selectedUnitIndex]?.name || selectedUnitIndex + 1}`
+              : 'Place Symbol'}
           </button>
         </div>
       </div>

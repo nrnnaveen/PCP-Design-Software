@@ -54,7 +54,7 @@ export interface SchematicPin {
 }
 
 export interface SymbolGraphicShape {
-  type: 'rectangle' | 'circle' | 'arc' | 'line' | 'polygon' | 'text';
+  type: 'rectangle' | 'circle' | 'arc' | 'line' | 'polygon' | 'bezier' | 'text';
   points?: Point2D[];
   x?: number;
   y?: number;
@@ -63,11 +63,14 @@ export interface SymbolGraphicShape {
   radius?: number;
   startAngle?: number;
   endAngle?: number;
+  counterclockwise?: boolean;
   filled?: boolean;
   strokeWidth?: number;
   color?: string;
   text?: string;
   fontSize?: number;
+  rotation?: number;
+  unit?: number;
 }
 
 export interface SymbolUnitDefinition {
@@ -75,7 +78,9 @@ export interface SymbolUnitDefinition {
   name?: string; // 'A', 'B', 'C', 'Power', etc.
   pins: SchematicPin[];
   shapes: SymbolGraphicShape[];
+  alternateShapes?: SymbolGraphicShape[];
   isPower?: boolean;
+  description?: string;
 }
 
 export interface SymbolDefinition {

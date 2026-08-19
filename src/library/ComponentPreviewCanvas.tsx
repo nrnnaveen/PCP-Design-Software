@@ -121,10 +121,12 @@ export const ComponentPreviewCanvas: React.FC<Props> = ({
 
       shapes.forEach((shape) => {
         if (shape.type === 'rectangle' && shape.width && shape.height) {
+          const sx = (shape.x || 0) * zoom;
+          const sy = (shape.y || 0) * zoom;
           const w = shape.width * zoom;
           const h = shape.height * zoom;
           ctx.beginPath();
-          ctx.rect(-w / 2, -h / 2, w, h);
+          ctx.rect(sx - w / 2, sy - h / 2, w, h);
           if (shape.filled) ctx.fill();
           ctx.stroke();
         } else if (shape.type === 'line' && shape.points && shape.points.length >= 2) {
@@ -137,6 +139,7 @@ export const ComponentPreviewCanvas: React.FC<Props> = ({
         } else if (shape.type === 'circle' && shape.radius) {
           ctx.beginPath();
           ctx.arc((shape.x || 0) * zoom, (shape.y || 0) * zoom, shape.radius * zoom, 0, Math.PI * 2);
+          if (shape.filled) ctx.fill();
           ctx.stroke();
         } else if (shape.type === 'polygon' && shape.points && shape.points.length >= 3) {
           ctx.beginPath();
@@ -150,6 +153,38 @@ export const ComponentPreviewCanvas: React.FC<Props> = ({
             ctx.fill();
           }
           ctx.stroke();
+        } else if (shape.type === 'arc' && shape.radius) {
+          ctx.beginPath();
+          ctx.arc(
+            (shape.x || 0) * zoom,
+            (shape.y || 0) * zoom,
+            shape.radius * zoom,
+            shape.startAngle || 0,
+            shape.endAngle || Math.PI,
+            shape.counterclockwise
+          );
+          if (shape.filled) ctx.fill();
+          ctx.stroke();
+        } else if (shape.type === 'bezier' && shape.points && shape.points.length >= 4) {
+          ctx.beginPath();
+          ctx.moveTo(shape.points[0].x * zoom, shape.points[0].y * zoom);
+          ctx.bezierCurveTo(
+            shape.points[1].x * zoom,
+            shape.points[1].y * zoom,
+            shape.points[2].x * zoom,
+            shape.points[2].y * zoom,
+            shape.points[3].x * zoom,
+            shape.points[3].y * zoom
+          );
+          ctx.stroke();
+        } else if (shape.type === 'text' && shape.text) {
+          ctx.save();
+          ctx.translate((shape.x || 0) * zoom, (shape.y || 0) * zoom);
+          if (shape.rotation) ctx.rotate((shape.rotation * Math.PI) / 180);
+          ctx.font = `${Math.max(8, (shape.fontSize || 1.27) * 2.0 * zoom)}px 'Inter', sans-serif`;
+          ctx.fillStyle = isLight ? '#334155' : '#cbd5e1';
+          ctx.fillText(shape.text, 0, 0);
+          ctx.restore();
         }
       });
 
@@ -160,11 +195,13 @@ export const ComponentPreviewCanvas: React.FC<Props> = ({
       pins.forEach((pin) => {
         const px = pin.x * zoom;
         const py = pin.y * zoom;
-        const rad = (pin.orientation * Math.PI) / 180;
-        const len = (pin.length || 3.81) * zoom;
+        const pinOrient = pin.orientation || 0;
+        const rad = (pinOrient * Math.PI) / 180;
+        const len = (pin.length !== undefined ? pin.length : 2.54) * zoom;
         const endX = px + Math.cos(rad) * len;
         const endY = py + Math.sin(rad) * len;
 
+        // Pin lead
         ctx.beginPath();
         ctx.moveTo(px, py);
         ctx.lineTo(endX, endY);
@@ -174,9 +211,27 @@ export const ComponentPreviewCanvas: React.FC<Props> = ({
         if (pin.graphicStyle === 'inverted' || pin.graphicStyle === 'inverted_clock') {
           ctx.save();
           ctx.beginPath();
-          ctx.arc(px + Math.cos(rad) * 1.5 * zoom, py + Math.sin(rad) * 1.5 * zoom, 1.2 * zoom, 0, Math.PI * 2);
+          ctx.arc(px + Math.cos(rad) * 1.2 * zoom, py + Math.sin(rad) * 1.2 * zoom, 1.0 * zoom, 0, Math.PI * 2);
           ctx.fillStyle = isLight ? '#f8fafc' : '#111418';
           ctx.fill();
+          ctx.stroke();
+          ctx.restore();
+        }
+
+        // Pin Clock Triangle if applicable
+        if (pin.graphicStyle === 'clock' || pin.graphicStyle === 'inverted_clock') {
+          ctx.save();
+          const normRad = rad + Math.PI / 2;
+          const tipX = px + Math.cos(rad) * 1.8 * zoom;
+          const tipY = py + Math.sin(rad) * 1.8 * zoom;
+          const pLeftX = px + Math.cos(normRad) * 1.2 * zoom;
+          const pLeftY = py + Math.sin(normRad) * 1.2 * zoom;
+          const pRightX = px - Math.cos(normRad) * 1.2 * zoom;
+          const pRightY = py - Math.sin(normRad) * 1.2 * zoom;
+          ctx.beginPath();
+          ctx.moveTo(pLeftX, pLeftY);
+          ctx.lineTo(tipX, tipY);
+          ctx.lineTo(pRightX, pRightY);
           ctx.stroke();
           ctx.restore();
         }
@@ -191,10 +246,23 @@ export const ComponentPreviewCanvas: React.FC<Props> = ({
         ctx.fillStyle = isLight ? '#475569' : '#94a3b8';
         ctx.font = `${Math.max(9, 2.0 * zoom)}px "JetBrains Mono", monospace`;
         ctx.textAlign = 'left';
-        ctx.fillText(pin.number, px + 2, py - 3);
-
-        ctx.fillStyle = isLight ? '#0f172a' : '#ffffff';
-        ctx.fillText(pin.name, px + (pin.orientation === 180 ? -26 : 6), py + 3);
+        if (pinOrient === 180) {
+          ctx.fillText(pin.number, endX + 3, endY - 3);
+          ctx.fillStyle = isLight ? '#0f172a' : '#ffffff';
+          ctx.fillText(pin.name, px + 5, py + 3);
+        } else if (pinOrient === 0) {
+          ctx.fillText(pin.number, endX - 14, endY - 3);
+          ctx.fillStyle = isLight ? '#0f172a' : '#ffffff';
+          ctx.fillText(pin.name, px - 24, py + 3);
+        } else if (pinOrient === 270) {
+          ctx.fillText(pin.number, endX + 3, endY + 10);
+          ctx.fillStyle = isLight ? '#0f172a' : '#ffffff';
+          ctx.fillText(pin.name, px + 4, py + 12);
+        } else {
+          ctx.fillText(pin.number, endX + 3, endY - 5);
+          ctx.fillStyle = isLight ? '#0f172a' : '#ffffff';
+          ctx.fillText(pin.name, px + 4, py - 4);
+        }
       });
 
       // Origin crosshair
