@@ -62,16 +62,31 @@ export const SymbolChooser: React.FC<Props> = ({ isOpen, onClose, onSelectSymbol
     });
   }, [allSymbols, searchQuery, selectedCategory]);
 
+  const [displayLimit, setDisplayLimit] = useState<number>(40);
+
+  useEffect(() => {
+    setDisplayLimit(40);
+  }, [searchQuery, selectedCategory]);
+
+  const visibleSymbols = useMemo(() => {
+    return filteredSymbols.slice(0, displayLimit);
+  }, [filteredSymbols, displayLimit]);
+
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm select-none">
-      <div className="bg-cad-panel border border-cad-border w-[920px] h-[640px] rounded-xl shadow-2xl flex flex-col overflow-hidden text-cad-text">
+      <div className="bg-cad-panel border border-cad-border w-[940px] h-[660px] rounded-xl shadow-2xl flex flex-col overflow-hidden text-cad-text">
         {/* Header */}
         <div className="h-12 bg-cad-header border-b border-cad-border px-4 flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <Cpu size={18} className="text-blue-400" />
-            <h2 className="text-sm font-semibold text-white">Choose Component Symbol — FloZ ECA</h2>
+            <h2 className="text-sm font-semibold text-white flex items-center gap-2">
+              Choose Component Symbol — FloZ ECA
+              <span className="text-[10px] font-normal px-2 py-0.5 bg-blue-500/20 text-blue-300 rounded border border-blue-500/30 font-mono">
+                {filteredSymbols.length} Symbols Found
+              </span>
+            </h2>
           </div>
           <button onClick={onClose} className="p-1 hover:bg-cad-subpanel rounded text-cad-textMuted hover:text-white">
             <X size={18} />
@@ -84,14 +99,14 @@ export const SymbolChooser: React.FC<Props> = ({ isOpen, onClose, onSelectSymbol
             <Search size={15} className="absolute left-3 top-2.5 text-cad-textMuted" />
             <input
               type="text"
-              placeholder="Search symbols by name, keyword, or function..."
+              placeholder="Search symbols by name (e.g. 4010, NE555, STM32, OpAmp, Resistor, ATmega)..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full bg-cad-bg border border-cad-border rounded-lg pl-9 pr-3 py-1.5 text-xs text-white focus:outline-none focus:border-blue-500"
             />
           </div>
-          <div className="flex items-center gap-1.5 overflow-x-auto max-w-[400px]">
-            {categories.slice(0, 6).map((cat) => (
+          <div className="flex items-center gap-1.5 overflow-x-auto max-w-[420px]">
+            {categories.slice(0, 8).map((cat) => (
               <button
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}
@@ -104,6 +119,22 @@ export const SymbolChooser: React.FC<Props> = ({ isOpen, onClose, onSelectSymbol
                 {cat}
               </button>
             ))}
+            {categories.length > 8 && (
+              <select
+                value={categories.slice(0, 8).includes(selectedCategory) ? '' : selectedCategory}
+                onChange={(e) => {
+                  if (e.target.value) setSelectedCategory(e.target.value);
+                }}
+                className="bg-cad-panel border border-cad-border text-cad-textMuted text-xs rounded px-2 py-1 focus:outline-none focus:border-blue-500"
+              >
+                <option value="" disabled>More ({categories.length - 8})...</option>
+                {categories.slice(8).map((cat) => (
+                  <option key={cat} value={cat} className="bg-cad-panel text-white">
+                    {cat}
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
         </div>
 
@@ -111,7 +142,7 @@ export const SymbolChooser: React.FC<Props> = ({ isOpen, onClose, onSelectSymbol
         <div className="flex-1 flex overflow-hidden">
           {/* Left: Symbol List */}
           <div className="w-1/2 border-r border-cad-border overflow-y-auto divide-y divide-cad-border bg-cad-panel">
-            {filteredSymbols.map((sym) => {
+            {visibleSymbols.map((sym) => {
               const isSelected = selectedSymbol?.id === sym.id;
               const hasUnits = Boolean(sym.units && sym.units.length > 1);
 
@@ -148,6 +179,15 @@ export const SymbolChooser: React.FC<Props> = ({ isOpen, onClose, onSelectSymbol
                 </div>
               );
             })}
+
+            {filteredSymbols.length > displayLimit && (
+              <button
+                onClick={() => setDisplayLimit((prev) => prev + 40)}
+                className="w-full py-2 bg-cad-subpanel hover:bg-cad-border text-blue-400 hover:text-blue-300 rounded text-xs font-mono font-semibold transition-colors"
+              >
+                Show More ({filteredSymbols.length - displayLimit} remaining)...
+              </button>
+            )}
 
             {filteredSymbols.length === 0 && (
               <div className="text-center py-12 text-cad-textMuted text-xs font-mono">

@@ -1,0 +1,6 @@
+*.pyc
+*.bak
+*.bck
+
+# CMake build directories
+/build*

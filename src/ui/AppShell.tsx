@@ -38,6 +38,7 @@ import { LiveCircuitLab } from '../simulation/LiveCircuitLab';
 import { AuthModal } from './AuthModal';
 import { AuthService, User } from '../core/auth';
 import { AssetResolver } from '../library/assetResolver';
+import { platform } from '../platform';
 
 // Icons
 import {
@@ -113,6 +114,8 @@ function parseInitialRoute(): { tab: WorkspaceTab; showDashboard: boolean } {
   }
 }
 
+import { AppThemeId, ThemeManager, AVAILABLE_THEMES } from '../theme/themeManager';
+
 export const AppShell: React.FC = () => {
   // 1. Authoritative Project State
   const [project, setProject] = useState<ApexProject>(() => {
@@ -172,28 +175,21 @@ export const AppShell: React.FC = () => {
     }
   };
 
-  // Theme Management (Dark / Light)
-  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
-    try {
-      const saved = localStorage.getItem('floz-eda-theme') as 'dark' | 'light';
-      if (saved === 'light' || saved === 'dark') return saved;
-      return 'dark';
-    } catch {
-      return 'dark';
-    }
-  });
+  // Centralized Theme Management (Dark / Light / Midnight / Slate / High Contrast)
+  const [theme, setThemeState] = useState<AppThemeId>(() => ThemeManager.getInitialTheme());
+  const [showThemeDropdown, setShowThemeDropdown] = useState<boolean>(false);
 
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme);
-    if (theme === 'light') {
-      document.documentElement.classList.remove('dark');
-      document.documentElement.classList.add('light');
-    } else {
-      document.documentElement.classList.remove('light');
-      document.documentElement.classList.add('dark');
-    }
-    localStorage.setItem('floz-eda-theme', theme);
+    ThemeManager.applyTheme(theme);
+    const unsub = ThemeManager.subscribe((t) => setThemeState(t));
+    return unsub;
   }, [theme]);
+
+  const handleSetTheme = (newTheme: AppThemeId) => {
+    ThemeManager.applyTheme(newTheme);
+    setThemeState(newTheme);
+    setShowThemeDropdown(false);
+  };
 
   // Undo/Redo Engine
   const [transactionMgr] = useState(() => new TransactionManager<ApexProject>(100));
@@ -301,8 +297,63 @@ export const AppShell: React.FC = () => {
     setActiveTab('pcb');
   };
 
-  // Global Keyboard Shortcuts
+  // Global Keyboard & Platform Menu Action Handlers
   useEffect(() => {
+    const handleAction = async (action: string) => {
+      switch (action) {
+        case 'undo':
+          handleUndo();
+          break;
+        case 'redo':
+          handleRedo();
+          break;
+        case 'save':
+        case 'save-project':
+          await platform.saveProject(project);
+          showToast('Project Saved (.floz)');
+          break;
+        case 'save-as':
+        case 'save-project-as':
+          await platform.saveProjectAs(project);
+          showToast('Project Saved As (.floz)');
+          break;
+        case 'open':
+        case 'open-project': {
+          const opened = await platform.openProject();
+          if (opened?.project) {
+            setProject(opened.project);
+            showToast(`Opened: ${opened.fileName}`);
+          }
+          break;
+        }
+        case 'new-project':
+          setProject(createDemoProject());
+          showToast('Created New Project');
+          break;
+        case 'export-gerber':
+          setShowMfgModal(true);
+          break;
+        case 'tab-schematic':
+          setActiveTab('schematic');
+          break;
+        case 'tab-pcb':
+          setActiveTab('pcb');
+          break;
+        case 'tab-3d':
+          setActiveTab('3d');
+          break;
+        case 'run-drc':
+          setRightPanel('drc');
+          setRightPanelCollapsed(false);
+          break;
+        case 'help-about':
+          setShowAboutModal(true);
+          break;
+      }
+    };
+
+    const unsubscribeMenu = platform.onMenuAction(handleAction);
+
     const handleGlobalKeys = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
         e.preventDefault();
@@ -315,8 +366,7 @@ export const AppShell: React.FC = () => {
         handleRedo();
       } else if ((e.ctrlKey || e.metaKey) && e.key === 's') {
         e.preventDefault();
-        ProjectSerializer.exportToFile(project);
-        showToast('Project File Saved');
+        platform.saveProject(project).then(() => showToast('Project Saved (.floz)'));
       } else if (e.key === 'F8') {
         e.preventDefault();
         handleSyncPCB();
@@ -324,8 +374,11 @@ export const AppShell: React.FC = () => {
     };
 
     window.addEventListener('keydown', handleGlobalKeys);
-    return () => window.removeEventListener('keydown', handleGlobalKeys);
-  }, [project, handleUndo, handleRedo]);
+    return () => {
+      window.removeEventListener('keydown', handleGlobalKeys);
+      unsubscribeMenu();
+    };
+  }, [project, handleUndo, handleRedo, handleSyncPCB]);
 
   // Global Drag & Drop Handler for Library Files (.kicad_sym, .kicad_mod)
   useEffect(() => {
@@ -537,11 +590,11 @@ export const AppShell: React.FC = () => {
               setRightPanel('ai');
               setRightPanelCollapsed(false);
             }}
-            title="FloZ AI - Electronic Design Assistant"
-            className="px-2.5 py-1 bg-blue-600/20 hover:bg-blue-600/30 text-blue-600 dark:text-blue-300 rounded text-[11px] font-semibold flex items-center gap-1.5 border border-blue-500/40 shadow-sm transition-colors"
+            title="AI Electronic Design Assistant"
+            className="px-2.5 py-1 bg-cad-subpanel hover:bg-cad-border text-cad-text rounded text-[11px] font-semibold flex items-center gap-1.5 border border-cad-border shadow-sm transition-colors"
           >
-            <Sparkles size={12} className="text-blue-500 dark:text-blue-400" />
-            FloZ AI
+            <Cpu size={12} className="text-blue-500 dark:text-blue-400" />
+            AI Assistant
           </button>
 
           {/* User Account / Guest Button */}
@@ -569,14 +622,49 @@ export const AppShell: React.FC = () => {
             <SettingsIcon size={13} />
           </button>
 
-          {/* Theme Switcher Toggle (Moon/Sun) */}
-          <button
-            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-            title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Theme`}
-            className="p-1.5 hover:bg-cad-subpanel rounded text-cad-textMuted hover:text-cad-text border border-transparent hover:border-cad-border transition-colors"
-          >
-            {theme === 'dark' ? <Sun size={13} className="text-amber-400" /> : <Moon size={13} className="text-blue-500" />}
-          </button>
+          {/* Professional Theme Selector Dropdown */}
+          <div className="relative">
+            <button
+              onClick={() => setShowThemeDropdown((prev) => !prev)}
+              title={`Theme: ${ThemeManager.getThemeDefinition(theme).name}`}
+              className="px-2 py-1 bg-cad-subpanel hover:bg-cad-border rounded text-cad-text text-[11px] font-semibold border border-cad-border flex items-center gap-1.5 transition-colors"
+            >
+              <span
+                className="w-2.5 h-2.5 rounded-full border border-cad-border"
+                style={{ backgroundColor: ThemeManager.getThemeDefinition(theme).previewColor }}
+              />
+              <span className="hidden sm:inline">{ThemeManager.getThemeDefinition(theme).name.split(' ')[0]}</span>
+            </button>
+
+            {showThemeDropdown && (
+              <div
+                className="absolute right-0 top-full mt-1 w-44 bg-cad-panel border border-cad-border rounded-lg shadow-xl py-1 z-50 text-xs cad-dropdown"
+                onMouseLeave={() => setShowThemeDropdown(false)}
+              >
+                <div className="px-2.5 py-1 text-[10px] font-bold text-cad-textMuted uppercase font-mono border-b border-cad-border">
+                  Appearance
+                </div>
+                {AVAILABLE_THEMES.map((th) => (
+                  <button
+                    key={th.id}
+                    onClick={() => handleSetTheme(th.id)}
+                    className={`w-full px-2.5 py-1.5 text-left flex items-center justify-between hover:bg-cad-subpanel transition-colors ${
+                      theme === th.id ? 'font-bold text-blue-500' : 'text-cad-text'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <span
+                        className="w-2.5 h-2.5 rounded-full border border-cad-border"
+                        style={{ backgroundColor: th.previewColor }}
+                      />
+                      <span>{th.name}</span>
+                    </div>
+                    {theme === th.id && <CheckCircle2 size={12} className="text-blue-500" />}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
 
           <button
             onClick={() => setShowAboutModal(true)}
@@ -875,7 +963,7 @@ export const AppShell: React.FC = () => {
           project={project}
           onUpdateProject={updateProject}
           theme={theme}
-          onSetTheme={setTheme}
+          onSetTheme={handleSetTheme}
           onOpenAuthModal={() => {
             setShowSettingsModal(false);
             setShowAuthModal(true);

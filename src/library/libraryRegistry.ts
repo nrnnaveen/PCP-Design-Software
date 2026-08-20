@@ -26,14 +26,24 @@ const STORAGE_KEY = 'floz_eca_imported_libraries_v1';
 class ComponentLibraryRegistry {
   private libraries: Map<string, LibraryPackage> = new Map();
   private listeners: Set<() => void> = new Set();
+  private notifyTimeout: any = null;
+
+  // Memoized cache for lightning-fast queries
+  private _cachedSymbols: SymbolDefinition[] | null = null;
+  private _cachedFootprints: FootprintDefinition[] | null = null;
 
   constructor() {
     this.initSystemLibraries();
     this.loadFromStorage();
   }
 
+  private invalidateCache(): void {
+    this._cachedSymbols = null;
+    this._cachedFootprints = null;
+  }
+
   private initSystemLibraries(): void {
-    // 1. Group built-in symbols by library name
+    // 1. Group built-in authoritative symbols by library name
     const symsByLib: Map<string, SymbolDefinition[]> = new Map();
     BUILTIN_SYMBOLS.forEach((sym) => {
       const lib = sym.library || 'Device';
@@ -54,7 +64,7 @@ class ComponentLibraryRegistry {
       });
     });
 
-    // 2. Group built-in footprints by library name
+    // 2. Group built-in authoritative footprints by library name
     const fpsByLib: Map<string, FootprintDefinition[]> = new Map();
     BUILTIN_FOOTPRINTS.forEach((fp) => {
       const lib = fp.library || 'General';
@@ -88,7 +98,9 @@ class ComponentLibraryRegistry {
         const parsed: LibraryPackage[] = JSON.parse(raw);
         if (Array.isArray(parsed)) {
           parsed.forEach((lib) => {
-            this.libraries.set(lib.id, lib);
+            if (lib && lib.id && (lib.category === 'Custom' || lib.category === 'Imported')) {
+              this.libraries.set(lib.id, lib);
+            }
           });
         }
       }
@@ -100,11 +112,12 @@ class ComponentLibraryRegistry {
   private saveToStorage(): void {
     try {
       if (typeof window !== 'undefined' && typeof window.localStorage !== 'undefined') {
-        const imported = Array.from(this.libraries.values()).filter(
-          (l) => l.category === 'Imported' || l.category === 'Custom'
+        const customOrImported = Array.from(this.libraries.values()).filter(
+          (l) => l.category === 'Custom' || l.category === 'Imported'
         );
-        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(imported));
+        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(customOrImported));
       }
+      this.invalidateCache();
       this.notifyListeners();
     } catch (err) {
       // Ignored in headless environments
@@ -119,13 +132,16 @@ class ComponentLibraryRegistry {
   }
 
   private notifyListeners(): void {
-    this.listeners.forEach((cb) => {
-      try {
-        cb();
-      } catch (err) {
-        console.error('Error in library registry listener:', err);
-      }
-    });
+    if (this.notifyTimeout) clearTimeout(this.notifyTimeout);
+    this.notifyTimeout = setTimeout(() => {
+      this.listeners.forEach((cb) => {
+        try {
+          cb();
+        } catch (err) {
+          console.error('Error in library registry listener:', err);
+        }
+      });
+    }, 16);
   }
 
   // Queries
@@ -138,18 +154,22 @@ class ComponentLibraryRegistry {
   }
 
   public getAllSymbols(): SymbolDefinition[] {
+    if (this._cachedSymbols) return this._cachedSymbols;
     const all: SymbolDefinition[] = [];
     this.libraries.forEach((lib) => {
       all.push(...lib.symbols);
     });
+    this._cachedSymbols = all;
     return all;
   }
 
   public getAllFootprints(): FootprintDefinition[] {
+    if (this._cachedFootprints) return this._cachedFootprints;
     const all: FootprintDefinition[] = [];
     this.libraries.forEach((lib) => {
       all.push(...lib.footprints);
     });
+    this._cachedFootprints = all;
     return all;
   }
 
@@ -164,6 +184,7 @@ class ComponentLibraryRegistry {
   // Modifications
   public addLibrary(lib: LibraryPackage): void {
     this.libraries.set(lib.id, lib);
+    this.invalidateCache();
     this.saveToStorage();
   }
 
@@ -171,6 +192,7 @@ class ComponentLibraryRegistry {
     const lib = this.libraries.get(id);
     if (!lib || lib.category === 'System') return false; // Protect system libraries
     this.libraries.delete(id);
+    this.invalidateCache();
     this.saveToStorage();
     return true;
   }
@@ -179,6 +201,7 @@ class ComponentLibraryRegistry {
     const lib = this.libraries.get(id);
     if (!lib || lib.category === 'System') return false;
     lib.name = newName;
+    this.invalidateCache();
     this.saveToStorage();
     return true;
   }
@@ -187,6 +210,7 @@ class ComponentLibraryRegistry {
     const lib = this.libraries.get(libraryId);
     if (!lib) return;
     lib.symbols.push(...newSymbols);
+    this.invalidateCache();
     this.saveToStorage();
   }
 
@@ -194,6 +218,7 @@ class ComponentLibraryRegistry {
     const lib = this.libraries.get(libraryId);
     if (!lib) return;
     lib.footprints.push(...newFootprints);
+    this.invalidateCache();
     this.saveToStorage();
   }
 }

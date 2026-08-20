@@ -58,12 +58,18 @@ export const SymbolLibrarySidebar: React.FC<Props> = ({
     return Array.from(cats);
   }, [allSymbols]);
 
+  const [displayLimit, setDisplayLimit] = useState<number>(30);
+
+  useEffect(() => {
+    setDisplayLimit(30);
+  }, [searchQuery, selectedCategory]);
+
   // Filtered symbols
   const filteredSymbols = useMemo(() => {
+    const q = searchQuery.toLowerCase().trim();
     return allSymbols.filter((s) => {
       const cat = s.category || s.library || 'General';
       const matchesCat = selectedCategory === 'All' || cat === selectedCategory;
-      const q = searchQuery.toLowerCase().trim();
       if (!q) return matchesCat;
 
       return (
@@ -75,6 +81,10 @@ export const SymbolLibrarySidebar: React.FC<Props> = ({
       );
     });
   }, [allSymbols, searchQuery, selectedCategory]);
+
+  const visibleSymbols = useMemo(() => {
+    return filteredSymbols.slice(0, displayLimit);
+  }, [filteredSymbols, displayLimit]);
 
   if (isCollapsed) {
     return (
@@ -128,7 +138,7 @@ export const SymbolLibrarySidebar: React.FC<Props> = ({
 
         {/* Category Pills */}
         <div className="flex items-center gap-1 overflow-x-auto py-0.5 no-scrollbar text-[10px]">
-          {categories.map((cat) => (
+          {categories.slice(0, 10).map((cat) => (
             <button
               key={cat}
               onClick={() => setSelectedCategory(cat)}
@@ -146,7 +156,7 @@ export const SymbolLibrarySidebar: React.FC<Props> = ({
 
       {/* Symbols List */}
       <div className="flex-1 overflow-y-auto p-2 space-y-1 bg-cad-bg/20">
-        {filteredSymbols.map((sym) => {
+        {visibleSymbols.map((sym) => {
           const isSelected = selectedSymbolId === sym.id;
 
           return (
@@ -191,6 +201,15 @@ export const SymbolLibrarySidebar: React.FC<Props> = ({
             </div>
           );
         })}
+
+        {filteredSymbols.length > displayLimit && (
+          <button
+            onClick={() => setDisplayLimit((prev) => prev + 30)}
+            className="w-full py-1.5 mt-1 bg-cad-subpanel hover:bg-cad-border text-blue-400 hover:text-blue-300 rounded text-xs font-mono font-semibold transition-colors"
+          >
+            Show More ({filteredSymbols.length - displayLimit} remaining)...
+          </button>
+        )}
 
         {filteredSymbols.length === 0 && (
           <div className="text-center py-10 text-cad-textMuted text-xs font-mono">

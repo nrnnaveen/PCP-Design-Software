@@ -22,14 +22,15 @@ import {
   LogIn,
   Layers,
 } from 'lucide-react';
+import { AppThemeId, AVAILABLE_THEMES } from '../theme/themeManager';
 
 interface Props {
   isOpen: boolean;
   onClose: () => void;
   project: ApexProject;
   onUpdateProject: (updater: (prev: ApexProject) => ApexProject, actionName?: string) => void;
-  theme: 'dark' | 'light';
-  onSetTheme: (theme: 'dark' | 'light') => void;
+  theme: AppThemeId;
+  onSetTheme: (theme: AppThemeId) => void;
   onOpenAuthModal?: () => void;
 }
 
@@ -99,10 +100,7 @@ export const SettingsModal: React.FC<Props> = ({
         gridSpacingPCB: pcbGrid,
         snapToGrid: snapEnabled,
       },
-    }), 'Update Editor Settings');
-
-    localStorage.setItem('floz_schematic_grid', schematicGrid.toString());
-    localStorage.setItem('floz_pcb_grid', pcbGrid.toString());
+    }), 'Update Editor Preferences');
     showSavedNotification();
   };
 
@@ -141,7 +139,7 @@ export const SettingsModal: React.FC<Props> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md select-none p-4">
-      <div className="bg-cad-panel border border-cad-border w-[720px] max-w-full h-[520px] max-h-full rounded-xl shadow-2xl overflow-hidden flex flex-col text-cad-text">
+      <div className="bg-cad-panel border border-cad-border w-[760px] max-w-full h-[540px] max-h-full rounded-xl shadow-2xl overflow-hidden flex flex-col text-cad-text">
         {/* Header */}
         <div className="h-12 bg-cad-header border-b border-cad-border px-5 flex items-center justify-between">
           <div className="flex items-center space-x-2">
@@ -200,46 +198,33 @@ export const SettingsModal: React.FC<Props> = ({
                   </p>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3 pt-2">
-                  <div
-                    onClick={() => onSetTheme('dark')}
-                    className={`p-4 rounded-xl border cursor-pointer transition-all ${
-                      theme === 'dark'
-                        ? 'bg-slate-900 border-blue-500 ring-2 ring-blue-500/30 text-white'
-                        : 'bg-slate-900/60 border-cad-border text-slate-400 hover:border-slate-600'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2 font-bold text-xs">
-                        <Moon size={16} className="text-blue-400" />
-                        Dark Theme (Default)
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 pt-2">
+                  {AVAILABLE_THEMES.map((th) => {
+                    const isSelected = theme === th.id;
+                    return (
+                      <div
+                        key={th.id}
+                        onClick={() => onSetTheme(th.id)}
+                        className={`p-3 rounded-lg border cursor-pointer transition-all ${
+                          isSelected
+                            ? 'bg-cad-subpanel border-blue-500 ring-2 ring-blue-500/30'
+                            : 'bg-cad-panel hover:bg-cad-subpanel border-cad-border'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-1.5">
+                          <div className="flex items-center gap-2 font-bold text-xs text-cad-text">
+                            <span
+                              className="w-3.5 h-3.5 rounded-full border border-cad-border"
+                              style={{ backgroundColor: th.previewColor }}
+                            />
+                            {th.name}
+                          </div>
+                          {isSelected && <Check size={14} className="text-blue-500" />}
+                        </div>
+                        <p className="text-[11px] text-cad-textMuted">{th.description}</p>
                       </div>
-                      {theme === 'dark' && <Check size={14} className="text-blue-400" />}
-                    </div>
-                    <p className="text-[11px] opacity-70">
-                      Standard CAD dark theme with emerald wires and high-contrast trace rendering.
-                    </p>
-                  </div>
-
-                  <div
-                    onClick={() => onSetTheme('light')}
-                    className={`p-4 rounded-xl border cursor-pointer transition-all ${
-                      theme === 'light'
-                        ? 'bg-slate-100 border-blue-500 ring-2 ring-blue-500/30 text-slate-900'
-                        : 'bg-slate-100/60 border-cad-border text-slate-600 hover:border-slate-400'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2 font-bold text-xs">
-                        <Sun size={16} className="text-amber-500" />
-                        Light Theme
-                      </div>
-                      {theme === 'light' && <Check size={14} className="text-blue-500" />}
-                    </div>
-                    <p className="text-[11px] opacity-70">
-                      Crisp drafting daylight theme with high-contrast borders and readable labels.
-                    </p>
-                  </div>
+                    );
+                  })}
                 </div>
               </div>
             )}

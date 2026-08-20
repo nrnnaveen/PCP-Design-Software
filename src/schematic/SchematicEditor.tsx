@@ -42,12 +42,13 @@ import {
   Info,
   Hand,
 } from 'lucide-react';
+import { AppThemeId, getCanvasColors } from '../theme/themeManager';
 
 interface Props {
   project: ApexProject;
   onUpdateProject: (updater: (prev: ApexProject) => ApexProject, actionName?: string) => void;
   onOpenSymbolChooser: () => void;
-  theme?: 'dark' | 'light';
+  theme?: AppThemeId;
 }
 
 export type EditorTool = 'select' | 'pan' | 'wire' | 'junction' | 'label' | 'power' | 'delete' | 'place_symbol';
@@ -400,27 +401,32 @@ export const SchematicEditor: React.FC<Props> = ({
 
     const width = canvas.parentElement?.clientWidth || 800;
     const height = canvas.parentElement?.clientHeight || 600;
-    canvas.width = width;
-    canvas.height = height;
+    if (canvas.width !== width || canvas.height !== height) {
+      canvas.width = width;
+      canvas.height = height;
+    }
 
-    // Theme detection
-    const isLight = theme === 'light' || document.documentElement.getAttribute('data-theme') === 'light';
+    // Theme detection & canvas colors
+    const colors = getCanvasColors(theme);
+    const isLight = colors.isLight;
 
-    // 1. CAD Background & Dot Grid
-    ctx.fillStyle = isLight ? '#f8fafc' : '#14171c';
+    // 1. CAD Background & Dot Grid (Adaptive for 60fps performance)
+    ctx.fillStyle = colors.canvasBg;
     ctx.fillRect(0, 0, width, height);
 
     const startWorld = screenToWorld(0, 0);
     const endWorld = screenToWorld(width, height);
 
-    const minGridX = Math.floor(startWorld.x / gridStep) * gridStep;
-    const maxGridX = Math.ceil(endWorld.x / gridStep) * gridStep;
-    const minGridY = Math.floor(startWorld.y / gridStep) * gridStep;
-    const maxGridY = Math.ceil(endWorld.y / gridStep) * gridStep;
+    const gridPx = gridStep * zoom;
+    const step = gridPx < 8 ? gridStep * 4 : gridPx < 14 ? gridStep * 2 : gridStep;
+    const minGridX = Math.floor(startWorld.x / step) * step;
+    const maxGridX = Math.ceil(endWorld.x / step) * step;
+    const minGridY = Math.floor(startWorld.y / step) * step;
+    const maxGridY = Math.ceil(endWorld.y / step) * step;
 
-    ctx.fillStyle = isLight ? '#cbd5e1' : '#2a3240';
-    for (let gx = minGridX; gx <= maxGridX; gx += gridStep) {
-      for (let gy = minGridY; gy <= maxGridY; gy += gridStep) {
+    ctx.fillStyle = colors.gridColor;
+    for (let gx = minGridX; gx <= maxGridX; gx += step) {
+      for (let gy = minGridY; gy <= maxGridY; gy += step) {
         const sp = worldToScreen(gx, gy);
         ctx.fillRect(sp.x - 0.75, sp.y - 0.75, 1.5, 1.5);
       }

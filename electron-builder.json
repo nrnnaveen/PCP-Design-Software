@@ -1,0 +1,67 @@
+{
+  "appId": "com.floz.pcbeditor",
+  "productName": "FloZ AI PCB Editor",
+  "copyright": "Copyright © 2026 FloZ EDA",
+  "directories": {
+    "output": "release",
+    "buildResources": "assets"
+  },
+  "files": [
+    "dist/**/*",
+    "dist-electron/**/*",
+    "package.json"
+  ],
+  "extraMetadata": {
+    "main": "dist-electron/main.cjs"
+  },
+  "win": {
+    "target": [
+      {
+        "target": "nsis",
+        "arch": ["x64"]
+      },
+      {
+        "target": "portable",
+        "arch": ["x64"]
+      }
+    ],
+    "icon": "assets/icon.png",
+    "fileAssociations": [
+      {
+        "ext": "floz",
+        "name": "FloZ PCB Project",
+        "description": "FloZ EDA Circuit and PCB Layout Project",
+        "role": "Editor"
+      }
+    ]
+  },
+  "nsis": {
+    "oneClick": false,
+    "allowToChangeInstallationDirectory": true,
+    "createDesktopShortcut": true,
+    "createStartMenuShortcut": true,
+    "shortcutName": "FloZ AI PCB Editor"
+  },
+  "linux": {
+    "target": [
+      {
+        "target": "AppImage",
+        "arch": ["x64"]
+      },
+      {
+        "target": "deb",
+        "arch": ["x64"]
+      }
+    ],
+    "category": "Development;Electronics;Engineering;",
+    "icon": "assets/icon.png",
+    "fileAssociations": [
+      {
+        "ext": "floz",
+        "name": "FloZ PCB Project",
+        "description": "FloZ EDA Circuit and PCB Layout Project",
+        "role": "Editor"
+      }
+    ]
+  }
+}

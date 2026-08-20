@@ -56,6 +56,12 @@ export const FootprintAssignment: React.FC<Props> = ({
 
   const activeSymbol = schematicSymbols.find((s) => s.id === selectedSymId);
 
+  const categories = useMemo(() => {
+    const cats = new Set<string>(['All']);
+    allFootprints.forEach((f) => cats.add(f.category || f.library || 'General'));
+    return Array.from(cats);
+  }, [allFootprints]);
+
   const filteredFootprints = useMemo(() => {
     return allFootprints.filter((fp) => {
       const matchCat = categoryFilter === 'All' || fp.category === categoryFilter;
@@ -69,6 +75,16 @@ export const FootprintAssignment: React.FC<Props> = ({
       return matchCat && matchSearch;
     });
   }, [allFootprints, searchFilter, categoryFilter]);
+
+  const [displayLimit, setDisplayLimit] = useState<number>(40);
+
+  useEffect(() => {
+    setDisplayLimit(40);
+  }, [searchFilter, categoryFilter]);
+
+  const visibleFootprints = useMemo(() => {
+    return filteredFootprints.slice(0, displayLimit);
+  }, [filteredFootprints, displayLimit]);
 
   const handleAssignFootprint = (fpId: string) => {
     if (!selectedSymId) return;
@@ -98,7 +114,12 @@ export const FootprintAssignment: React.FC<Props> = ({
         <div className="h-12 bg-cad-header border-b border-cad-border px-4 flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <Layers size={18} className="text-amber-400" />
-            <h2 className="text-sm font-semibold text-white">Assign PCB Footprints to Schematic Symbols — FloZ ECA</h2>
+            <h2 className="text-sm font-semibold text-white flex items-center gap-2">
+              Assign PCB Footprints to Schematic Symbols — FloZ ECA
+              <span className="text-[10px] font-normal px-2 py-0.5 bg-amber-500/20 text-amber-300 rounded border border-amber-500/30 font-mono">
+                {filteredFootprints.length} Footprints Available
+              </span>
+            </h2>
           </div>
           <button onClick={onClose} className="p-1 hover:bg-cad-subpanel rounded text-cad-textMuted hover:text-white">
             <X size={18} />
@@ -108,7 +129,7 @@ export const FootprintAssignment: React.FC<Props> = ({
         {/* 3-Pane Body */}
         <div className="flex-1 flex overflow-hidden">
           {/* Left Pane: Schematic Symbols List */}
-          <div className="w-[320px] border-r border-cad-border flex flex-col bg-cad-bg/30">
+          <div className="w-[300px] border-r border-cad-border flex flex-col bg-cad-bg/30">
             <div className="p-2.5 bg-cad-subpanel border-b border-cad-border text-xs font-semibold text-cad-textMuted uppercase font-mono">
               Schematic Symbols ({schematicSymbols.length})
             </div>
@@ -207,22 +228,55 @@ export const FootprintAssignment: React.FC<Props> = ({
           </div>
 
           {/* Right Pane: Available Footprint Browser */}
-          <div className="w-[340px] flex flex-col bg-cad-bg/30">
+          <div className="w-[360px] flex flex-col bg-cad-bg/30">
             <div className="p-2.5 bg-cad-subpanel border-b border-cad-border space-y-2">
               <div className="relative">
                 <Search size={14} className="absolute left-2.5 top-2 text-cad-textMuted" />
                 <input
                   type="text"
-                  placeholder="Filter footprints (e.g. 0805, LQFP, SOT, imported)..."
+                  placeholder="Filter footprints (e.g. 0805, SOIC, DIP, QFN, Battery)..."
                   value={searchFilter}
                   onChange={(e) => setSearchFilter(e.target.value)}
                   className="w-full bg-cad-bg border border-cad-border rounded pl-8 pr-2 py-1 text-xs text-cad-text focus:outline-none focus:border-blue-500 font-mono"
                 />
               </div>
+
+              {/* Category Filter Pills / Dropdown */}
+              <div className="flex items-center gap-1 overflow-x-auto pb-0.5">
+                {categories.slice(0, 4).map((cat) => (
+                  <button
+                    key={cat}
+                    onClick={() => setCategoryFilter(cat)}
+                    className={`px-2 py-0.5 rounded text-[10px] font-mono transition-colors whitespace-nowrap ${
+                      categoryFilter === cat
+                        ? 'bg-blue-600 text-white font-bold'
+                        : 'bg-cad-panel hover:bg-cad-border text-cad-textMuted hover:text-white'
+                    }`}
+                  >
+                    {cat}
+                  </button>
+                ))}
+                {categories.length > 4 && (
+                  <select
+                    value={categories.slice(0, 4).includes(categoryFilter) ? '' : categoryFilter}
+                    onChange={(e) => {
+                      if (e.target.value) setCategoryFilter(e.target.value);
+                    }}
+                    className="bg-cad-panel border border-cad-border text-cad-textMuted text-[10px] rounded px-1.5 py-0.5 focus:outline-none focus:border-blue-500 font-mono"
+                  >
+                    <option value="" disabled>More ({categories.length - 4})...</option>
+                    {categories.slice(4).map((cat) => (
+                      <option key={cat} value={cat} className="bg-cad-panel text-white">
+                        {cat}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
             </div>
 
             <div className="flex-1 overflow-y-auto p-2 space-y-1">
-              {filteredFootprints.map((fp) => {
+              {visibleFootprints.map((fp) => {
                 const isCurrentAssigned = activeSymbol?.footprint === fp.id;
 
                 return (
@@ -264,6 +318,15 @@ export const FootprintAssignment: React.FC<Props> = ({
                   </div>
                 );
               })}
+
+              {filteredFootprints.length > displayLimit && (
+                <button
+                  onClick={() => setDisplayLimit((prev) => prev + 40)}
+                  className="w-full py-2 bg-cad-subpanel hover:bg-cad-border text-blue-400 hover:text-blue-300 rounded text-xs font-mono font-semibold transition-colors"
+                >
+                  Show More ({filteredFootprints.length - displayLimit} remaining)...
+                </button>
+              )}
             </div>
           </div>
         </div>

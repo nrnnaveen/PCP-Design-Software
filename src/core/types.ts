@@ -204,13 +204,30 @@ export type PCBLayerId =
   | 'B.Mask'
   | 'F.Paste'
   | 'B.Paste'
+  | 'F.Adhesive'
+  | 'B.Adhesive'
+  | 'F.Courtyard'
+  | 'B.Courtyard'
   | 'F.CrtYd'
   | 'B.CrtYd'
   | 'F.Fab'
   | 'B.Fab'
   | 'Edge.Cuts'
+  | 'Margin'
   | 'Dwgs.User'
-  | 'Margin';
+  | 'User.Drawings'
+  | 'User.Comments'
+  | 'User.Eco1'
+  | 'User.Eco2';
+
+export type BoardFinish =
+  | 'hasl_lead_free'
+  | 'hasl_leaded'
+  | 'enig'
+  | 'osp'
+  | 'immersion_silver'
+  | 'immersion_tin'
+  | 'hard_gold';
 
 export type PadShape = 'rect' | 'roundrect' | 'circle' | 'oval';
 export type PadType = 'smd' | 'through_hole' | 'npth';
@@ -395,6 +412,10 @@ export interface PCBData {
   graphics: FootprintGraphicShape[];
   texts: PCBTextGraphic[];
   dimensions: PCBDimension[];
+  boardFinish?: BoardFinish;
+  solderMaskColor?: string;
+  silkscreenColor?: string;
+  boardThickness?: number;
 }
 
 // ==========================================

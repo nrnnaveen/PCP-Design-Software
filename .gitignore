@@ -6,6 +6,8 @@ node_modules/
 # Production Build Output
 dist/
 dist-ssr/
+dist-electron/
+release/
 *.local
 
 # Environment files

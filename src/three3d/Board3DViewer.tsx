@@ -8,10 +8,12 @@ import * as THREE from 'three';
 import { ApexProject } from '../core/types';
 import { Layers, Eye, EyeOff, RotateCcw, Box, Camera, Download } from 'lucide-react';
 
+import { AppThemeId, getCanvasColors } from '../theme/themeManager';
+
 interface Props {
   project: ApexProject;
   onSelectComponent?: (reference: string) => void;
-  theme?: 'dark' | 'light';
+  theme?: AppThemeId;
 }
 
 export const Board3DViewer: React.FC<Props> = ({ project, onSelectComponent, theme = 'dark' }) => {
@@ -20,7 +22,9 @@ export const Board3DViewer: React.FC<Props> = ({ project, onSelectComponent, the
   const sceneRef = useRef<THREE.Scene | null>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
 
-  const [soldermaskColor, setSoldermaskColor] = useState<string>('#15803d'); // Standard Green
+  const [soldermaskColor, setSoldermaskColor] = useState<string>(
+    project.pcb.solderMaskColor || '#15803d'
+  );
   const [showComponents, setShowComponents] = useState<boolean>(true);
   const [showSilkscreen, setShowSilkscreen] = useState<boolean>(true);
   const [isTransparent, setIsTransparent] = useState<boolean>(false);
@@ -31,11 +35,11 @@ export const Board3DViewer: React.FC<Props> = ({ project, onSelectComponent, the
     const width = container.clientWidth;
     const height = container.clientHeight;
 
-    const isLight = theme === 'light' || document.documentElement.getAttribute('data-theme') === 'light';
+    const colors = getCanvasColors(theme);
 
     // 1. Scene & Camera Setup
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(isLight ? 0xf8fafc : 0x14171c);
+    scene.background = new THREE.Color(colors.canvasBg);
     sceneRef.current = scene;
 
     const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
@@ -68,7 +72,7 @@ export const Board3DViewer: React.FC<Props> = ({ project, onSelectComponent, the
     scene.add(boardGroup);
 
     const pcb = project.pcb;
-    const boardThickness = 1.6; // standard 1.6mm
+    const boardThickness = pcb.boardThickness || 1.6; // standard or custom stackup thickness
 
     // FR4 Substrate Extrusion from board outline
     const outlineShape = new THREE.Shape();

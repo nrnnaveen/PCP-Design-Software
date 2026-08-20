@@ -869,7 +869,7 @@ export class KiCadFootprintParser {
               drillDiameter: drillDia,
               layers,
             });
-          } else if (keyword === 'fp_line') {
+          } else if (keyword === 'fp_line' || keyword === 'gr_line') {
             // (fp_line (start x1 y1) (end x2 y2) (layer ...) (stroke (width w)))
             const startNode = getSubList(item, 'start');
             const endNode = getSubList(item, 'end');
@@ -887,7 +887,7 @@ export class KiCadFootprintParser {
                 strokeWidth: 0.15,
               });
             }
-          } else if (keyword === 'fp_rect') {
+          } else if (keyword === 'fp_rect' || keyword === 'gr_rect') {
             const startNode = getSubList(item, 'start');
             const endNode = getSubList(item, 'end');
             const layerNode = getSubList(item, 'layer');
@@ -909,7 +909,7 @@ export class KiCadFootprintParser {
                 strokeWidth: 0.15,
               });
             }
-          } else if (keyword === 'fp_circle') {
+          } else if (keyword === 'fp_circle' || keyword === 'gr_circle') {
             const centerNode = getSubList(item, 'center');
             const endNode = getSubList(item, 'end');
             const layerNode = getSubList(item, 'layer');
@@ -929,6 +929,80 @@ export class KiCadFootprintParser {
                 y: cy,
                 radius,
                 strokeWidth: 0.15,
+              });
+            }
+          } else if (keyword === 'fp_arc' || keyword === 'gr_arc') {
+            const startNode = getSubList(item, 'start');
+            const midNode = getSubList(item, 'mid');
+            const endNode = getSubList(item, 'end');
+            const layerNode = getSubList(item, 'layer');
+
+            if (startNode && midNode && endNode) {
+              const x1 = parseFloat(startNode[1] as string) || 0;
+              const y1 = parseFloat(startNode[2] as string) || 0;
+              const x2 = parseFloat(midNode[1] as string) || 0;
+              const y2 = parseFloat(midNode[2] as string) || 0;
+              const x3 = parseFloat(endNode[1] as string) || 0;
+              const y3 = parseFloat(endNode[2] as string) || 0;
+              const arc = compute3PointArc(x1, y1, x2, y2, x3, y3);
+              const layer = mapLayerName(layerNode && typeof layerNode[1] === 'string' ? layerNode[1] : 'F.Silkscreen');
+
+              shapes.push({
+                type: 'arc',
+                layer,
+                x: arc.cx,
+                y: arc.cy,
+                radius: arc.radius,
+                startAngle: arc.startAngle,
+                endAngle: arc.endAngle,
+                strokeWidth: 0.15,
+              });
+            }
+          } else if (keyword === 'fp_poly' || keyword === 'gr_poly') {
+            const ptsNode = getSubList(item, 'pts');
+            const layerNode = getSubList(item, 'layer');
+            if (ptsNode) {
+              const points: Point2D[] = [];
+              for (const pt of ptsNode) {
+                if (Array.isArray(pt) && pt[0] === 'xy') {
+                  points.push({
+                    x: parseFloat(pt[1] as string) || 0,
+                    y: parseFloat(pt[2] as string) || 0,
+                  });
+                }
+              }
+              if (points.length >= 3) {
+                const layer = mapLayerName(layerNode && typeof layerNode[1] === 'string' ? layerNode[1] : 'F.Silkscreen');
+                shapes.push({
+                  type: 'polygon',
+                  layer,
+                  points,
+                  strokeWidth: 0.15,
+                });
+              }
+            }
+          } else if (keyword === 'fp_text') {
+            const textContent = typeof item[2] === 'string' ? item[2] : (typeof item[1] === 'string' ? item[1] : '');
+            const atNode = getSubList(item, 'at');
+            const layerNode = getSubList(item, 'layer');
+            const effectsNode = getSubList(item, 'effects');
+            let fontSize = 1.0;
+            if (effectsNode) {
+              const fontNode = getSubList(effectsNode, 'font');
+              if (fontNode) {
+                const sizeNode = getSubList(fontNode, 'size');
+                if (sizeNode) fontSize = parseFloat(sizeNode[1] as string) || 1.0;
+              }
+            }
+            if (textContent && atNode) {
+              const layer = mapLayerName(layerNode && typeof layerNode[1] === 'string' ? layerNode[1] : 'F.Silkscreen');
+              shapes.push({
+                type: 'text',
+                layer,
+                x: parseFloat(atNode[1] as string) || 0,
+                y: parseFloat(atNode[2] as string) || 0,
+                text: textContent,
+                fontSize,
               });
             }
           }

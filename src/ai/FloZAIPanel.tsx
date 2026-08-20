@@ -21,6 +21,7 @@ import { secureStorage } from '../core/secureStorage';
 import { eventBus } from '../core/eventBus';
 import {
   Sparkles,
+  Cpu,
   Send,
   Square,
   Settings,
@@ -294,12 +295,12 @@ Ask any question about your design, or click a suggestion below:`,
       <div className="h-10 bg-cad-header border-b border-cad-border px-3 flex items-center justify-between">
         <div className="flex items-center space-x-2">
           <div className="p-1 rounded bg-blue-600/20 text-blue-500 dark:text-blue-400 border border-blue-500/30">
-            <Sparkles size={14} />
+            <Cpu size={14} />
           </div>
           <div>
             <div className="flex items-center gap-1.5">
               <span className="font-bold text-cad-text uppercase font-mono tracking-wider text-[11px]">
-                FloZ AI
+                AI Assistant
               </span>
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
             </div>
@@ -308,7 +309,7 @@ Ask any question about your design, or click a suggestion below:`,
                 ? 'OpenRouter'
                 : settings.provider === 'ollama'
                 ? 'Ollama (Local)'
-                : 'FloZ Local Engine'}
+                : 'FloZ Engineering Engine'}
             </span>
           </div>
         </div>
@@ -367,13 +368,13 @@ Ask any question about your design, or click a suggestion below:`,
       {/* 2. Context Pills */}
       <div className="px-3 py-1.5 bg-cad-subpanel border-b border-cad-border flex items-center gap-1 overflow-x-auto text-[10px] font-mono no-scrollbar">
         <span className="text-cad-textMuted shrink-0">Context:</span>
-        <span className="px-1.5 py-0.5 rounded bg-blue-950/60 border border-blue-500/30 text-blue-300 shrink-0">
+        <span className="px-1.5 py-0.5 rounded bg-blue-950/40 border border-blue-500/30 text-blue-400 shrink-0">
           Schematic ({project.schematic.sheets[0].symbols.length} parts)
         </span>
-        <span className="px-1.5 py-0.5 rounded bg-emerald-950/60 border border-emerald-500/30 text-emerald-300 shrink-0">
+        <span className="px-1.5 py-0.5 rounded bg-emerald-950/40 border border-emerald-500/30 text-emerald-400 shrink-0">
           PCB ({project.pcb.footprints.length} footprints)
         </span>
-        <span className="px-1.5 py-0.5 rounded bg-amber-950/60 border border-amber-500/30 text-amber-300 shrink-0">
+        <span className="px-1.5 py-0.5 rounded bg-amber-950/40 border border-amber-500/30 text-amber-400 shrink-0">
           ERC Active
         </span>
       </div>
@@ -403,7 +404,7 @@ Ask any question about your design, or click a suggestion below:`,
             >
               {/* Message Header */}
               <div className="flex items-center space-x-1.5 text-[10px] font-mono text-cad-textMuted px-1">
-                <span className="font-semibold text-slate-300">{isUser ? 'You' : 'FloZ AI'}</span>
+                <span className="font-semibold text-cad-text">{isUser ? 'You' : 'AI Assistant'}</span>
                 <span>•</span>
                 <span>{msg.timestamp}</span>
               </div>
@@ -412,8 +413,8 @@ Ask any question about your design, or click a suggestion below:`,
               <div
                 className={`p-3 rounded-lg max-w-[95%] border leading-relaxed text-xs ${
                   isUser
-                    ? 'bg-blue-600/15 border-blue-500/40 text-slate-100'
-                    : 'bg-cad-subpanel/80 border-cad-border text-slate-200'
+                    ? 'bg-blue-600/15 border-blue-500/40 text-cad-text'
+                    : 'bg-cad-subpanel border-cad-border text-cad-text'
                 }`}
               >
                 {/* Tool Activities Chips */}

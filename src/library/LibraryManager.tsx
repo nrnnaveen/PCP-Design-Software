@@ -47,6 +47,9 @@ export const LibraryManager: React.FC<Props> = ({ isOpen, onClose }) => {
   const [isDraggingOver, setIsDraggingOver] = useState<boolean>(false);
   const [statusNotification, setStatusNotification] = useState<string | null>(null);
 
+  const [isLoadingLib, setIsLoadingLib] = useState<boolean>(false);
+  const [isBulkLoading, setIsBulkLoading] = useState<boolean>(false);
+
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const folderInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -62,14 +65,26 @@ export const LibraryManager: React.FC<Props> = ({ isOpen, onClose }) => {
     return unsub;
   }, [selectedLibId]);
 
+  const selectedLibrary = libraries.find((l) => l.id === selectedLibId);
+
+  // Synchronize selection
+  useEffect(() => {
+    if (!selectedLibrary) return;
+    if (selectedLibrary.symbols.length > 0 && (!selectedSymbol || !selectedLibrary.symbols.find((s) => s.id === selectedSymbol.id))) {
+      setSelectedSymbol(selectedLibrary.symbols[0]);
+      setSelectedFootprint(undefined);
+    } else if (selectedLibrary.footprints.length > 0 && (!selectedFootprint || !selectedLibrary.footprints.find((f) => f.id === selectedFootprint.id))) {
+      setSelectedFootprint(selectedLibrary.footprints[0]);
+      setSelectedSymbol(undefined);
+    }
+  }, [selectedLibId, selectedLibrary?.id]);
+
   if (!isOpen) return null;
 
   const showStatus = (msg: string) => {
     setStatusNotification(msg);
     setTimeout(() => setStatusNotification(null), 3000);
   };
-
-  const selectedLibrary = libraries.find((l) => l.id === selectedLibId);
 
   // Filtered Libraries
   const filteredLibraries = libraries.filter((lib) => {
@@ -88,50 +103,63 @@ export const LibraryManager: React.FC<Props> = ({ isOpen, onClose }) => {
   };
 
   // Handle Drag & Drop
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDraggingOver(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDraggingOver(false);
+  };
+
   const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault();
     setIsDraggingOver(false);
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      const fileArray = Array.from(e.dataTransfer.files);
-      const analysis = await LibraryImportAnalyzer.analyzeFiles(fileArray);
-      setImportAnalysis(analysis);
+      await handleFilesSelected(e.dataTransfer.files);
     }
   };
 
-  // Remove Library
+  // Handle Import Confirmed
+  const handleImportConfirmed = (newLib: LibraryPackage) => {
+    libraryRegistry.addLibrary(newLib);
+    setImportAnalysis(null);
+    setSelectedLibId(newLib.id);
+    showStatus(`Successfully imported library "${newLib.name}" (${newLib.symbols.length} symbols, ${newLib.footprints.length} footprints)`);
+  };
+
   const handleRemoveLib = (libId: string) => {
-    if (confirm('Are you sure you want to remove this imported library?')) {
-      const success = libraryRegistry.removeLibrary(libId);
-      if (success) {
-        showStatus('Library removed successfully.');
-        setSelectedLibId(libraries.find((l) => l.id !== libId)?.id || '');
-      }
+    const success = libraryRegistry.removeLibrary(libId);
+    if (success) {
+      showStatus('Library removed.');
+      const remaining = libraryRegistry.getLibraries();
+      if (remaining.length > 0) setSelectedLibId(remaining[0].id);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md select-none">
-      <div
-        onDragOver={(e) => {
-          e.preventDefault();
-          setIsDraggingOver(true);
-        }}
-        onDragLeave={() => setIsDraggingOver(false)}
-        onDrop={handleDrop}
-        className={`bg-cad-panel border w-[1100px] h-[720px] rounded-xl shadow-2xl flex flex-col overflow-hidden text-cad-text transition-all ${
-          isDraggingOver ? 'border-blue-500 scale-[1.005]' : 'border-cad-border'
-        }`}
-      >
-        {/* Top Header */}
-        <div className="h-14 bg-cad-header border-b border-cad-border px-6 flex items-center justify-between">
+    <div
+      className={`fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm select-none ${isDraggingOver ? 'ring-4 ring-blue-500/50' : ''}`}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
+      <div className="bg-cad-panel border border-cad-border w-[1100px] h-[720px] rounded-xl shadow-2xl flex flex-col overflow-hidden text-cad-text">
+        {/* Header */}
+        <div className="h-14 bg-cad-header border-b border-cad-border px-4 flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <div className="p-2 bg-blue-600/20 text-blue-400 rounded-lg border border-blue-500/30">
               <Layers size={20} />
             </div>
             <div>
-              <h1 className="text-sm font-bold text-white tracking-wide">FloZ ECA Library Manager</h1>
+              <h1 className="text-sm font-bold text-white tracking-wide flex items-center gap-2">
+                FloZ ECA Library Manager
+                <span className="text-[10px] px-2 py-0.5 bg-blue-500/20 text-blue-300 border border-blue-500/30 rounded font-mono">
+                  {libraries.length} Libraries Available
+                </span>
+              </h1>
               <p className="text-[11px] text-cad-textMuted font-mono">
-                System & Imported KiCad Symbol (.kicad_sym) and Footprint (.kicad_mod) Packages
+                System, Project, and User-Imported Component Packages
               </p>
             </div>
           </div>
@@ -280,13 +308,20 @@ export const LibraryManager: React.FC<Props> = ({ isOpen, onClose }) => {
 
                 {/* Symbols & Footprints List */}
                 <div className="flex-1 overflow-y-auto p-2 space-y-3">
+                  {isLoadingLib && (
+                    <div className="p-8 flex flex-col items-center justify-center text-cad-textMuted text-xs font-mono space-y-2">
+                      <RefreshCw size={20} className="animate-spin text-blue-400" />
+                      <span>Loading library components...</span>
+                    </div>
+                  )}
+
                   {selectedLibrary.symbols.length > 0 && (
                     <div>
                       <div className="text-[10px] uppercase font-mono font-bold text-cad-textMuted px-1 mb-1">
                         Symbols ({selectedLibrary.symbols.length})
                       </div>
                       <div className="space-y-1">
-                        {selectedLibrary.symbols.map((sym) => {
+                        {selectedLibrary.symbols.slice(0, 50).map((sym) => {
                           const hasUnits = Boolean(sym.units && sym.units.length > 1);
                           return (
                             <div
@@ -317,6 +352,11 @@ export const LibraryManager: React.FC<Props> = ({ isOpen, onClose }) => {
                           );
                         })}
                       </div>
+                      {selectedLibrary.symbols.length > 50 && (
+                        <div className="text-[10px] text-cad-textMuted font-mono text-center py-1 mt-1">
+                          Showing first 50 of {selectedLibrary.symbols.length} symbols
+                        </div>
+                      )}
                     </div>
                   )}
 
@@ -326,7 +366,7 @@ export const LibraryManager: React.FC<Props> = ({ isOpen, onClose }) => {
                         Footprints ({selectedLibrary.footprints.length})
                       </div>
                       <div className="space-y-1">
-                        {selectedLibrary.footprints.map((fp) => (
+                        {selectedLibrary.footprints.slice(0, 50).map((fp) => (
                           <div
                             key={fp.id}
                             onClick={() => {
@@ -347,6 +387,11 @@ export const LibraryManager: React.FC<Props> = ({ isOpen, onClose }) => {
                           </div>
                         ))}
                       </div>
+                      {selectedLibrary.footprints.length > 50 && (
+                        <div className="text-[10px] text-cad-textMuted font-mono text-center py-1 mt-1">
+                          Showing first 50 of {selectedLibrary.footprints.length} footprints
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

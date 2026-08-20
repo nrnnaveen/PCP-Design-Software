@@ -37,6 +37,8 @@ export interface PadHitInfo {
   netName: string;
 }
 
+export type RoutingMode = '45' | '90' | 'free';
+
 export class InteractiveRouter {
   /**
    * Computes 45-degree octilinear route segments from start point to current mouse position.
@@ -83,6 +85,60 @@ export class InteractiveRouter {
     }
 
     return segments;
+  }
+
+  /**
+   * Computes 90-degree orthogonal route segments from start point to mouse position.
+   */
+  public static compute90DegreePath(
+    start: Point2D,
+    end: Point2D,
+    posture: 0 | 1 = 0
+  ): RouteSegment[] {
+    if (start.x === end.x || start.y === end.y) {
+      return [{ x1: start.x, y1: start.y, x2: end.x, y2: end.y }];
+    }
+
+    if (posture === 0) {
+      // Horizontal then Vertical
+      return [
+        { x1: start.x, y1: start.y, x2: end.x, y2: start.y },
+        { x1: end.x, y1: start.y, x2: end.x, y2: end.y },
+      ];
+    } else {
+      // Vertical then Horizontal
+      return [
+        { x1: start.x, y1: start.y, x2: start.x, y2: end.y },
+        { x1: start.x, y1: end.y, x2: end.x, y2: end.y },
+      ];
+    }
+  }
+
+  /**
+   * Computes direct free-angle route segment.
+   */
+  public static computeDirectPath(start: Point2D, end: Point2D): RouteSegment[] {
+    return [{ x1: start.x, y1: start.y, x2: end.x, y2: end.y }];
+  }
+
+  /**
+   * Computes route path according to active routing mode and posture.
+   */
+  public static computePath(
+    start: Point2D,
+    end: Point2D,
+    mode: RoutingMode = '45',
+    posture: 0 | 1 = 0
+  ): RouteSegment[] {
+    switch (mode) {
+      case '90':
+        return this.compute90DegreePath(start, end, posture);
+      case 'free':
+        return this.computeDirectPath(start, end);
+      case '45':
+      default:
+        return this.compute45DegreePath(start, end, posture);
+    }
   }
 
   /**

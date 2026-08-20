@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { LibraryImportAnalyzer } from '../library/importAnalyzer';
 import { libraryRegistry } from '../library/libraryRegistry';
+import { KiCadFootprintParser } from '../library/kicadParser';
 
 describe('Library Import Analyzer & Registry Tests', () => {
   it('should classify multi-file uploads into symbols, footprints, and unsupported items', async () => {
@@ -90,5 +91,42 @@ describe('Library Import Analyzer & Registry Tests', () => {
     libraryRegistry.removeLibrary('imported_rf_modules');
     const cleanedSyms = libraryRegistry.getAllSymbols();
     expect(cleanedSyms.find((s) => s.name === 'nRF24L01+')).toBeUndefined();
+  });
+
+  it('should parse advanced KiCad footprint geometry with arcs, polygons, texts, and pads', () => {
+    const rawFp = `(footprint "BatteryHolder_Keystone_1058_1x2032"
+      (version 20240108)
+      (generator "pcbnew")
+      (layer "F.Cu")
+      (descr "Keystone 1058 CR2032 battery retainer")
+      (tags "battery holder cr2032")
+      (fp_line (start -10.5 5.5) (end 10.5 5.5) (stroke (width 0.15)) (layer "F.SilkS"))
+      (fp_rect (start -8 -4) (end 8 4) (stroke (width 0.15)) (layer "F.Fab"))
+      (fp_circle (center 0 0) (end 10 0) (stroke (width 0.15)) (layer "F.SilkS"))
+      (fp_arc (start 0 10) (mid 10 0) (end 0 -10) (stroke (width 0.15)) (layer "F.SilkS"))
+      (fp_poly (pts (xy -2 -2) (xy 2 -2) (xy 0 2)) (stroke (width 0.15)) (layer "F.SilkS"))
+      (fp_text user "CR2032" (at 0 0 0) (layer "F.SilkS"))
+      (pad "1" smd rect (at -11 0) (size 2.5 3.0) (layers "F.Cu" "F.Paste" "F.Mask"))
+      (pad "2" smd rect (at 11 0) (size 2.5 3.0) (layers "F.Cu" "F.Paste" "F.Mask"))
+      (pad "3" thru_hole circle (at 0 -8) (size 2.0 2.0) (drill 1.0) (layers "F.Cu" "B.Cu"))
+    )`;
+
+    const res = KiCadFootprintParser.parse(rawFp, 'Battery');
+    expect(res.errors.length).toBe(0);
+    expect(res.footprints.length).toBe(1);
+
+    const fp = res.footprints[0];
+    expect(fp.name).toBe('BatteryHolder_Keystone_1058_1x2032');
+    expect(fp.pads.length).toBe(3);
+    expect(fp.pads[0].type).toBe('smd');
+    expect(fp.pads[2].type).toBe('through_hole');
+    expect(fp.pads[2].drillDiameter).toBe(1.0);
+
+    expect(fp.shapes.some((s: any) => s.type === 'line')).toBe(true);
+    expect(fp.shapes.some((s: any) => s.type === 'rect')).toBe(true);
+    expect(fp.shapes.some((s: any) => s.type === 'circle')).toBe(true);
+    expect(fp.shapes.some((s: any) => s.type === 'arc')).toBe(true);
+    expect(fp.shapes.some((s: any) => s.type === 'polygon')).toBe(true);
+    expect(fp.shapes.some((s: any) => s.type === 'text')).toBe(true);
   });
 });

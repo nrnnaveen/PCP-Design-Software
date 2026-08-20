@@ -7,13 +7,14 @@
 import React, { useRef, useEffect, useState, useMemo } from 'react';
 import { SymbolDefinition, FootprintDefinition, SymbolUnitDefinition, SchematicPin, SymbolGraphicShape } from '../core/types';
 import { ZoomIn, ZoomOut, Maximize2, Grid, Layers } from 'lucide-react';
+import { AppThemeId, getCanvasColors } from '../theme/themeManager';
 
 interface Props {
   symbol?: SymbolDefinition;
   footprint?: FootprintDefinition;
   activeUnitIndex?: number | 'all';
   onSelectUnitIndex?: (index: number | 'all') => void;
-  theme?: 'dark' | 'light';
+  theme?: AppThemeId;
   className?: string;
 }
 
@@ -65,15 +66,16 @@ export const ComponentPreviewCanvas: React.FC<Props> = ({
     const centerX = width / 2 + pan.x;
     const centerY = height / 2 + pan.y;
 
-    const isLight = theme === 'light' || document.documentElement.getAttribute('data-theme') === 'light';
+    const colors = getCanvasColors(theme);
+    const isLight = colors.isLight;
 
     // 1. CAD Background
-    ctx.fillStyle = isLight ? '#f8fafc' : '#111418';
+    ctx.fillStyle = colors.canvasBg;
     ctx.fillRect(0, 0, width, height);
 
     // 2. Dot Grid
     if (showGrid) {
-      ctx.fillStyle = isLight ? '#cbd5e1' : '#232934';
+      ctx.fillStyle = colors.gridColor;
       const gridSpacing = 2.54 * zoom;
       const startX = (centerX % gridSpacing) - gridSpacing;
       const startY = (centerY % gridSpacing) - gridSpacing;
@@ -360,6 +362,30 @@ export const ComponentPreviewCanvas: React.FC<Props> = ({
           ctx.beginPath();
           ctx.arc((shape.x || 0) * zoom, (shape.y || 0) * zoom, shape.radius * zoom, 0, Math.PI * 2);
           ctx.stroke();
+        } else if (shape.type === 'arc' && shape.radius) {
+          ctx.beginPath();
+          ctx.arc(
+            (shape.x || 0) * zoom,
+            (shape.y || 0) * zoom,
+            shape.radius * zoom,
+            shape.startAngle || 0,
+            shape.endAngle || Math.PI
+          );
+          ctx.stroke();
+        } else if (shape.type === 'polygon' && shape.points && shape.points.length >= 3) {
+          ctx.beginPath();
+          ctx.moveTo(shape.points[0].x * zoom, shape.points[0].y * zoom);
+          for (let i = 1; i < shape.points.length; i++) {
+            ctx.lineTo(shape.points[i].x * zoom, shape.points[i].y * zoom);
+          }
+          ctx.closePath();
+          ctx.stroke();
+        } else if (shape.type === 'text' && shape.text) {
+          ctx.save();
+          ctx.font = `${Math.max(7, (shape.fontSize || 1.0) * 1.5 * zoom)}px "Inter", sans-serif`;
+          ctx.fillStyle = isLight ? '#475569' : '#cbd5e1';
+          ctx.fillText(shape.text, (shape.x || 0) * zoom, (shape.y || 0) * zoom);
+          ctx.restore();
         }
       });
 
