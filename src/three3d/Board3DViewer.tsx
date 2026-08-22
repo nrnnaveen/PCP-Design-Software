@@ -73,8 +73,33 @@ export const Board3DViewer: React.FC<Props> = ({ project, onSelectComponent, the
 
     const pcb = project.pcb;
     const boardThickness = pcb.boardThickness || 1.6; // standard or custom stackup thickness
+    const isFlexBoard = pcb.stackup?.some((l) => l.isFlex) || false;
 
-    // FR4 Substrate Extrusion from board outline
+    // Calculate deterministic bounding box & center for centering at (0, 0, 0)
+    let minX = Infinity;
+    let maxX = -Infinity;
+    let minY = Infinity;
+    let maxY = -Infinity;
+    if (pcb.boardOutline.length >= 3) {
+      pcb.boardOutline.forEach((p) => {
+        if (p.x < minX) minX = p.x;
+        if (p.x > maxX) maxX = p.x;
+        if (p.y < minY) minY = p.y;
+        if (p.y > maxY) maxY = p.y;
+      });
+    } else {
+      minX = 0;
+      maxX = 100;
+      minY = 0;
+      maxY = 80;
+    }
+    const boardCenterX = (minX + maxX) / 2;
+    const boardCenterY = (minY + maxY) / 2;
+
+    // Deterministically center the entire board model at the world origin
+    boardGroup.position.set(-boardCenterX, -boardCenterY, 0);
+
+    // FR4 / Flex Substrate Extrusion from board outline
     const outlineShape = new THREE.Shape();
     if (pcb.boardOutline.length >= 3) {
       outlineShape.moveTo(pcb.boardOutline[0].x, pcb.boardOutline[0].y);
@@ -104,29 +129,29 @@ export const Board3DViewer: React.FC<Props> = ({ project, onSelectComponent, the
 
     const boardGeo = new THREE.ExtrudeGeometry(outlineShape, extrudeSettings);
     const boardMat = new THREE.MeshStandardMaterial({
-      color: new THREE.Color(soldermaskColor),
-      roughness: 0.35,
-      metalness: 0.1,
+      color: new THREE.Color(isFlexBoard ? '#f59e0b' : soldermaskColor),
+      roughness: isFlexBoard ? 0.4 : 0.35,
+      metalness: isFlexBoard ? 0.2 : 0.1,
       transparent: isTransparent,
       opacity: isTransparent ? 0.6 : 1.0,
     });
     const boardMesh = new THREE.Mesh(boardGeo, boardMat);
     boardGroup.add(boardMesh);
 
-    // Materials
+    // High-Fidelity PBR Materials
     const goldMat = new THREE.MeshStandardMaterial({
       color: 0xeab308,
-      metalness: 0.85,
-      roughness: 0.25,
-    });
-    const tinMat = new THREE.MeshStandardMaterial({
-      color: 0xd1d5db,
       metalness: 0.9,
       roughness: 0.2,
     });
+    const tinMat = new THREE.MeshStandardMaterial({
+      color: 0xd1d5db,
+      metalness: 0.85,
+      roughness: 0.25,
+    });
     const copperTopMat = new THREE.MeshStandardMaterial({
       color: 0xe05638,
-      metalness: 0.7,
+      metalness: 0.85,
       roughness: 0.3,
     });
     const silkMat = new THREE.MeshBasicMaterial({
@@ -490,13 +515,13 @@ export const Board3DViewer: React.FC<Props> = ({ project, onSelectComponent, the
     const animate = () => {
       animationFrameId = requestAnimationFrame(animate);
 
-      // Spherical orbital camera
-      const cx = 37.5 + zoomDist * Math.cos(targetRotX) * Math.sin(targetRotZ);
-      const cy = 27.5 - zoomDist * Math.cos(targetRotX) * Math.cos(targetRotZ);
+      // Spherical orbital camera centered around world origin (0, 0, 0)
+      const cx = zoomDist * Math.cos(targetRotX) * Math.sin(targetRotZ);
+      const cy = -zoomDist * Math.cos(targetRotX) * Math.cos(targetRotZ);
       const cz = zoomDist * Math.sin(targetRotX);
 
       camera.position.set(cx, cy, cz);
-      camera.lookAt(37.5, 27.5, 0.8);
+      camera.lookAt(0, 0, 0);
 
       renderer.render(scene, camera);
     };

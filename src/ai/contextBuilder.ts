@@ -60,7 +60,15 @@ export class ContextBuilder {
     }));
 
     const labels = activeSheet.labels.map((l) => this.sanitizeString(l.text));
-    const powerRails = activeSheet.powerSymbols.map((p) => this.sanitizeString(p.netName));
+    const powerNetNames = Object.values(connectivity.netGraph.nets)
+      .filter((n) => n.isPower || /^(VCC|VDD|\+?3\.3V|\+?5V|VBUS|GND|VSSA|VSS)/i.test(n.name))
+      .map((n) => this.sanitizeString(n.name));
+    const powerRails = Array.from(
+      new Set([
+        ...activeSheet.powerSymbols.map((p) => this.sanitizeString(p.netName)),
+        ...powerNetNames,
+      ])
+    );
 
     const violations = ercViolations.map((v) => ({
       code: v.code,

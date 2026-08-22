@@ -155,14 +155,14 @@ export const AppShell: React.FC = () => {
     setActiveTab(tab);
     setShowProjectManager(false);
     const targetUrl = `/workspace/${tab}`;
-    if (window.location.pathname !== targetUrl) {
+    if (window.location.protocol !== 'file:' && window.location.pathname !== targetUrl) {
       window.history.pushState(null, '', targetUrl);
     }
   };
 
   const openDashboard = () => {
     setShowProjectManager(true);
-    if (window.location.pathname !== '/dashboard') {
+    if (window.location.protocol !== 'file:' && window.location.pathname !== '/dashboard') {
       window.history.pushState(null, '', '/dashboard');
     }
   };
@@ -170,7 +170,11 @@ export const AppShell: React.FC = () => {
   const closeDashboard = () => {
     setShowProjectManager(false);
     const targetUrl = `/workspace/${activeTab}`;
-    if (window.location.pathname !== targetUrl && window.location.pathname !== '/workspace') {
+    if (
+      window.location.protocol !== 'file:' &&
+      window.location.pathname !== targetUrl &&
+      window.location.pathname !== '/workspace'
+    ) {
       window.history.pushState(null, '', targetUrl);
     }
   };
@@ -807,6 +811,32 @@ export const AppShell: React.FC = () => {
           {activeTab === 'gerbview' && <GerberViewer project={project} />}
 
           {activeTab === 'calculator' && <Calculators />}
+
+          {/* Floating AI Assistant Hub (Non-blocking, Isolated Event Bubbling) */}
+          {(activeTab === 'schematic' || activeTab === 'pcb') && (
+            <div
+              className="absolute bottom-5 right-5 z-30 pointer-events-auto"
+              onMouseDown={(e) => e.stopPropagation()}
+              onClick={(e) => e.stopPropagation()}
+              onDoubleClick={(e) => e.stopPropagation()}
+            >
+              <button
+                onClick={() => {
+                  if (rightPanel === 'ai' && !rightPanelCollapsed) {
+                    setRightPanelCollapsed(true);
+                  } else {
+                    setRightPanel('ai');
+                    setRightPanelCollapsed(false);
+                  }
+                }}
+                title="FloZ AI Assistant (Copilot)"
+                className="flex items-center gap-2 px-3 py-1.5 bg-cad-panel hover:bg-cad-subpanel text-cad-text hover:text-white rounded-lg shadow-md border border-cad-border hover:border-blue-500/50 transition-colors text-xs font-semibold select-none cursor-pointer"
+              >
+                <Sparkles size={14} className="text-blue-400" />
+                <span>AI Copilot</span>
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Right Dock Panel (Fluidly Resizable Width) */}

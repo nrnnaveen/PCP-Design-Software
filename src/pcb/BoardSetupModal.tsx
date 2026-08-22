@@ -104,14 +104,20 @@ export const BoardSetupModal: React.FC<Props> = ({ project, isOpen, onClose, onS
     onClose();
   };
 
-  const setLayerPreset = (layersCount: 2 | 4 | 6) => {
-    if (layersCount === 2) {
+  const setLayerPreset = (layersCount: 1 | 2 | 4 | 6 | 8, isFlex = false) => {
+    if (layersCount === 1) {
       setStackup([
         { id: 'sm_top', name: 'F.Mask', type: 'soldermask', thicknessMm: 0.015, color: '#15803d' },
         { id: 'cu_top', name: 'F.Cu', type: 'copper', thicknessMm: 0.035, color: '#e05638' },
         { id: 'core', name: 'Core (FR4)', type: 'core', thicknessMm: 1.5, dielectricConstant: 4.5, color: '#d97706' },
+      ]);
+    } else if (layersCount === 2) {
+      setStackup([
+        { id: 'sm_top', name: 'F.Mask', type: 'soldermask', thicknessMm: 0.015, color: isFlex ? '#f59e0b' : '#15803d', isCoverlay: isFlex },
+        { id: 'cu_top', name: 'F.Cu', type: 'copper', thicknessMm: 0.035, color: '#e05638' },
+        { id: 'core', name: isFlex ? 'Polyimide Core' : 'Core (FR4)', type: 'core', thicknessMm: isFlex ? 0.1 : 1.5, dielectricConstant: isFlex ? 3.4 : 4.5, color: isFlex ? '#b45309' : '#d97706', isFlex },
         { id: 'cu_bot', name: 'B.Cu', type: 'copper', thicknessMm: 0.035, color: '#3b82f6' },
-        { id: 'sm_bot', name: 'B.Mask', type: 'soldermask', thicknessMm: 0.015, color: '#047857' },
+        { id: 'sm_bot', name: 'B.Mask', type: 'soldermask', thicknessMm: 0.015, color: isFlex ? '#f59e0b' : '#047857', isCoverlay: isFlex },
       ]);
     } else if (layersCount === 4) {
       setStackup([
@@ -119,7 +125,7 @@ export const BoardSetupModal: React.FC<Props> = ({ project, isOpen, onClose, onS
         { id: 'cu_top', name: 'F.Cu', type: 'copper', thicknessMm: 0.035, color: '#e05638' },
         { id: 'pp1', name: 'Prepreg 2116', type: 'prepreg', thicknessMm: 0.2, dielectricConstant: 4.2, color: '#f59e0b' },
         { id: 'cu_in1', name: 'In1.Cu (GND)', type: 'copper', thicknessMm: 0.035, color: '#d97706' },
-        { id: 'core', name: 'Core (FR4)', type: 'core', thicknessMm: 1.0, dielectricConstant: 4.5, color: '#b45309' },
+        { id: 'core', name: isFlex ? 'Flex Polyimide Core' : 'Core (FR4)', type: 'core', thicknessMm: isFlex ? 0.2 : 1.0, dielectricConstant: isFlex ? 3.4 : 4.5, color: '#b45309', isFlex },
         { id: 'cu_in2', name: 'In2.Cu (PWR)', type: 'copper', thicknessMm: 0.035, color: '#059669' },
         { id: 'pp2', name: 'Prepreg 2116', type: 'prepreg', thicknessMm: 0.2, dielectricConstant: 4.2, color: '#f59e0b' },
         { id: 'cu_bot', name: 'B.Cu', type: 'copper', thicknessMm: 0.035, color: '#3b82f6' },
@@ -138,6 +144,26 @@ export const BoardSetupModal: React.FC<Props> = ({ project, isOpen, onClose, onS
         { id: 'core2', name: 'Core 2', type: 'core', thicknessMm: 0.4, dielectricConstant: 4.5, color: '#b45309' },
         { id: 'cu_in4', name: 'In4.Cu (GND)', type: 'copper', thicknessMm: 0.035, color: '#7c3aed' },
         { id: 'pp3', name: 'Prepreg', type: 'prepreg', thicknessMm: 0.15, dielectricConstant: 4.2, color: '#f59e0b' },
+        { id: 'cu_bot', name: 'B.Cu', type: 'copper', thicknessMm: 0.035, color: '#3b82f6' },
+        { id: 'sm_bot', name: 'B.Mask', type: 'soldermask', thicknessMm: 0.015, color: '#047857' },
+      ]);
+    } else if (layersCount === 8) {
+      setStackup([
+        { id: 'sm_top', name: 'F.Mask', type: 'soldermask', thicknessMm: 0.015, color: '#15803d' },
+        { id: 'cu_top', name: 'F.Cu', type: 'copper', thicknessMm: 0.035, color: '#e05638' },
+        { id: 'pp1', name: 'Prepreg', type: 'prepreg', thicknessMm: 0.1, dielectricConstant: 4.2, color: '#f59e0b' },
+        { id: 'cu_in1', name: 'In1.Cu (GND)', type: 'copper', thicknessMm: 0.035, color: '#d97706' },
+        { id: 'core1', name: 'Core 1', type: 'core', thicknessMm: 0.25, dielectricConstant: 4.5, color: '#b45309' },
+        { id: 'cu_in2', name: 'In2.Cu (SIG1)', type: 'copper', thicknessMm: 0.035, color: '#059669' },
+        { id: 'pp2', name: 'Prepreg', type: 'prepreg', thicknessMm: 0.1, dielectricConstant: 4.2, color: '#f59e0b' },
+        { id: 'cu_in3', name: 'In3.Cu (PWR1)', type: 'copper', thicknessMm: 0.035, color: '#0284c7' },
+        { id: 'core2', name: 'Core 2 (Center)', type: 'core', thicknessMm: 0.3, dielectricConstant: 4.5, color: '#b45309' },
+        { id: 'cu_in4', name: 'In4.Cu (PWR2)', type: 'copper', thicknessMm: 0.035, color: '#6366f1' },
+        { id: 'pp3', name: 'Prepreg', type: 'prepreg', thicknessMm: 0.1, dielectricConstant: 4.2, color: '#f59e0b' },
+        { id: 'cu_in5', name: 'In5.Cu (SIG2)', type: 'copper', thicknessMm: 0.035, color: '#ec4899' },
+        { id: 'core3', name: 'Core 3', type: 'core', thicknessMm: 0.25, dielectricConstant: 4.5, color: '#b45309' },
+        { id: 'cu_in6', name: 'In6.Cu (GND)', type: 'copper', thicknessMm: 0.035, color: '#7c3aed' },
+        { id: 'pp4', name: 'Prepreg', type: 'prepreg', thicknessMm: 0.1, dielectricConstant: 4.2, color: '#f59e0b' },
         { id: 'cu_bot', name: 'B.Cu', type: 'copper', thicknessMm: 0.035, color: '#3b82f6' },
         { id: 'sm_bot', name: 'B.Mask', type: 'soldermask', thicknessMm: 0.015, color: '#047857' },
       ]);
@@ -219,8 +245,14 @@ export const BoardSetupModal: React.FC<Props> = ({ project, isOpen, onClose, onS
                 </div>
 
                 {/* Preset Buttons */}
-                <div className="flex items-center space-x-1.5">
+                <div className="flex items-center space-x-1.5 flex-wrap gap-y-1">
                   <span className="text-[11px] text-cad-textMuted mr-1">Presets:</span>
+                  <button
+                    onClick={() => setLayerPreset(1)}
+                    className="px-2 py-1 bg-cad-subpanel hover:bg-cad-border border border-cad-border rounded font-mono text-[11px]"
+                  >
+                    1-Layer
+                  </button>
                   <button
                     onClick={() => setLayerPreset(2)}
                     className="px-2 py-1 bg-cad-subpanel hover:bg-cad-border border border-cad-border rounded font-mono text-[11px]"
@@ -238,6 +270,18 @@ export const BoardSetupModal: React.FC<Props> = ({ project, isOpen, onClose, onS
                     className="px-2 py-1 bg-cad-subpanel hover:bg-cad-border border border-cad-border rounded font-mono text-[11px]"
                   >
                     6-Layer
+                  </button>
+                  <button
+                    onClick={() => setLayerPreset(8)}
+                    className="px-2 py-1 bg-cad-subpanel hover:bg-cad-border border border-cad-border rounded font-mono text-[11px]"
+                  >
+                    8-Layer
+                  </button>
+                  <button
+                    onClick={() => setLayerPreset(2, true)}
+                    className="px-2 py-1 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 rounded font-mono text-[11px]"
+                  >
+                    Flex 2L
                   </button>
                 </div>
               </div>

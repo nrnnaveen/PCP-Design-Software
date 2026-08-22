@@ -206,6 +206,12 @@ export type PCBLayerId =
   | 'B.Paste'
   | 'F.Adhesive'
   | 'B.Adhesive'
+  | 'F.Coverlay'
+  | 'B.Coverlay'
+  | 'Stiffener.FR4'
+  | 'Stiffener.PI'
+  | 'Stiffener.Alu'
+  | 'Bend.Lines'
   | 'F.Courtyard'
   | 'B.Courtyard'
   | 'F.CrtYd'
@@ -399,6 +405,11 @@ export interface StackupLayer {
   dielectricConstant?: number;
   lossTangent?: number;
   color?: string;
+  isFlex?: boolean;
+  isCoverlay?: boolean;
+  isStiffener?: boolean;
+  bendRadiusMm?: number;
+  bendAngleDeg?: number;
 }
 
 export interface PCBData {
@@ -597,6 +608,7 @@ export interface ProjectMetadata {
   id: string;
   name: string;
   version: string;
+  schemaVersion?: string;
   author: string;
   description: string;
   createdAt: string;

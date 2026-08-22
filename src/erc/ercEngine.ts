@@ -161,9 +161,18 @@ const PIN_MATRIX: Record<PinElectricalType, Record<PinElectricalType, PinMatrixR
   },
 };
 
+export const DEFAULT_ERC_CONFIG: ERCConfiguration = {
+  checkUnconnectedPins: true,
+  checkDanglingWires: true,
+  checkPinTypeConflicts: true,
+  checkMissingPowerDrivers: true,
+  checkDuplicateReferences: true,
+  checkEmptyValues: true,
+};
+
 export class ERCEngine {
   public static run(project: ApexProject, config?: ERCConfiguration): DiagnosticViolation[] {
-    const activeConfig = config || project.ercConfig;
+    const activeConfig = config || project.ercConfig || DEFAULT_ERC_CONFIG;
     const violations: DiagnosticViolation[] = [];
 
     project.schematic.sheets.forEach((sheet) => {

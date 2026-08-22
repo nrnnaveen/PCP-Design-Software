@@ -101,13 +101,12 @@ describe('Unified Web & Desktop Platform Packaging Suite', () => {
 
       // Windows targets
       expect(config.win).toBeDefined();
-      expect(config.win.target.some((t: any) => t.target === 'nsis')).toBe(true);
+      expect(config.win.target.some((t: any) => t.target === 'zip' || t.target === 'nsis')).toBe(true);
       expect(config.win.target.some((t: any) => t.target === 'portable')).toBe(true);
 
       // Linux targets
       expect(config.linux).toBeDefined();
       expect(config.linux.target.some((t: any) => t.target === 'AppImage')).toBe(true);
-      expect(config.linux.target.some((t: any) => t.target === 'deb')).toBe(true);
 
       // File association for .floz
       expect(config.win.fileAssociations[0].ext).toBe('floz');

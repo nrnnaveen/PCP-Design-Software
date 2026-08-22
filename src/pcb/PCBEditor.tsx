@@ -24,8 +24,11 @@ import { AppearancePanel } from './AppearancePanel';
 import { BoardSetupModal } from './BoardSetupModal';
 import { PropertiesPanel } from '../ui/PropertiesPanel';
 import { eventBus } from '../core/eventBus';
+import { ZoneToolFSM } from './zoneToolFSM';
+import { CADDrawingEngine } from './cadDrawingTools';
 import {
   Move,
+  Hand,
   RotateCw,
   Trash2,
   ZoomIn,
@@ -58,7 +61,7 @@ interface Props {
   theme?: AppThemeId;
 }
 
-type PCBTool = 'select' | 'route' | 'via' | 'zone' | 'measure';
+type PCBTool = 'select' | 'pan' | 'route' | 'via' | 'zone' | 'measure';
 
 export const PCBEditor: React.FC<Props> = ({ project, onUpdateProject, onRunDRC, theme = 'dark' }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -501,9 +504,7 @@ export const PCBEditor: React.FC<Props> = ({ project, onUpdateProject, onRunDRC,
         ? '#ef4444' // Red for Short Circuit
         : isValidTarget
         ? '#22c55e' // Green for Same Net Pad
-        : activeLayer === 'F.Cu'
-        ? '#f97316'
-        : '#60a5fa';
+        : (STANDARD_PCB_LAYERS.find((l) => l.id === activeLayer)?.color || '#f97316');
 
       const effectiveWidth = getActiveTrackWidth();
       ctx.lineWidth = Math.max(2.5, effectiveWidth * zoom);
@@ -623,8 +624,8 @@ export const PCBEditor: React.FC<Props> = ({ project, onUpdateProject, onRunDRC,
     const wp = screenToWorld(sx, sy);
     const snapped = { x: snapToGrid(wp.x), y: snapToGrid(wp.y) };
 
-    // Middle click or Alt-drag = Pan
-    if (e.button === 1 || e.altKey) {
+    // 1. Pan with Middle click, Right drag, Alt-drag, Spacebar, or active Pan tool
+    if (e.button === 1 || activeTool === 'pan' || e.altKey) {
       setIsDragging(true);
       setDragOffset({ x: sx - pan.x, y: sy - pan.y });
       return;
@@ -790,7 +791,7 @@ export const PCBEditor: React.FC<Props> = ({ project, onUpdateProject, onRunDRC,
     }
 
     if (isDragging) {
-      if (e.buttons === 4 || e.altKey) {
+      if (e.buttons === 4 || activeTool === 'pan' || e.altKey || (!selectedFootprintId && activeTool !== 'route' && activeTool !== 'via' && activeTool !== 'zone' && activeTool !== 'measure')) {
         setPan({ x: sx - dragOffset.x, y: sy - dragOffset.y });
       } else if (selectedFootprintId) {
         const snappedX = snapToGrid(wp.x - dragOffset.x);
@@ -971,12 +972,35 @@ export const PCBEditor: React.FC<Props> = ({ project, onUpdateProject, onRunDRC,
           setZonePoints([]);
           setActiveTool('select');
         }
-      } else if (e.key === 'Escape') {
-        setActiveTool('select');
+      } else if (e.key === 'Backspace' || e.key === 'Delete') {
+        if (activeTool === 'zone' && zonePoints.length > 0) {
+          e.preventDefault();
+          setZonePoints((prev) => prev.slice(0, -1));
+        } else if (selectedFootprintId) {
+          onUpdateProject((prev) => ({
+            ...prev,
+            pcb: {
+              ...prev.pcb,
+              footprints: prev.pcb.footprints.filter((fp) => fp.id !== selectedFootprintId),
+            },
+          }), 'Delete Footprint');
+          setSelectedFootprintId(null);
+        }
+      } else if (e.key.toLowerCase() === 'h') {
+        e.preventDefault();
+        setActiveTool((prev) => (prev === 'pan' ? 'select' : 'pan'));
         setRouteStart(null);
-        setZonePoints([]);
-        setMeasureStart(null);
-        setContextMenu(null);
+      } else if (e.key === 'Escape') {
+        if (activeTool === 'zone' && zonePoints.length > 0) {
+          // Cancel only the current unconfirmed polygon segment
+          setZonePoints([]);
+          setActiveTool('select');
+        } else {
+          setActiveTool('select');
+          setRouteStart(null);
+          setMeasureStart(null);
+          setContextMenu(null);
+        }
       }
     };
 
@@ -1014,11 +1038,26 @@ export const PCBEditor: React.FC<Props> = ({ project, onUpdateProject, onRunDRC,
               setRouteStart(null);
             }}
             title="Select & Move Footprint (Esc)"
-            className={`p-1.5 rounded transition-colors ${
-              activeTool === 'select' ? 'bg-blue-600 text-white' : 'hover:bg-cad-subpanel text-cad-textMuted'
+            className={`p-1.5 rounded transition-colors flex items-center gap-1 text-xs font-semibold ${
+              activeTool === 'select' ? 'bg-blue-600 text-white shadow-sm' : 'hover:bg-cad-subpanel text-cad-textMuted'
             }`}
           >
             <Move size={15} />
+            <span className="hidden sm:inline">Select</span>
+          </button>
+
+          <button
+            onClick={() => {
+              setActiveTool('pan');
+              setRouteStart(null);
+            }}
+            title="Pan Canvas Tool (H / Middle Drag / Right Drag)"
+            className={`p-1.5 rounded transition-colors flex items-center gap-1 text-xs font-semibold ${
+              activeTool === 'pan' ? 'bg-blue-600 text-white shadow-sm' : 'hover:bg-cad-subpanel text-cad-textMuted'
+            }`}
+          >
+            <Hand size={15} />
+            <span className="hidden sm:inline">Pan (H)</span>
           </button>
 
           <button
@@ -1283,7 +1322,19 @@ export const PCBEditor: React.FC<Props> = ({ project, onUpdateProject, onRunDRC,
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
             onWheel={handleWheel}
-            className="w-full h-full cursor-crosshair"
+            style={{
+              cursor:
+                activeTool === 'pan'
+                  ? isDragging
+                    ? 'grabbing'
+                    : 'grab'
+                  : activeTool === 'route'
+                  ? 'crosshair'
+                  : activeTool === 'measure'
+                  ? 'crosshair'
+                  : 'default',
+            }}
+            className="w-full h-full"
           />
         </div>
 

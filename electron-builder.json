@@ -17,7 +17,7 @@
   "win": {
     "target": [
       {
-        "target": "nsis",
+        "target": "zip",
         "arch": ["x64"]
       },
       {
@@ -46,10 +46,6 @@
     "target": [
       {
         "target": "AppImage",
-        "arch": ["x64"]
-      },
-      {
-        "target": "deb",
         "arch": ["x64"]
       }
     ],

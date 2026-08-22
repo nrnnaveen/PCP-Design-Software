@@ -205,7 +205,69 @@ export const STANDARD_PCB_LAYERS: LayerMetadata[] = [
     side: 'bottom',
   },
 
-  // 4. Mechanical & Outline
+  // 4. Flex PCB Special Layers
+  {
+    id: 'F.Coverlay',
+    name: 'F.Coverlay',
+    category: 'mask',
+    isCopper: false,
+    color: '#d97706', // Amber Coverlay
+    defaultOpacity: 0.8,
+    description: 'Front Polyimide Flexible Coverlay',
+    side: 'top',
+  },
+  {
+    id: 'B.Coverlay',
+    name: 'B.Coverlay',
+    category: 'mask',
+    isCopper: false,
+    color: '#b45309', // Dark Amber Coverlay
+    defaultOpacity: 0.8,
+    description: 'Bottom Polyimide Flexible Coverlay',
+    side: 'bottom',
+  },
+  {
+    id: 'Stiffener.FR4',
+    name: 'Stiffener.FR4',
+    category: 'mechanical',
+    isCopper: false,
+    color: '#059669', // Emerald
+    defaultOpacity: 0.85,
+    description: 'FR-4 Mechanical Stiffener Zone',
+    side: 'all',
+  },
+  {
+    id: 'Stiffener.PI',
+    name: 'Stiffener.PI',
+    category: 'mechanical',
+    isCopper: false,
+    color: '#ea580c', // Orange PI
+    defaultOpacity: 0.85,
+    description: 'Polyimide Stiffener Zone',
+    side: 'all',
+  },
+  {
+    id: 'Stiffener.Alu',
+    name: 'Stiffener.Alu',
+    category: 'mechanical',
+    isCopper: false,
+    color: '#94a3b8', // Aluminum Silver
+    defaultOpacity: 0.85,
+    description: 'Aluminum Heat Stiffener Zone',
+    side: 'all',
+  },
+  {
+    id: 'Bend.Lines',
+    name: 'Bend.Lines',
+    category: 'mechanical',
+    isCopper: false,
+    color: '#ec4899', // Pink Bend Lines
+    defaultOpacity: 1.0,
+    description: 'Flex PCB Bend Lines & Angle Markers',
+    side: 'all',
+  },
+
+  // 5. Mechanical & Outline
   {
     id: 'Edge.Cuts',
     name: 'Edge.Cuts',

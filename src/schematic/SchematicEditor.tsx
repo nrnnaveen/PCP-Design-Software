@@ -22,6 +22,8 @@ import { NetConnectivitySolver } from './connectivity';
 import { ERCEngine } from '../erc/ercEngine';
 import { SymbolLibrarySidebar } from './SymbolLibrarySidebar';
 import { eventBus } from '../core/eventBus';
+import { AffineTransform2D } from '../core/transformMatrix';
+import { RubberBandRouter } from './rubberBandRouter';
 import {
   Move,
   RotateCw,
@@ -41,6 +43,7 @@ import {
   Crosshair,
   Info,
   Hand,
+  Grid,
 } from 'lucide-react';
 import { AppThemeId, getCanvasColors } from '../theme/themeManager';
 
@@ -65,6 +68,10 @@ export const SchematicEditor: React.FC<Props> = ({
   const [zoom, setZoom] = useState<number>(4.0); // pixels per mm
   const [pan, setPan] = useState<Point2D>({ x: 340, y: 200 });
   const [activeTool, setActiveTool] = useState<EditorTool>('select');
+
+  // Grid Configuration (100mil, 50mil, 25mil)
+  const [gridMil, setGridMil] = useState<100 | 50 | 25>(100);
+  const gridStep = gridMil === 100 ? 2.54 : gridMil === 50 ? 1.27 : 0.635;
 
   // Sidebar visibility
   const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(false);
@@ -107,12 +114,11 @@ export const SchematicEditor: React.FC<Props> = ({
   // Active ERC diagnostics markers
   const [ercViolations, setErcViolations] = useState<DiagnosticViolation[]>([]);
   const [activeViolationPopup, setActiveViolationPopup] = useState<DiagnosticViolation | null>(null);
+  const [hoveredViolation, setHoveredViolation] = useState<DiagnosticViolation | null>(null);
 
   const activeSheet =
     project.schematic.sheets.find((s) => s.id === project.schematic.activeSheetId) ||
     project.schematic.sheets[0];
-
-  const gridStep = project.settings.gridSpacingSchematic || 2.54;
 
   const snapToGrid = (val: number, step = gridStep): number => {
     return Math.round(val / step) * step;
@@ -128,24 +134,16 @@ export const SchematicEditor: React.FC<Props> = ({
     }
   }, [project]);
 
-  // Screen <-> World coordinate transforms
+  // Screen <-> World coordinate transforms via 2D Homogeneous Affine Matrix
+  const transform = AffineTransform2D.fromPanZoom(pan.x, pan.y, zoom, 1);
+
   const screenToWorld = useCallback(
-    (sx: number, sy: number): Point2D => {
-      return {
-        x: (sx - pan.x) / zoom,
-        y: (sy - pan.y) / zoom,
-      };
-    },
+    (sx: number, sy: number): Point2D => transform.screenToWorld(sx, sy),
     [pan, zoom]
   );
 
   const worldToScreen = useCallback(
-    (wx: number, wy: number): Point2D => {
-      return {
-        x: wx * zoom + pan.x,
-        y: wy * zoom + pan.y,
-      };
-    },
+    (wx: number, wy: number): Point2D => transform.worldToScreen(wx, wy),
     [pan, zoom]
   );
 
@@ -169,6 +167,7 @@ export const SchematicEditor: React.FC<Props> = ({
                   symbols: s.symbols.filter((sym) => !selectedIds.includes(sym.id)),
                   wires: s.wires.filter((w) => !selectedIds.includes(w.id)),
                   labels: s.labels.filter((l) => !selectedIds.includes(l.id)),
+                  powerSymbols: s.powerSymbols.filter((p) => !selectedIds.includes(p.id)),
                 }
               : s
           ),
@@ -1120,6 +1119,51 @@ export const SchematicEditor: React.FC<Props> = ({
 
       onUpdateProject((prev) => {
         const sheet = prev.schematic.sheets.find((s) => s.id === prev.schematic.activeSheetId) || prev.schematic.sheets[0];
+        
+        // 1. Move explicitly selected symbols
+        const updatedSymbols = sheet.symbols.map((sym) => {
+          const orig = dragStartSnapshot.symbols.get(sym.id);
+          return orig ? { ...sym, x: snapToGrid(orig.x + deltaX), y: snapToGrid(orig.y + deltaY) } : sym;
+        });
+
+        // 2. Base wire movement
+        let updatedWires = sheet.wires.map((w) => {
+          const orig = dragStartSnapshot.wires.get(w.id);
+          return orig
+            ? {
+                ...w,
+                x1: snapToGrid(orig.x1 + deltaX),
+                y1: snapToGrid(orig.y1 + deltaY),
+                x2: snapToGrid(orig.x2 + deltaX),
+                y2: snapToGrid(orig.y2 + deltaY),
+              }
+            : w;
+        });
+
+        // 3. Dynamic orthogonal rubber-banding for wires connected to moved symbols
+        sheet.symbols.forEach((sym) => {
+          if (dragStartSnapshot.symbols.has(sym.id)) {
+            const orig = dragStartSnapshot.symbols.get(sym.id)!;
+            const symDelta = {
+              x: snapToGrid(orig.x + deltaX) - orig.x,
+              y: snapToGrid(orig.y + deltaY) - orig.y,
+            };
+            if (symDelta.x !== 0 || symDelta.y !== 0) {
+              updatedWires = RubberBandRouter.stretchWiresOnSymbolMove(
+                { ...sym, x: orig.x, y: orig.y },
+                symDelta,
+                updatedWires
+              );
+            }
+          }
+        });
+
+        // 4. Move dragged labels
+        const updatedLabels = sheet.labels.map((l) => {
+          const orig = dragStartSnapshot.labels.get(l.id);
+          return orig ? { ...l, x: snapToGrid(orig.x + deltaX), y: snapToGrid(orig.y + deltaY) } : l;
+        });
+
         return {
           ...prev,
           schematic: {
@@ -1128,26 +1172,9 @@ export const SchematicEditor: React.FC<Props> = ({
               s.id === sheet.id
                 ? {
                     ...s,
-                    symbols: s.symbols.map((sym) => {
-                      const orig = dragStartSnapshot.symbols.get(sym.id);
-                      return orig ? { ...sym, x: snapToGrid(orig.x + deltaX), y: snapToGrid(orig.y + deltaY) } : sym;
-                    }),
-                    wires: s.wires.map((w) => {
-                      const orig = dragStartSnapshot.wires.get(w.id);
-                      return orig
-                        ? {
-                            ...w,
-                            x1: snapToGrid(orig.x1 + deltaX),
-                            y1: snapToGrid(orig.y1 + deltaY),
-                            x2: snapToGrid(orig.x2 + deltaX),
-                            y2: snapToGrid(orig.y2 + deltaY),
-                          }
-                        : w;
-                    }),
-                    labels: s.labels.map((l) => {
-                      const orig = dragStartSnapshot.labels.get(l.id);
-                      return orig ? { ...l, x: snapToGrid(orig.x + deltaX), y: snapToGrid(orig.y + deltaY) } : l;
-                    }),
+                    symbols: updatedSymbols,
+                    wires: updatedWires,
+                    labels: updatedLabels,
                   }
                 : s
             ),
@@ -1365,6 +1392,20 @@ export const SchematicEditor: React.FC<Props> = ({
                 <AlertTriangle size={13} /> {ercViolations.length} ERC Issues
               </span>
             )}
+
+            {/* Grid Spacing Selector */}
+            <div className="flex items-center space-x-1.5 border-l border-cad-border pl-2.5">
+              <Grid size={12} className="text-cad-textMuted" />
+              <select
+                value={gridMil}
+                onChange={(e) => setGridMil(Number(e.target.value) as 100 | 50 | 25)}
+                className="bg-cad-bg border border-cad-border rounded px-1.5 py-0.5 text-xs text-cad-text outline-none cursor-pointer hover:border-blue-500"
+              >
+                <option value={100}>100 mil (2.54 mm)</option>
+                <option value={50}>50 mil (1.27 mm)</option>
+                <option value={25}>25 mil (0.635 mm)</option>
+              </select>
+            </div>
 
             <div className="flex items-center space-x-1 border-l border-cad-border pl-2">
               <button

@@ -4,8 +4,9 @@
  */
 
 import { ApexProject } from './types';
+import { ProjectMigrationAdapter } from './migrationAdapter';
 
-const SCHEMA_VERSION = '1.0.0';
+const SCHEMA_VERSION = '2.0';
 const AUTOSAVE_STORAGE_KEY = 'apex_eda_autosave_latest';
 const BACKUP_STORAGE_KEY_PREFIX = 'apex_eda_backup_';
 
@@ -16,6 +17,7 @@ export class ProjectSerializer {
       metadata: {
         ...project.metadata,
         version: SCHEMA_VERSION,
+        schemaVersion: ProjectMigrationAdapter.CURRENT_SCHEMA_VERSION,
         updatedAt: new Date().toISOString(),
       },
     };
@@ -25,7 +27,7 @@ export class ProjectSerializer {
   public static deserialize(jsonStr: string): ApexProject {
     try {
       const parsed = JSON.parse(jsonStr);
-      return this.migrate(parsed);
+      return ProjectMigrationAdapter.migrate(parsed);
     } catch (err: any) {
       throw new Error(`Failed to parse Apex EDA project file: ${err.message}`);
     }

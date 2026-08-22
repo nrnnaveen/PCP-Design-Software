@@ -238,11 +238,7 @@ export function createDemoProject(): ApexProject {
             { id: 'lbl_4', text: 'I2C_SCL', type: 'local', x: 150, y: 78, orientation: 0 },
             { id: 'lbl_5', text: 'I2C_SDA', type: 'local', x: 150, y: 83, orientation: 0 },
           ],
-          powerSymbols: [
-            { id: 'pwr_1', netName: '+3.3V', x: 120, y: 45, orientation: 0 },
-            { id: 'pwr_2', netName: 'GND', x: 120, y: 115, orientation: 180 },
-            { id: 'pwr_3', netName: 'GND', x: 125, y: 130, orientation: 180 },
-          ],
+          powerSymbols: [],
           hierarchicalSheets: [],
           texts: [
             { id: 'txt_title', text: 'FLOZ IOT SENSOR NODE - MAIN CONTROLLER', x: 10, y: 10, fontSize: 4.5, color: '#3b82f6' },
