@@ -31,3 +31,7 @@ Open **`http://localhost:5173`** in your browser.
 - `npm test` — Executes the automated test suite (102 tests passing).
 - `npm run build` — Compiles the TypeScript project and creates an optimized production bundle in `dist/`.
 - `npm run preview` — Previews the production bundle locally.
+
+-Team 
+
+--Collab--
