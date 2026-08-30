@@ -13,7 +13,7 @@ npm run setup
 npm run dev
 ```
 
-Open **`http://localhost:5173`** in your browser.
+Open Locally :- **`http://localhost:5173`** 
 
 ---
 
@@ -32,6 +32,3 @@ Open **`http://localhost:5173`** in your browser.
 - `npm run build` — Compiles the TypeScript project and creates an optimized production bundle in `dist/`.
 - `npm run preview` — Previews the production bundle locally.
 
--Team 
-
---Collab--
