@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="flozGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2563eb" />
+      <stop offset="100%" stop-color="#0ea5e9" />
+    </linearGradient>
+    <linearGradient id="chipGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e293b" />
+      <stop offset="100%" stop-color="#0f172a" />
+    </linearGradient>
+  </defs>
+
+  <!-- Outer Rounded Shield / Chip -->
+  <rect x="4" y="4" width="56" height="56" rx="14" fill="url(#chipGrad)" stroke="url(#flozGrad)" stroke-width="2.5" />
+
+  <!-- PCB Traces & Via Dots -->
+  <path d="M12 20 L24 20 L30 14" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" fill="none" opacity="0.8" />
+  <circle cx="30" cy="14" r="2" fill="#38bdf8" />
+
+  <path d="M52 44 L40 44 L34 50" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" fill="none" opacity="0.8" />
+  <circle cx="34" cy="50" r="2" fill="#38bdf8" />
+
+  <circle cx="12" cy="44" r="2" fill="#10b981" />
+  <path d="M12 44 L20 44 L26 38" stroke="#10b981" stroke-width="1.5" stroke-linecap="round" fill="none" opacity="0.8" />
+
+  <!-- Center "F" Lettermark -->
+  <path d="M22 18 H42 V26 H30 V32 H38 V39 H30 V48 H22 Z" fill="url(#flozGrad)" />
+</svg>

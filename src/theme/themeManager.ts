@@ -1,9 +1,9 @@
 /**
- * FloZ EDA - Professional Centralized Theme Management System
- * Supports Dark (Default), Light (Day), Midnight, Slate, and High Contrast.
+ * FloZ ECA — Microsoft Fluent Centralized Theme Management System
+ * Supports VS Code Dark+ (Default), Microsoft 365 Light, Midnight, Slate, and High Contrast.
  */
 
-export type AppThemeId = 'dark' | 'light' | 'midnight' | 'slate' | 'high-contrast';
+export type AppThemeId = 'dark' | 'light';
 
 export interface ThemeDefinition {
   id: AppThemeId;
@@ -17,43 +17,19 @@ export interface ThemeDefinition {
 export const AVAILABLE_THEMES: ThemeDefinition[] = [
   {
     id: 'dark',
-    name: 'Dark (Default)',
+    name: 'Fluent Dark',
     mode: 'dark',
-    description: 'Neutral engineering dark palette with high readability',
-    previewColor: '#181d24',
-    badgeBg: 'bg-slate-800 text-slate-200 border-slate-700',
+    description: 'Modern VS Code & Microsoft Fluent dark palette with crisp contrast',
+    previewColor: '#1e1e1e',
+    badgeBg: 'bg-zinc-800 text-zinc-200 border-zinc-700',
   },
   {
     id: 'light',
-    name: 'Light (Day)',
+    name: 'Fluent Light',
     mode: 'light',
-    description: 'Clean high-contrast daytime engineering UI',
-    previewColor: '#ffffff',
-    badgeBg: 'bg-slate-100 text-slate-800 border-slate-300',
-  },
-  {
-    id: 'midnight',
-    name: 'Midnight',
-    mode: 'dark',
-    description: 'Deep blue-gray professional CAD palette',
-    previewColor: '#111827',
-    badgeBg: 'bg-indigo-950 text-indigo-300 border-indigo-800',
-  },
-  {
-    id: 'slate',
-    name: 'Slate',
-    mode: 'dark',
-    description: 'Cool gray industrial workspace palette',
-    previewColor: '#273549',
-    badgeBg: 'bg-slate-800 text-slate-300 border-slate-600',
-  },
-  {
-    id: 'high-contrast',
-    name: 'High Contrast',
-    mode: 'dark',
-    description: 'Maximum contrast monochrome engineering UI',
-    previewColor: '#000000',
-    badgeBg: 'bg-black text-white border-zinc-500',
+    description: 'Clean Microsoft 365 daytime UI with high-contrast typography and subtle elevation',
+    previewColor: '#f3f3f3',
+    badgeBg: 'bg-zinc-100 text-zinc-800 border-zinc-300',
   },
 ];
 
@@ -76,7 +52,7 @@ export class ThemeManager {
         }
       }
     } catch {
-      // Ignored
+      // Fallback
     }
     this.currentTheme = 'dark';
     return 'dark';
@@ -98,13 +74,13 @@ export class ThemeManager {
       const root = document.documentElement;
       root.setAttribute('data-theme', themeId);
 
-      // Remove all theme classes first
+      // Clean old classes
       AVAILABLE_THEMES.forEach((t) => {
         root.classList.remove(t.id);
       });
       root.classList.remove('dark', 'light');
 
-      // Add active classes
+      // Set active classes
       root.classList.add(themeId);
       root.classList.add(themeDef.mode);
     }
@@ -141,19 +117,71 @@ export class ThemeManager {
   }
 }
 
-export function getCanvasColors(themeId?: string): { canvasBg: string; gridColor: string; textColor: string; isLight: boolean } {
+export interface CanvasColorTokens {
+  canvasBg: string;
+  gridColor: string;
+  gridMajorColor: string;
+  textColor: string;
+  textMutedColor: string;
+  borderColor: string;
+  selectionBg: string;
+  selectionBorder: string;
+  wireColor: string;
+  wireHighlightColor: string;
+  busColor: string;
+  noConnectColor: string;
+  junctionColor: string;
+  labelColor: string;
+  powerColor: string;
+  drcColor: string;
+  ercColor: string;
+  isLight: boolean;
+}
+
+export function getCanvasColors(themeId?: string): CanvasColorTokens {
   const current = themeId || (typeof document !== 'undefined' ? document.documentElement.getAttribute('data-theme') : 'dark') || 'dark';
-  switch (current) {
-    case 'light':
-      return { canvasBg: '#ffffff', gridColor: '#cbd5e1', textColor: '#0f172a', isLight: true };
-    case 'midnight':
-      return { canvasBg: '#0b0f19', gridColor: '#1e293b', textColor: '#f1f5f9', isLight: false };
-    case 'slate':
-      return { canvasBg: '#1e293b', gridColor: '#334155', textColor: '#f8fafc', isLight: false };
-    case 'high-contrast':
-      return { canvasBg: '#000000', gridColor: '#444444', textColor: '#ffffff', isLight: false };
-    case 'dark':
-    default:
-      return { canvasBg: '#111418', gridColor: '#242c38', textColor: '#e2e8f0', isLight: false };
+  if (current === 'light') {
+    return {
+      canvasBg: '#ffffff',
+      gridColor: '#e4e4e7',
+      gridMajorColor: '#d4d4d8',
+      textColor: '#0f172a',
+      textMutedColor: '#52525b',
+      borderColor: '#d4d4d8',
+      selectionBg: 'rgba(0, 120, 212, 0.12)',
+      selectionBorder: '#0078d4',
+      wireColor: '#0078d4',
+      wireHighlightColor: '#ea580c',
+      busColor: '#4f46e5',
+      noConnectColor: '#dc2626',
+      junctionColor: '#0078d4',
+      labelColor: '#0284c7',
+      powerColor: '#b45309',
+      drcColor: '#dc2626',
+      ercColor: '#d97706',
+      isLight: true,
+    };
   }
+
+  // Dark (Default)
+  return {
+    canvasBg: '#1e1e1e',
+    gridColor: '#2d2d30',
+    gridMajorColor: '#3e3e42',
+    textColor: '#cccccc',
+    textMutedColor: '#858585',
+    borderColor: '#3e3e42',
+    selectionBg: 'rgba(0, 120, 212, 0.25)',
+    selectionBorder: '#0078d4',
+    wireColor: '#38bdf8',
+    wireHighlightColor: '#fb923c',
+    busColor: '#818cf8',
+    noConnectColor: '#ef4444',
+    junctionColor: '#38bdf8',
+    labelColor: '#7dd3fc',
+    powerColor: '#fbbf24',
+    drcColor: '#ef4444',
+    ercColor: '#f59e0b',
+    isLight: false,
+  };
 }

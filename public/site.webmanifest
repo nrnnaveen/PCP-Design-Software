@@ -1,0 +1,17 @@
+{
+  "name": "FloZ ECA — Electronic Circuit Architect",
+  "short_name": "FloZ ECA",
+  "description": "Professional Desktop & Web Electronic Design Automation Suite",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#111418",
+  "theme_color": "#2563eb",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "64x64 128x128 256x256 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -169,6 +169,32 @@ export interface HierarchicalSheet {
   }>;
 }
 
+export interface SchematicBusSegment {
+  id: string;
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+  name?: string;
+}
+
+export interface SchematicBusEntry {
+  id: string;
+  x: number;
+  y: number;
+  angle: 45 | 135 | 225 | 315;
+  busId?: string;
+  wireId?: string;
+}
+
+export interface SchematicNoConnect {
+  id: string;
+  x: number;
+  y: number;
+  symbolId?: string;
+  pinId?: string;
+}
+
 export interface SchematicSheet {
   id: string;
   title: string;
@@ -180,6 +206,9 @@ export interface SchematicSheet {
   powerSymbols: SchematicPowerSymbol[];
   hierarchicalSheets: HierarchicalSheet[];
   texts: Array<{ id: string; text: string; x: number; y: number; fontSize: number; color?: string }>;
+  buses?: SchematicBusSegment[];
+  busEntries?: SchematicBusEntry[];
+  noConnects?: SchematicNoConnect[];
 }
 
 export interface SchematicData {

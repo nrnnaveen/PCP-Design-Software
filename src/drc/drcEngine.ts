@@ -12,9 +12,20 @@ import {
 } from '../core/types';
 import { RatsnestGenerator } from '../pcb/ratsnest';
 
+export const DEFAULT_DRC_CONFIG: DRCConfiguration = {
+  checkClearances: true,
+  checkTrackWidths: true,
+  checkViaHoles: true,
+  checkBoardEdge: true,
+  checkCourtyardCollisions: true,
+  checkUnconnectedNets: true,
+  checkSilkscreenOverPads: true,
+  checkKeepouts: true,
+};
+
 export class DRCEngine {
   public static run(project: ApexProject, config?: DRCConfiguration): DiagnosticViolation[] {
-    const activeConfig = config || project.drcConfig;
+    const activeConfig = config || project.drcConfig || DEFAULT_DRC_CONFIG;
     const rules = project.designRules;
     const pcb = project.pcb;
     const violations: DiagnosticViolation[] = [];
@@ -223,6 +234,30 @@ export class DRCEngine {
           objectIds: [],
         });
       });
+    }
+
+    // 7. Hole-to-Hole Drill Clearance Check
+    const minHoleClearance = rules.minClearance || 0.25;
+    for (let i = 0; i < pcb.vias.length; i++) {
+      for (let j = i + 1; j < pcb.vias.length; j++) {
+        const v1 = pcb.vias[i];
+        const v2 = pcb.vias[j];
+        const dist = Math.hypot(v2.x - v1.x, v2.y - v1.y);
+        const reqDist = (v1.drillDiameter + v2.drillDiameter) / 2 + minHoleClearance;
+        if (dist < reqDist) {
+          violations.push({
+            id: `drc_hole_clr_${v1.id}_${v2.id}`,
+            code: 'DRC008',
+            severity: 'error',
+            source: 'DRC',
+            title: `Hole-to-Hole Drill Clearance Violation`,
+            description: `Via drill hole distance ${(dist - (v1.drillDiameter + v2.drillDiameter) / 2).toFixed(3)}mm is below minimum ${minHoleClearance}mm.`,
+            x: (v1.x + v2.x) / 2,
+            y: (v1.y + v2.y) / 2,
+            objectIds: [v1.id, v2.id],
+          });
+        }
+      }
     }
 
     return violations;

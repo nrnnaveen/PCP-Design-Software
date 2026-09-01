@@ -1,0 +1,15 @@
+# FloZ ECA — Robots Configuration
+User-agent: *
+Allow: /
+Allow: /dashboard
+Allow: /privacy
+Allow: /terms
+
+# Block private / internal administrative and packaging artifacts
+Disallow: /admin
+Disallow: /api/
+Disallow: /dist-electron/
+Disallow: /scratch/
+
+# Sitemap reference (Relative path resolves against host domain upon deployment)
+Sitemap: /sitemap.xml

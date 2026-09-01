@@ -1,8 +1,8 @@
 /**
  * FloZ ECA - Professional Interactive Schematic Capture Editor
- * Hardened 2D Canvas engine with Drag & Drop, precise magnetic pin snapping,
- * automatic T-junction creation, dynamic net highlighting, clickable ERC markers,
- * viewport culling, and keyboard guards.
+ * KiCad-class canvas engine with Buses, Bus Entries, No-Connect flags, Net Labels,
+ * Selection Filters, Drawing Sheet Title Block, Magnetic Pin Snapping, Auto-Annotation,
+ * Real-time ERC, and High-DPI theme-aware rendering.
  */
 
 import React, { useRef, useEffect, useState, useCallback } from 'react';
@@ -11,6 +11,9 @@ import {
   Point2D,
   SchematicSymbolInstance,
   SchematicWireSegment,
+  SchematicBusSegment,
+  SchematicBusEntry,
+  SchematicNoConnect,
   SchematicJunction,
   SchematicNetLabel,
   SymbolDefinition,
@@ -24,6 +27,7 @@ import { SymbolLibrarySidebar } from './SymbolLibrarySidebar';
 import { eventBus } from '../core/eventBus';
 import { AffineTransform2D } from '../core/transformMatrix';
 import { RubberBandRouter } from './rubberBandRouter';
+import { BOMGenerator } from '../manufacturing/bomGenerator';
 import {
   Move,
   RotateCw,
@@ -38,12 +42,15 @@ import {
   XCircle,
   Cpu,
   Layers,
-  Wand2,
   FlipHorizontal,
   Crosshair,
-  Info,
   Hand,
   Grid,
+  GitCommit,
+  FileSpreadsheet,
+  Binary,
+  SlidersHorizontal,
+  X,
 } from 'lucide-react';
 import { AppThemeId, getCanvasColors } from '../theme/themeManager';
 
@@ -54,13 +61,24 @@ interface Props {
   theme?: AppThemeId;
 }
 
-export type EditorTool = 'select' | 'pan' | 'wire' | 'junction' | 'label' | 'power' | 'delete' | 'place_symbol';
+export type EditorTool =
+  | 'select'
+  | 'pan'
+  | 'wire'
+  | 'bus'
+  | 'bus_entry'
+  | 'no_connect'
+  | 'junction'
+  | 'label'
+  | 'power'
+  | 'delete'
+  | 'place_symbol';
 
 export const SchematicEditor: React.FC<Props> = ({
   project,
   onUpdateProject,
   onOpenSymbolChooser,
-  theme = 'dark',
+  theme = 'high-contrast',
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
@@ -76,13 +94,23 @@ export const SchematicEditor: React.FC<Props> = ({
   // Sidebar visibility
   const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(false);
 
+  // Selection Filters
+  const [showFilterBar, setShowFilterBar] = useState<boolean>(false);
+  const [selectionFilter, setSelectionFilter] = useState({
+    symbols: true,
+    wires: true,
+    buses: true,
+    labels: true,
+    power: true,
+    noConnects: true,
+  });
+
   // Interactive Selection & Dragging
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [highlightedNetName, setHighlightedNetName] = useState<string | null>(null);
   const [isPanning, setIsPanning] = useState<boolean>(false);
   const [isDraggingObjects, setIsDraggingObjects] = useState<boolean>(false);
   const [panStart, setPanStart] = useState<Point2D>({ x: 0, y: 0 });
-  const [dragOffset, setDragOffset] = useState<Point2D>({ x: 0, y: 0 });
 
   // Marquee Box Selection State
   const [isSelectingBox, setIsSelectingBox] = useState<boolean>(false);
@@ -94,6 +122,7 @@ export const SchematicEditor: React.FC<Props> = ({
     symbols: Map<string, Point2D>;
     wires: Map<string, { x1: number; y1: number; x2: number; y2: number }>;
     labels: Map<string, Point2D>;
+    buses: Map<string, { x1: number; y1: number; x2: number; y2: number }>;
     anchorWorld: Point2D;
   } | null>(null);
 
@@ -102,8 +131,9 @@ export const SchematicEditor: React.FC<Props> = ({
   const [placementRotation, setPlacementRotation] = useState<0 | 90 | 180 | 270>(0);
   const [placementMirror, setPlacementMirror] = useState<boolean>(false);
 
-  // Wire drawing state
+  // Wire & Bus drawing state
   const [wireStart, setWireStart] = useState<Point2D | null>(null);
+  const [busStart, setBusStart] = useState<Point2D | null>(null);
   const [hoverWorldPos, setHoverWorldPos] = useState<Point2D>({ x: 0, y: 0 });
   const [magneticSnapPin, setMagneticSnapPin] = useState<{
     pin: any;
@@ -114,7 +144,6 @@ export const SchematicEditor: React.FC<Props> = ({
   // Active ERC diagnostics markers
   const [ercViolations, setErcViolations] = useState<DiagnosticViolation[]>([]);
   const [activeViolationPopup, setActiveViolationPopup] = useState<DiagnosticViolation | null>(null);
-  const [hoveredViolation, setHoveredViolation] = useState<DiagnosticViolation | null>(null);
 
   const activeSheet =
     project.schematic.sheets.find((s) => s.id === project.schematic.activeSheetId) ||
@@ -147,7 +176,7 @@ export const SchematicEditor: React.FC<Props> = ({
     [pan, zoom]
   );
 
-  // Delete selected objects handler (Components, Wires, Labels)
+  // Delete selected objects handler (Components, Wires, Buses, Labels, No-Connects)
   const handleDeleteSelected = useCallback(() => {
     if (selectedIds.length === 0) return;
 
@@ -166,6 +195,9 @@ export const SchematicEditor: React.FC<Props> = ({
                   ...s,
                   symbols: s.symbols.filter((sym) => !selectedIds.includes(sym.id)),
                   wires: s.wires.filter((w) => !selectedIds.includes(w.id)),
+                  buses: (s.buses || []).filter((b) => !selectedIds.includes(b.id)),
+                  busEntries: (s.busEntries || []).filter((be) => !selectedIds.includes(be.id)),
+                  noConnects: (s.noConnects || []).filter((nc) => !selectedIds.includes(nc.id)),
                   labels: s.labels.filter((l) => !selectedIds.includes(l.id)),
                   powerSymbols: s.powerSymbols.filter((p) => !selectedIds.includes(p.id)),
                 }
@@ -179,7 +211,54 @@ export const SchematicEditor: React.FC<Props> = ({
     setHighlightedNetName(null);
   }, [selectedIds, onUpdateProject]);
 
-  // Global keydown handler for Delete, Backspace, Escape, W, A, H, Space
+  // Automatic Re-Annotation (R? -> R1, R2...)
+  const handleAutoAnnotate = useCallback(() => {
+    onUpdateProject((prev) => {
+      const counters: Record<string, number> = {};
+      const newSheets = prev.schematic.sheets.map((sheet) => {
+        const newSymbols = sheet.symbols.map((sym) => {
+          const prefixMatch = sym.reference.match(/^[A-Za-z]+/);
+          const prefix = prefixMatch ? prefixMatch[0] : 'U';
+          if (sym.reference.includes('?') || !sym.reference.match(/^[A-Za-z]+\d+$/)) {
+            counters[prefix] = (counters[prefix] || 0) + 1;
+            return {
+              ...sym,
+              reference: `${prefix}${counters[prefix]}`,
+            };
+          } else {
+            const numMatch = sym.reference.match(/\d+$/);
+            if (numMatch) {
+              const num = parseInt(numMatch[0], 10);
+              counters[prefix] = Math.max(counters[prefix] || 0, num);
+            }
+            return sym;
+          }
+        });
+        return { ...sheet, symbols: newSymbols };
+      });
+      return {
+        ...prev,
+        schematic: {
+          ...prev.schematic,
+          sheets: newSheets,
+        },
+      };
+    }, 'Auto-Annotate Schematic');
+  }, [onUpdateProject]);
+
+  // Direct BOM CSV Download
+  const handleExportBOM = useCallback(() => {
+    const csv = BOMGenerator.exportCSV(project);
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${project.metadata.name || 'Project'}_BOM.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  }, [project]);
+
+  // Global keydown handler
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement)?.tagName)) return;
@@ -191,11 +270,21 @@ export const SchematicEditor: React.FC<Props> = ({
         setActiveTool('select');
         setArmedSymbolDef(null);
         setWireStart(null);
+        setBusStart(null);
         setSelectedIds([]);
         setIsSelectingBox(false);
       } else if (e.key.toLowerCase() === 'w') {
         setActiveTool('wire');
         setWireStart(null);
+      } else if (e.key.toLowerCase() === 'b') {
+        setActiveTool('bus');
+        setBusStart(null);
+      } else if (e.key.toLowerCase() === 'q') {
+        setActiveTool('no_connect');
+      } else if (e.key.toLowerCase() === 'l') {
+        setActiveTool('label');
+      } else if (e.key.toLowerCase() === 'p') {
+        setActiveTool('power');
       } else if (e.key.toLowerCase() === 'h') {
         setActiveTool('pan');
       } else if (e.key.toLowerCase() === 'v' || e.key.toLowerCase() === 's') {
@@ -279,7 +368,6 @@ export const SchematicEditor: React.FC<Props> = ({
     const zoomFactor = e.deltaY < 0 ? 1.15 : 0.85;
     const newZoom = Math.max(1.0, Math.min(25.0, zoom * zoomFactor));
 
-    // Keep world coordinate under cursor stable
     const wx = (mouseX - pan.x) / zoom;
     const wy = (mouseY - pan.y) / zoom;
 
@@ -289,107 +377,6 @@ export const SchematicEditor: React.FC<Props> = ({
     });
     setZoom(newZoom);
   };
-
-  // Keyboard Shortcuts (with input guard)
-  useEffect(() => {
-    const handleKeys = (e: KeyboardEvent) => {
-      const target = e.target as HTMLElement;
-      if (target && ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)) {
-        return;
-      }
-
-      if (e.key === 'r' || e.key === 'R') {
-        if (activeTool === 'place_symbol' && armedSymbolDef) {
-          setPlacementRotation((r) => ((r + 90) % 360) as any);
-        } else if (selectedIds.length > 0) {
-          onUpdateProject((prev) => {
-            const sheet = prev.schematic.sheets.find((s) => s.id === prev.schematic.activeSheetId) || prev.schematic.sheets[0];
-            return {
-              ...prev,
-              schematic: {
-                ...prev.schematic,
-                sheets: prev.schematic.sheets.map((s) =>
-                  s.id === sheet.id
-                    ? {
-                        ...s,
-                        symbols: s.symbols.map((sym) =>
-                          selectedIds.includes(sym.id)
-                            ? { ...sym, rotation: ((sym.rotation + 90) % 360) as any }
-                            : sym
-                        ),
-                      }
-                    : s
-                ),
-              },
-            };
-          }, 'Rotate Symbol');
-        }
-      } else if (e.key === 'm' || e.key === 'M') {
-        if (activeTool === 'place_symbol' && armedSymbolDef) {
-          setPlacementMirror((m) => !m);
-        } else if (selectedIds.length > 0) {
-          onUpdateProject((prev) => {
-            const sheet = prev.schematic.sheets.find((s) => s.id === prev.schematic.activeSheetId) || prev.schematic.sheets[0];
-            return {
-              ...prev,
-              schematic: {
-                ...prev.schematic,
-                sheets: prev.schematic.sheets.map((s) =>
-                  s.id === sheet.id
-                    ? {
-                        ...s,
-                        symbols: s.symbols.map((sym) =>
-                          selectedIds.includes(sym.id)
-                            ? { ...sym, mirrorX: !sym.mirrorX }
-                            : sym
-                        ),
-                      }
-                    : s
-                ),
-              },
-            };
-          }, 'Mirror Symbol');
-        }
-      } else if (e.key === 'Escape') {
-        setActiveTool('select');
-        setArmedSymbolDef(null);
-        setWireStart(null);
-        setSelectedIds([]);
-        setHighlightedNetName(null);
-        setActiveViolationPopup(null);
-      } else if (e.key === 'w' || e.key === 'W') {
-        setActiveTool('wire');
-        setWireStart(null);
-      } else if (e.key === 'a' || e.key === 'A') {
-        onOpenSymbolChooser();
-      } else if (e.key === 'Delete' || e.key === 'Backspace') {
-        if (selectedIds.length > 0) {
-          onUpdateProject((prev) => {
-            const sheet = prev.schematic.sheets.find((s) => s.id === prev.schematic.activeSheetId) || prev.schematic.sheets[0];
-            return {
-              ...prev,
-              schematic: {
-                ...prev.schematic,
-                sheets: prev.schematic.sheets.map((s) =>
-                  s.id === sheet.id
-                    ? {
-                        ...s,
-                        symbols: s.symbols.filter((sym) => !selectedIds.includes(sym.id)),
-                        wires: s.wires.filter((w) => !selectedIds.includes(w.id)),
-                      }
-                    : s
-                ),
-              },
-            };
-          }, 'Delete Objects');
-          setSelectedIds([]);
-        }
-      }
-    };
-
-    window.addEventListener('keydown', handleKeys);
-    return () => window.removeEventListener('keydown', handleKeys);
-  }, [activeTool, armedSymbolDef, selectedIds, onUpdateProject, onOpenSymbolChooser]);
 
   // Main Canvas Render Loop
   useEffect(() => {
@@ -405,11 +392,10 @@ export const SchematicEditor: React.FC<Props> = ({
       canvas.height = height;
     }
 
-    // Theme detection & canvas colors
     const colors = getCanvasColors(theme);
     const isLight = colors.isLight;
 
-    // 1. CAD Background & Dot Grid (Adaptive for 60fps performance)
+    // 1. CAD Background & Dot Grid
     ctx.fillStyle = colors.canvasBg;
     ctx.fillRect(0, 0, width, height);
 
@@ -431,7 +417,110 @@ export const SchematicEditor: React.FC<Props> = ({
       }
     }
 
-    // 2. Render Schematic Wires
+    // 2. ISO Drawing Sheet Border & Title Block (A4 Landscape: 287 x 200 mm)
+    const borderX1 = 10;
+    const borderY1 = 10;
+    const borderX2 = 287;
+    const borderY2 = 200;
+    const pTopLeft = worldToScreen(borderX1, borderY1);
+    const pBottomRight = worldToScreen(borderX2, borderY2);
+
+    ctx.strokeStyle = colors.borderColor;
+    ctx.lineWidth = 1;
+    ctx.strokeRect(pTopLeft.x, pTopLeft.y, pBottomRight.x - pTopLeft.x, pBottomRight.y - pTopLeft.y);
+
+    // Coordinate grid labels (A-D, 1-4)
+    ctx.fillStyle = colors.textMutedColor;
+    ctx.font = `${Math.max(8, 2.0 * zoom)}px 'JetBrains Mono', monospace`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    const numCols = 4;
+    const colStep = (borderX2 - borderX1) / numCols;
+    for (let c = 0; c < numCols; c++) {
+      const sp = worldToScreen(borderX1 + colStep * (c + 0.5), borderY1 - 3);
+      ctx.fillText(String(c + 1), sp.x, sp.y);
+    }
+
+    const numRows = 4;
+    const rowStep = (borderY2 - borderY1) / numRows;
+    for (let r = 0; r < numRows; r++) {
+      const sp = worldToScreen(borderX1 - 4, borderY1 + rowStep * (r + 0.5));
+      ctx.fillText(String.fromCharCode(65 + r), sp.x, sp.y);
+    }
+
+    // Bottom Right Title Block (80 x 26 mm)
+    const tbWidth = 80;
+    const tbHeight = 26;
+    const tbOrigin = { x: borderX2 - tbWidth, y: borderY2 - tbHeight };
+    const tbScreen = worldToScreen(tbOrigin.x, tbOrigin.y);
+    const tbWidthPx = tbWidth * zoom;
+    const tbHeightPx = tbHeight * zoom;
+
+    ctx.fillStyle = isLight ? '#f8fafc' : '#111620';
+    ctx.fillRect(tbScreen.x, tbScreen.y, tbWidthPx, tbHeightPx);
+    ctx.strokeStyle = colors.borderColor;
+    ctx.strokeRect(tbScreen.x, tbScreen.y, tbWidthPx, tbHeightPx);
+
+    const line1Y = worldToScreen(tbOrigin.x, tbOrigin.y + 11).y;
+    const line2Y = worldToScreen(tbOrigin.x, tbOrigin.y + 19).y;
+    ctx.beginPath();
+    ctx.moveTo(tbScreen.x, line1Y);
+    ctx.lineTo(tbScreen.x + tbWidthPx, line1Y);
+    ctx.moveTo(tbScreen.x, line2Y);
+    ctx.lineTo(tbScreen.x + tbWidthPx, line2Y);
+    ctx.stroke();
+
+    ctx.textAlign = 'left';
+    ctx.fillStyle = colors.textColor;
+    ctx.font = `600 ${Math.max(9, 2.8 * zoom)}px Inter, sans-serif`;
+    ctx.fillText(project.metadata.name || 'Untitled Schematic', tbScreen.x + 6, tbScreen.y + 14 * (zoom / 4));
+
+    ctx.fillStyle = colors.textMutedColor;
+    ctx.font = `400 ${Math.max(7, 2.0 * zoom)}px Inter, sans-serif`;
+    ctx.fillText(`Sheet: ${activeSheet.sheetNumber || 1}/${project.schematic.sheets.length}  |  Rev: ${project.metadata.version || '1.0'}`, tbScreen.x + 6, line1Y + 11 * (zoom / 4));
+    ctx.fillText(`FloZ ECA  |  ${new Date().toISOString().slice(0, 10)}`, tbScreen.x + 6, line2Y + 11 * (zoom / 4));
+
+    // 3. Render Schematic Buses (Thick vector line)
+    if (activeSheet.buses) {
+      activeSheet.buses.forEach((bus) => {
+        const isSelected = selectedIds.includes(bus.id);
+        ctx.strokeStyle = isSelected ? colors.wireHighlightColor : colors.busColor;
+        ctx.lineWidth = Math.max(3.5, 0.9 * zoom);
+        ctx.lineCap = 'square';
+
+        const p1 = worldToScreen(bus.x1, bus.y1);
+        const p2 = worldToScreen(bus.x2, bus.y2);
+        ctx.beginPath();
+        ctx.moveTo(p1.x, p1.y);
+        ctx.lineTo(p2.x, p2.y);
+        ctx.stroke();
+
+        if (bus.name) {
+          ctx.fillStyle = colors.busColor;
+          ctx.font = `bold ${Math.max(9, 2.5 * zoom)}px 'JetBrains Mono', monospace`;
+          ctx.fillText(bus.name, (p1.x + p2.x) / 2 + 4, (p1.y + p2.y) / 2 - 4);
+        }
+      });
+    }
+
+    // 4. Render Bus Entries (45-degree angled tick)
+    if (activeSheet.busEntries) {
+      activeSheet.busEntries.forEach((entry) => {
+        const isSelected = selectedIds.includes(entry.id);
+        ctx.strokeStyle = isSelected ? colors.wireHighlightColor : colors.busColor;
+        ctx.lineWidth = Math.max(2.0, 0.5 * zoom);
+
+        const sp = worldToScreen(entry.x, entry.y);
+        const stubLen = 3.0 * zoom;
+        ctx.beginPath();
+        ctx.moveTo(sp.x, sp.y);
+        ctx.lineTo(sp.x + stubLen, sp.y + stubLen);
+        ctx.stroke();
+      });
+    }
+
+    // 5. Render Schematic Wires
     const connectivity = NetConnectivitySolver.solveSheet(activeSheet);
 
     activeSheet.wires.forEach((wire) => {
@@ -456,10 +545,10 @@ export const SchematicEditor: React.FC<Props> = ({
       }
 
       ctx.strokeStyle = isSelected
-        ? (isLight ? '#0284c7' : '#38bdf8')
+        ? colors.wireHighlightColor
         : isNetHighlighted
         ? '#f59e0b'
-        : (isLight ? '#0369a1' : '#10b981');
+        : colors.wireColor;
       ctx.lineWidth = isSelected || isNetHighlighted ? Math.max(2.5, 0.6 * zoom) : Math.max(1.5, 0.4 * zoom);
       ctx.lineCap = 'round';
 
@@ -472,9 +561,9 @@ export const SchematicEditor: React.FC<Props> = ({
       ctx.stroke();
     });
 
-    // 3. Render Active Wire in Progress
+    // 6. Active Wire / Bus in Progress
     if (wireStart && activeTool === 'wire') {
-      ctx.strokeStyle = isLight ? '#0284c7' : '#38bdf8';
+      ctx.strokeStyle = colors.wireHighlightColor;
       ctx.lineWidth = Math.max(2.0, 0.45 * zoom);
       ctx.setLineDash([4, 4]);
 
@@ -491,8 +580,24 @@ export const SchematicEditor: React.FC<Props> = ({
       ctx.setLineDash([]);
     }
 
-    // 4. Render Junctions
-    ctx.fillStyle = isLight ? '#0369a1' : '#10b981';
+    if (busStart && activeTool === 'bus') {
+      ctx.strokeStyle = colors.busColor;
+      ctx.lineWidth = Math.max(3.5, 0.9 * zoom);
+      ctx.setLineDash([4, 4]);
+
+      const p1 = worldToScreen(busStart.x, busStart.y);
+      const targetPos = { x: snapToGrid(hoverWorldPos.x), y: snapToGrid(hoverWorldPos.y) };
+      const p2 = worldToScreen(targetPos.x, targetPos.y);
+
+      ctx.beginPath();
+      ctx.moveTo(p1.x, p1.y);
+      ctx.lineTo(p2.x, p2.y);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    // 7. Render Junctions
+    ctx.fillStyle = colors.junctionColor;
     activeSheet.junctions.forEach((junc) => {
       const sp = worldToScreen(junc.x, junc.y);
       ctx.beginPath();
@@ -500,12 +605,29 @@ export const SchematicEditor: React.FC<Props> = ({
       ctx.fill();
     });
 
-    // 5. Render Symbols
+    // 8. Render No-Connect (X) Flags
+    if (activeSheet.noConnects) {
+      activeSheet.noConnects.forEach((nc) => {
+        const isSelected = selectedIds.includes(nc.id);
+        const sp = worldToScreen(nc.x, nc.y);
+        const size = Math.max(4, 1.0 * zoom);
+
+        ctx.strokeStyle = isSelected ? colors.wireHighlightColor : colors.noConnectColor;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(sp.x - size, sp.y - size);
+        ctx.lineTo(sp.x + size, sp.y + size);
+        ctx.moveTo(sp.x + size, sp.y - size);
+        ctx.lineTo(sp.x - size, sp.y + size);
+        ctx.stroke();
+      });
+    }
+
+    // 9. Render Symbols
     activeSheet.symbols.forEach((sym) => {
       const isSelected = selectedIds.includes(sym.id);
       const symScreen = worldToScreen(sym.x, sym.y);
 
-      // Viewport culling
       const bb = SchematicHelper.getSymbolBoundingBox(sym);
       if (bb.maxX < startWorld.x || bb.minX > endWorld.x || bb.maxY < startWorld.y || bb.minY > endWorld.y) {
         return;
@@ -525,8 +647,8 @@ export const SchematicEditor: React.FC<Props> = ({
         }
       }
 
-      ctx.strokeStyle = isSelected ? (isLight ? '#0284c7' : '#38bdf8') : (isLight ? '#1e293b' : '#e2e8f0');
-      ctx.fillStyle = isLight ? '#ffffff' : '#1a202c';
+      ctx.strokeStyle = isSelected ? colors.selectionBorder : (isLight ? '#1e293b' : '#e2e8f0');
+      ctx.fillStyle = isLight ? '#ffffff' : '#141a23';
       ctx.lineWidth = Math.max(1.5, 0.35 * zoom);
 
       shapes.forEach((shape) => {
@@ -554,7 +676,7 @@ export const SchematicEditor: React.FC<Props> = ({
           }
           ctx.closePath();
           if (shape.filled) {
-            ctx.fillStyle = isSelected ? (isLight ? '#bae6fd' : '#38bdf8') : (isLight ? '#f1f5f9' : '#cbd5e1');
+            ctx.fillStyle = isSelected ? colors.selectionBg : (isLight ? '#f1f5f9' : '#1e293b');
             ctx.fill();
           }
           ctx.stroke();
@@ -563,43 +685,11 @@ export const SchematicEditor: React.FC<Props> = ({
           ctx.arc((shape.x || 0) * zoom, (shape.y || 0) * zoom, shape.radius * zoom, 0, Math.PI * 2);
           if (shape.filled) ctx.fill();
           ctx.stroke();
-        } else if (shape.type === 'arc' && shape.radius) {
-          ctx.beginPath();
-          ctx.arc(
-            (shape.x || 0) * zoom,
-            (shape.y || 0) * zoom,
-            shape.radius * zoom,
-            shape.startAngle || 0,
-            shape.endAngle || Math.PI,
-            shape.counterclockwise
-          );
-          if (shape.filled) ctx.fill();
-          ctx.stroke();
-        } else if (shape.type === 'bezier' && shape.points && shape.points.length >= 4) {
-          ctx.beginPath();
-          ctx.moveTo(shape.points[0].x * zoom, shape.points[0].y * zoom);
-          ctx.bezierCurveTo(
-            shape.points[1].x * zoom,
-            shape.points[1].y * zoom,
-            shape.points[2].x * zoom,
-            shape.points[2].y * zoom,
-            shape.points[3].x * zoom,
-            shape.points[3].y * zoom
-          );
-          ctx.stroke();
-        } else if (shape.type === 'text' && shape.text) {
-          ctx.save();
-          ctx.translate((shape.x || 0) * zoom, (shape.y || 0) * zoom);
-          if (shape.rotation) ctx.rotate((shape.rotation * Math.PI) / 180);
-          ctx.font = `${Math.max(8, (shape.fontSize || 1.27) * 2.0 * zoom)}px 'Inter', sans-serif`;
-          ctx.fillStyle = isLight ? '#334155' : '#cbd5e1';
-          ctx.fillText(shape.text, 0, 0);
-          ctx.restore();
         }
       });
 
       // Render Pins
-      ctx.strokeStyle = isLight ? '#dc2626' : '#e05638';
+      ctx.strokeStyle = colors.noConnectColor;
       ctx.font = `${Math.max(9, 2.0 * zoom)}px 'JetBrains Mono', monospace`;
 
       sym.pins.forEach((pin) => {
@@ -611,69 +701,31 @@ export const SchematicEditor: React.FC<Props> = ({
         const endX = px + Math.cos(rad) * len;
         const endY = py + Math.sin(rad) * len;
 
-        // Pin Lead Line
         ctx.beginPath();
         ctx.moveTo(px, py);
         ctx.lineTo(endX, endY);
         ctx.stroke();
 
-        // Pin Inversion Bubble if applicable
-        if (pin.graphicStyle === 'inverted' || pin.graphicStyle === 'inverted_clock') {
-          ctx.save();
-          ctx.beginPath();
-          ctx.arc(px + Math.cos(rad) * 1.2 * zoom, py + Math.sin(rad) * 1.2 * zoom, 1.0 * zoom, 0, Math.PI * 2);
-          ctx.fillStyle = isLight ? '#f8fafc' : '#1a202c';
-          ctx.fill();
-          ctx.stroke();
-          ctx.restore();
-        }
-
-        // Pin Clock Triangle if applicable
-        if (pin.graphicStyle === 'clock' || pin.graphicStyle === 'inverted_clock') {
-          ctx.save();
-          const normRad = rad + Math.PI / 2;
-          const tipX = px + Math.cos(rad) * 1.8 * zoom;
-          const tipY = py + Math.sin(rad) * 1.8 * zoom;
-          const pLeftX = px + Math.cos(normRad) * 1.2 * zoom;
-          const pLeftY = py + Math.sin(normRad) * 1.2 * zoom;
-          const pRightX = px - Math.cos(normRad) * 1.2 * zoom;
-          const pRightY = py - Math.sin(normRad) * 1.2 * zoom;
-          ctx.beginPath();
-          ctx.moveTo(pLeftX, pLeftY);
-          ctx.lineTo(tipX, tipY);
-          ctx.lineTo(pRightX, pRightY);
-          ctx.stroke();
-          ctx.restore();
-        }
-
-        // Pin Connection Dot at the active lead endpoint
         ctx.fillStyle = '#ef4444';
         ctx.beginPath();
         ctx.arc(endX, endY, 2.5, 0, Math.PI * 2);
         ctx.fill();
 
-        // Pin Number & Name (Clean orientation-aware placement)
         if (pin.visible && zoom > 2.2) {
-          ctx.fillStyle = isLight ? '#475569' : '#94a3b8';
-          // Number along lead
+          ctx.fillStyle = colors.textMutedColor;
           if (pinOrient === 180) {
             ctx.fillText(pin.number, endX + 3, endY - 3);
           } else if (pinOrient === 0) {
             ctx.fillText(pin.number, endX - 14, endY - 3);
-          } else if (pinOrient === 270) {
-            ctx.fillText(pin.number, endX + 3, endY + 10);
           } else {
             ctx.fillText(pin.number, endX + 3, endY - 5);
           }
 
-          // Name adjacent to body
-          ctx.fillStyle = isLight ? '#0f172a' : '#e2e8f0';
+          ctx.fillStyle = colors.textColor;
           if (pinOrient === 180) {
             ctx.fillText(pin.name, px + 5, py + 3);
           } else if (pinOrient === 0) {
             ctx.fillText(pin.name, px - 24, py + 3);
-          } else if (pinOrient === 270) {
-            ctx.fillText(pin.name, px + 4, py + 12);
           } else {
             ctx.fillText(pin.name, px + 4, py - 4);
           }
@@ -682,11 +734,11 @@ export const SchematicEditor: React.FC<Props> = ({
 
       ctx.restore();
 
-      // Clean Reference & Value Labels (e.g. U1A, U1B for multi-unit components)
+      // Clean Reference & Value Labels
       const unitSuffix = sym.unitSuffix || (symDef && symDef.unitCount && symDef.unitCount > 1 ? (sym.unit > 0 && sym.unit <= 26 ? String.fromCharCode(64 + sym.unit) : `_${sym.unit}`) : '');
       const displayRef = `${sym.reference}${unitSuffix}`;
 
-      ctx.fillStyle = isLight ? '#0284c7' : '#38bdf8';
+      ctx.fillStyle = colors.selectionBorder;
       ctx.font = `600 ${Math.max(10, 3.2 * zoom)}px Inter, sans-serif`;
       ctx.fillText(displayRef, symScreen.x - 12, symScreen.y - 18 * (zoom / 4));
 
@@ -695,7 +747,7 @@ export const SchematicEditor: React.FC<Props> = ({
       ctx.fillText(sym.value, symScreen.x - 12, symScreen.y + 22 * (zoom / 4));
     });
 
-    // 6. Ghost Preview for Armed Symbol Placement
+    // 10. Ghost Preview for Armed Symbol Placement
     if (activeTool === 'place_symbol' && armedSymbolDef) {
       const snappedHover = { x: snapToGrid(hoverWorldPos.x), y: snapToGrid(hoverWorldPos.y) };
       const ghostScreen = worldToScreen(snappedHover.x, snappedHover.y);
@@ -708,7 +760,7 @@ export const SchematicEditor: React.FC<Props> = ({
       ctx.rotate((placementRotation * Math.PI) / 180);
       if (placementMirror) ctx.scale(-1, 1);
 
-      ctx.strokeStyle = '#38bdf8';
+      ctx.strokeStyle = colors.selectionBorder;
       ctx.lineWidth = Math.max(1.5, 0.35 * zoom);
       ctx.setLineDash([3, 3]);
 
@@ -724,21 +776,6 @@ export const SchematicEditor: React.FC<Props> = ({
             ctx.lineTo(shape.points[i].x * zoom, shape.points[i].y * zoom);
           }
           ctx.closePath();
-          ctx.stroke();
-        } else if (shape.type === 'line' && shape.points && shape.points.length >= 2) {
-          ctx.beginPath();
-          ctx.moveTo(shape.points[0].x * zoom, shape.points[0].y * zoom);
-          for (let i = 1; i < shape.points.length; i++) {
-            ctx.lineTo(shape.points[i].x * zoom, shape.points[i].y * zoom);
-          }
-          ctx.stroke();
-        } else if (shape.type === 'circle' && shape.radius) {
-          ctx.beginPath();
-          ctx.arc((shape.x || 0) * zoom, (shape.y || 0) * zoom, shape.radius * zoom, 0, Math.PI * 2);
-          ctx.stroke();
-        } else if (shape.type === 'arc' && shape.radius) {
-          ctx.beginPath();
-          ctx.arc((shape.x || 0) * zoom, (shape.y || 0) * zoom, shape.radius * zoom, shape.startAngle || 0, shape.endAngle || Math.PI, shape.counterclockwise);
           ctx.stroke();
         }
       });
@@ -757,12 +794,12 @@ export const SchematicEditor: React.FC<Props> = ({
       ctx.setLineDash([]);
       ctx.restore();
 
-      ctx.fillStyle = '#38bdf8';
+      ctx.fillStyle = colors.selectionBorder;
       ctx.font = 'bold 11px Inter, sans-serif';
       ctx.fillText(`${armedSymbolDef.defaultPrefix}? (${armedSymbolDef.name}) [R:Rotate, M:Mirror, Esc:Cancel]`, ghostScreen.x - 15, ghostScreen.y - 20);
     }
 
-    // 7. Render Magnetic Pin Snapping Feedback
+    // 11. Magnetic Pin Snapping Feedback
     if (magneticSnapPin) {
       const sp = worldToScreen(magneticSnapPin.worldPos.x, magneticSnapPin.worldPos.y);
       ctx.strokeStyle = '#22c55e';
@@ -776,12 +813,12 @@ export const SchematicEditor: React.FC<Props> = ({
       ctx.fillText(`${magneticSnapPin.symbol.reference}.${magneticSnapPin.pin.name}`, sp.x + 8, sp.y - 4);
     }
 
-    // 8. Render In-Canvas ERC Error & Warning Markers
+    // 12. In-Canvas ERC Error & Warning Markers
     ercViolations.forEach((v) => {
       const sp = worldToScreen(v.x, v.y);
       const isError = v.severity === 'error';
 
-      ctx.fillStyle = isError ? '#ef4444' : '#f59e0b';
+      ctx.fillStyle = isError ? colors.drcColor : colors.ercColor;
       ctx.beginPath();
       ctx.arc(sp.x, sp.y - 12, 7, 0, Math.PI * 2);
       ctx.fill();
@@ -793,10 +830,10 @@ export const SchematicEditor: React.FC<Props> = ({
       ctx.fillText(isError ? '✕' : '!', sp.x, sp.y - 12);
     });
 
-    // 9. Render Net Labels
+    // 13. Render Net Labels
     activeSheet.labels.forEach((lbl) => {
       const sp = worldToScreen(lbl.x, lbl.y);
-      ctx.fillStyle = '#f59e0b';
+      ctx.fillStyle = colors.labelColor;
       ctx.font = `600 ${Math.max(10, 2.8 * zoom)}px 'JetBrains Mono', monospace`;
       ctx.textAlign = 'left';
       ctx.fillText(`[ ${lbl.text} ]`, sp.x + 4, sp.y - 4);
@@ -805,14 +842,14 @@ export const SchematicEditor: React.FC<Props> = ({
       ctx.fill();
     });
 
-    // 10. Render Power Symbols
+    // 14. Render Power Symbols
     activeSheet.powerSymbols.forEach((pwr) => {
       const sp = worldToScreen(pwr.x, pwr.y);
-      ctx.fillStyle = '#ef4444';
+      ctx.fillStyle = colors.powerColor;
       ctx.font = `bold ${Math.max(10, 3.0 * zoom)}px 'JetBrains Mono', monospace`;
       ctx.fillText(pwr.netName, sp.x - 10, sp.y - 8);
 
-      ctx.strokeStyle = '#ef4444';
+      ctx.strokeStyle = colors.powerColor;
       ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.moveTo(sp.x, sp.y);
@@ -822,7 +859,7 @@ export const SchematicEditor: React.FC<Props> = ({
       ctx.stroke();
     });
 
-    // 11. Render Marquee Box Selection Overlay
+    // 15. Render Marquee Box Selection Overlay
     if (isSelectingBox && selectionBoxStart && selectionBoxCurrent) {
       const p1 = worldToScreen(selectionBoxStart.x, selectionBoxStart.y);
       const p2 = worldToScreen(selectionBoxCurrent.x, selectionBoxCurrent.y);
@@ -831,9 +868,9 @@ export const SchematicEditor: React.FC<Props> = ({
       const w = Math.abs(p2.x - p1.x);
       const h = Math.abs(p2.y - p1.y);
 
-      ctx.fillStyle = 'rgba(56, 189, 248, 0.15)';
+      ctx.fillStyle = colors.selectionBg;
       ctx.fillRect(minX, minY, w, h);
-      ctx.strokeStyle = '#38bdf8';
+      ctx.strokeStyle = colors.selectionBorder;
       ctx.lineWidth = 1.5;
       ctx.setLineDash([4, 4]);
       ctx.strokeRect(minX, minY, w, h);
@@ -850,6 +887,7 @@ export const SchematicEditor: React.FC<Props> = ({
     placementRotation,
     placementMirror,
     wireStart,
+    busStart,
     hoverWorldPos,
     magneticSnapPin,
     ercViolations,
@@ -860,6 +898,7 @@ export const SchematicEditor: React.FC<Props> = ({
     screenToWorld,
     worldToScreen,
     theme,
+    project,
   ]);
 
   // Mouse Interaction Handlers
@@ -870,43 +909,28 @@ export const SchematicEditor: React.FC<Props> = ({
     const sx = e.clientX - rect.left;
     const sy = e.clientY - rect.top;
     const wp = screenToWorld(sx, sy);
-    const snapped = { x: snapToGrid(wp.x), y: snapToGrid(wp.y) };
+    const snapPoint = { x: snapToGrid(wp.x), y: snapToGrid(wp.y) };
 
-    // Check if clicked an ERC marker
-    const clickedMarker = ercViolations.find((v) => {
-      const sp = worldToScreen(v.x, v.y);
-      return Math.hypot(sx - sp.x, sy - (sp.y - 12)) < 10;
-    });
-
-    if (clickedMarker) {
-      setActiveViolationPopup(clickedMarker);
-      setPan({
-        x: canvas.width / 2 - clickedMarker.x * zoom,
-        y: canvas.height / 2 - clickedMarker.y * zoom,
-      });
-      return;
-    }
-
-    // 1. Pan with Middle mouse, Right mouse, Alt key, or Pan Tool
-    if (e.button === 1 || e.button === 2 || activeTool === 'pan' || e.altKey) {
+    // Pan with Middle or Right button or Pan tool
+    if (e.button === 1 || e.button === 2 || activeTool === 'pan') {
       setIsPanning(true);
       setPanStart({ x: sx - pan.x, y: sy - pan.y });
       return;
     }
 
-    // 2. Armed Symbol Placement
+    // 1. Place Symbol
     if (activeTool === 'place_symbol' && armedSymbolDef) {
       const nextRef = SchematicHelper.getNextReference(armedSymbolDef.defaultPrefix, activeSheet.symbols);
       const initialUnit = armedSymbolDef.units && armedSymbolDef.units.length > 0 ? armedSymbolDef.units[0] : null;
 
-      const newSym: SchematicSymbolInstance = {
+      const newSymInstance: SchematicSymbolInstance = {
         id: `sym_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
         symbolDefId: armedSymbolDef.id,
         reference: nextRef,
         value: armedSymbolDef.name,
         footprint: armedSymbolDef.defaultFootprint || '',
-        x: snapped.x,
-        y: snapped.y,
+        x: snapPoint.x,
+        y: snapPoint.y,
         rotation: placementRotation,
         mirrorX: placementMirror,
         unit: initialUnit ? initialUnit.unit : 1,
@@ -922,54 +946,36 @@ export const SchematicEditor: React.FC<Props> = ({
           schematic: {
             ...prev.schematic,
             sheets: prev.schematic.sheets.map((s) =>
-              s.id === sheet.id ? { ...s, symbols: [...s.symbols, newSym] } : s
+              s.id === sheet.id ? { ...s, symbols: [...s.symbols, newSymInstance] } : s
             ),
           },
         };
-      }, `Place ${newSym.reference}`);
+      }, `Place ${newSymInstance.reference}`);
 
-      setSelectedIds([newSym.id]);
-      eventBus.emit('SELECT_SYMBOL', { symbolId: newSym.id, reference: newSym.reference });
+      if (!e.shiftKey) {
+        setActiveTool('select');
+        setArmedSymbolDef(null);
+      }
+      setSelectedIds([newSymInstance.id]);
       return;
     }
 
-    // 3. Wire Routing
+    // 2. Wire Tool
     if (activeTool === 'wire') {
-      const snapPoint = magneticSnapPin ? magneticSnapPin.worldPos : snapped;
-
       if (!wireStart) {
-        setWireStart(snapPoint);
+        const startPt = magneticSnapPin ? magneticSnapPin.worldPos : snapPoint;
+        setWireStart(startPt);
       } else {
+        const endPt = magneticSnapPin ? magneticSnapPin.worldPos : snapPoint;
+        if (wireStart.x === endPt.x && wireStart.y === endPt.y) return;
+
         const newWire: SchematicWireSegment = {
-          id: `w_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+          id: `wire_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
           x1: wireStart.x,
           y1: wireStart.y,
-          x2: snapPoint.x,
-          y2: snapPoint.y,
+          x2: endPt.x,
+          y2: endPt.y,
         };
-
-        const existingWire = activeSheet.wires.find((w) => {
-          const minX = Math.min(w.x1, w.x2) - 0.2;
-          const maxX = Math.max(w.x1, w.x2) + 0.2;
-          const minY = Math.min(w.y1, w.y2) - 0.2;
-          const maxY = Math.max(w.y1, w.y2) + 0.2;
-          if (snapPoint.x >= minX && snapPoint.x <= maxX && snapPoint.y >= minY && snapPoint.y <= maxY) {
-            const len = Math.hypot(w.x2 - w.x1, w.y2 - w.y1);
-            if (len > 0) {
-              const cross = Math.abs((w.y2 - w.y1) * snapPoint.x - (w.x2 - w.x1) * snapPoint.y + w.x2 * w.y1 - w.y2 * w.x1);
-              return cross / len < 0.25;
-            }
-          }
-          return false;
-        });
-
-        const newJuncs: SchematicJunction[] = [];
-        if (existingWire) {
-          const hasJunc = activeSheet.junctions.some((j) => Math.hypot(j.x - snapPoint.x, j.y - snapPoint.y) < 0.3);
-          if (!hasJunc) {
-            newJuncs.push({ id: `junc_${Date.now()}`, x: snapPoint.x, y: snapPoint.y });
-          }
-        }
 
         onUpdateProject((prev) => {
           const sheet = prev.schematic.sheets.find((s) => s.id === prev.schematic.activeSheetId) || prev.schematic.sheets[0];
@@ -978,13 +984,7 @@ export const SchematicEditor: React.FC<Props> = ({
             schematic: {
               ...prev.schematic,
               sheets: prev.schematic.sheets.map((s) =>
-                s.id === sheet.id
-                  ? {
-                      ...s,
-                      wires: [...s.wires, newWire],
-                      junctions: [...s.junctions, ...newJuncs],
-                    }
-                  : s
+                s.id === sheet.id ? { ...s, wires: [...s.wires, newWire] } : s
               ),
             },
           };
@@ -993,13 +993,74 @@ export const SchematicEditor: React.FC<Props> = ({
         if (magneticSnapPin) {
           setWireStart(null);
         } else {
-          setWireStart(snapPoint);
+          setWireStart(endPt);
         }
       }
       return;
     }
 
-    // 4. Selection Mode & Multi-Object Move
+    // 3. Bus Tool
+    if (activeTool === 'bus') {
+      if (!busStart) {
+        setBusStart(snapPoint);
+      } else {
+        if (busStart.x === snapPoint.x && busStart.y === snapPoint.y) return;
+
+        const newBus: SchematicBusSegment = {
+          id: `bus_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+          x1: busStart.x,
+          y1: busStart.y,
+          x2: snapPoint.x,
+          y2: snapPoint.y,
+          name: 'BUS[0..7]',
+        };
+
+        onUpdateProject((prev) => {
+          const sheet = prev.schematic.sheets.find((s) => s.id === prev.schematic.activeSheetId) || prev.schematic.sheets[0];
+          return {
+            ...prev,
+            schematic: {
+              ...prev.schematic,
+              sheets: prev.schematic.sheets.map((s) =>
+                s.id === sheet.id ? { ...s, buses: [...(s.buses || []), newBus] } : s
+              ),
+            },
+          };
+        }, 'Draw Bus');
+
+        setBusStart(null);
+      }
+      return;
+    }
+
+    // 4. No-Connect Tool
+    if (activeTool === 'no_connect') {
+      const pinHit = SchematicHelper.findClosestPin(wp, activeSheet.symbols, 2.5);
+      const ncPos = pinHit ? pinHit.worldPos : snapPoint;
+      const newNC: SchematicNoConnect = {
+        id: `nc_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+        x: ncPos.x,
+        y: ncPos.y,
+        symbolId: pinHit?.symbol.id,
+        pinId: pinHit?.pin.id,
+      };
+
+      onUpdateProject((prev) => {
+        const sheet = prev.schematic.sheets.find((s) => s.id === prev.schematic.activeSheetId) || prev.schematic.sheets[0];
+        return {
+          ...prev,
+          schematic: {
+            ...prev.schematic,
+            sheets: prev.schematic.sheets.map((s) =>
+              s.id === sheet.id ? { ...s, noConnects: [...(s.noConnects || []), newNC] } : s
+            ),
+          },
+        };
+      }, 'Place No-Connect');
+      return;
+    }
+
+    // 5. Selection Mode & Multi-Object Move
     if (activeTool === 'select') {
       // Check Pin Click for Net Highlighting
       const pinHit = SchematicHelper.findClosestPin(wp, activeSheet.symbols, 2.0);
@@ -1020,23 +1081,39 @@ export const SchematicEditor: React.FC<Props> = ({
       }
 
       // Check Symbol Body Click
-      const symHit = activeSheet.symbols.find((s) => {
-        const bb = SchematicHelper.getSymbolBoundingBox(s);
-        return wp.x >= bb.minX && wp.x <= bb.maxX && wp.y >= bb.minY && wp.y <= bb.maxY;
-      });
+      const symHit = selectionFilter.symbols
+        ? activeSheet.symbols.find((s) => {
+            const bb = SchematicHelper.getSymbolBoundingBox(s);
+            return wp.x >= bb.minX && wp.x <= bb.maxX && wp.y >= bb.minY && wp.y <= bb.maxY;
+          })
+        : undefined;
 
       // Check Wire Click
-      const wireHit = !symHit ? activeSheet.wires.find((w) => {
-        const dist = Math.hypot(w.x2 - w.x1, w.y2 - w.y1);
-        if (dist === 0) return false;
-        const d = Math.abs((w.y2 - w.y1) * wp.x - (w.x2 - w.x1) * wp.y + w.x2 * w.y1 - w.y2 * w.x1) / dist;
-        return d < 1.2;
-      }) : undefined;
+      const wireHit = (!symHit && selectionFilter.wires)
+        ? activeSheet.wires.find((w) => {
+            const dist = Math.hypot(w.x2 - w.x1, w.y2 - w.y1);
+            if (dist === 0) return false;
+            const d = Math.abs((w.y2 - w.y1) * wp.x - (w.x2 - w.x1) * wp.y + w.x2 * w.y1 - w.y2 * w.x1) / dist;
+            return d < 1.2;
+          })
+        : undefined;
+
+      // Check Bus Click
+      const busHit = (!symHit && !wireHit && selectionFilter.buses && activeSheet.buses)
+        ? activeSheet.buses.find((b) => {
+            const dist = Math.hypot(b.x2 - b.x1, b.y2 - b.y1);
+            if (dist === 0) return false;
+            const d = Math.abs((b.y2 - b.y1) * wp.x - (b.x2 - b.x1) * wp.y + b.x2 * b.y1 - b.y2 * b.x1) / dist;
+            return d < 1.5;
+          })
+        : undefined;
 
       // Check Label Click
-      const labelHit = (!symHit && !wireHit) ? activeSheet.labels.find((l) => Math.hypot(l.x - wp.x, l.y - wp.y) < 3.0) : undefined;
+      const labelHit = (!symHit && !wireHit && !busHit && selectionFilter.labels)
+        ? activeSheet.labels.find((l) => Math.hypot(l.x - wp.x, l.y - wp.y) < 3.0)
+        : undefined;
 
-      const hitId = symHit?.id || wireHit?.id || labelHit?.id;
+      const hitId = symHit?.id || wireHit?.id || busHit?.id || labelHit?.id;
 
       if (hitId) {
         let newSelected: string[];
@@ -1053,9 +1130,9 @@ export const SchematicEditor: React.FC<Props> = ({
           eventBus.emit('SELECT_SYMBOL', { symbolId: symHit.id, reference: symHit.reference });
         }
 
-        // Snapshot positions for group drag
         const symMap = new Map<string, Point2D>();
         const wireMap = new Map<string, { x1: number; y1: number; x2: number; y2: number }>();
+        const busMap = new Map<string, { x1: number; y1: number; x2: number; y2: number }>();
         const lblMap = new Map<string, Point2D>();
 
         activeSheet.symbols.forEach((s) => {
@@ -1063,6 +1140,9 @@ export const SchematicEditor: React.FC<Props> = ({
         });
         activeSheet.wires.forEach((w) => {
           if (newSelected.includes(w.id)) wireMap.set(w.id, { x1: w.x1, y1: w.y1, x2: w.x2, y2: w.y2 });
+        });
+        activeSheet.buses?.forEach((b) => {
+          if (newSelected.includes(b.id)) busMap.set(b.id, { x1: b.x1, y1: b.y1, x2: b.x2, y2: b.y2 });
         });
         activeSheet.labels.forEach((l) => {
           if (newSelected.includes(l.id)) lblMap.set(l.id, { x: l.x, y: l.y });
@@ -1072,6 +1152,7 @@ export const SchematicEditor: React.FC<Props> = ({
         setDragStartSnapshot({
           symbols: symMap,
           wires: wireMap,
+          buses: busMap,
           labels: lblMap,
           anchorWorld: { x: wp.x, y: wp.y },
         });
@@ -1080,7 +1161,7 @@ export const SchematicEditor: React.FC<Props> = ({
         return;
       }
 
-      // Clicked empty canvas -> Start Marquee Box Selection
+      // Empty canvas click -> Start Box Selection
       if (e.button === 0) {
         setIsSelectingBox(true);
         setSelectionBoxStart(wp);
@@ -1119,14 +1200,12 @@ export const SchematicEditor: React.FC<Props> = ({
 
       onUpdateProject((prev) => {
         const sheet = prev.schematic.sheets.find((s) => s.id === prev.schematic.activeSheetId) || prev.schematic.sheets[0];
-        
-        // 1. Move explicitly selected symbols
+
         const updatedSymbols = sheet.symbols.map((sym) => {
           const orig = dragStartSnapshot.symbols.get(sym.id);
           return orig ? { ...sym, x: snapToGrid(orig.x + deltaX), y: snapToGrid(orig.y + deltaY) } : sym;
         });
 
-        // 2. Base wire movement
         let updatedWires = sheet.wires.map((w) => {
           const orig = dragStartSnapshot.wires.get(w.id);
           return orig
@@ -1140,7 +1219,7 @@ export const SchematicEditor: React.FC<Props> = ({
             : w;
         });
 
-        // 3. Dynamic orthogonal rubber-banding for wires connected to moved symbols
+        // Rubber-band stretch wires connected to moved symbols
         sheet.symbols.forEach((sym) => {
           if (dragStartSnapshot.symbols.has(sym.id)) {
             const orig = dragStartSnapshot.symbols.get(sym.id)!;
@@ -1158,7 +1237,19 @@ export const SchematicEditor: React.FC<Props> = ({
           }
         });
 
-        // 4. Move dragged labels
+        const updatedBuses = (sheet.buses || []).map((b) => {
+          const orig = dragStartSnapshot.buses.get(b.id);
+          return orig
+            ? {
+                ...b,
+                x1: snapToGrid(orig.x1 + deltaX),
+                y1: snapToGrid(orig.y1 + deltaY),
+                x2: snapToGrid(orig.x2 + deltaX),
+                y2: snapToGrid(orig.y2 + deltaY),
+              }
+            : b;
+        });
+
         const updatedLabels = sheet.labels.map((l) => {
           const orig = dragStartSnapshot.labels.get(l.id);
           return orig ? { ...l, x: snapToGrid(orig.x + deltaX), y: snapToGrid(orig.y + deltaY) } : l;
@@ -1174,6 +1265,7 @@ export const SchematicEditor: React.FC<Props> = ({
                     ...s,
                     symbols: updatedSymbols,
                     wires: updatedWires,
+                    buses: updatedBuses,
                     labels: updatedLabels,
                   }
                 : s
@@ -1184,7 +1276,6 @@ export const SchematicEditor: React.FC<Props> = ({
       return;
     }
 
-    // Check magnetic snap for wiring
     if (activeTool === 'wire') {
       const snapPin = SchematicHelper.findClosestPin(wp, activeSheet.symbols, 2.5);
       setMagneticSnapPin(snapPin);
@@ -1203,23 +1294,37 @@ export const SchematicEditor: React.FC<Props> = ({
 
       if (w > 1.5 || h > 1.5) {
         const matched: string[] = [];
-        activeSheet.symbols.forEach((sym) => {
-          const bb = SchematicHelper.getSymbolBoundingBox(sym);
-          if (bb.minX <= maxX && bb.maxX >= minX && bb.minY <= maxY && bb.maxY >= minY) {
-            matched.push(sym.id);
-          }
-        });
-        activeSheet.wires.forEach((wire) => {
-          const inBox =
-            (wire.x1 >= minX && wire.x1 <= maxX && wire.y1 >= minY && wire.y1 <= maxY) ||
-            (wire.x2 >= minX && wire.x2 <= maxX && wire.y2 >= minY && wire.y2 <= maxY);
-          if (inBox) matched.push(wire.id);
-        });
-        activeSheet.labels.forEach((lbl) => {
-          if (lbl.x >= minX && lbl.x <= maxX && lbl.y >= minY && lbl.y <= maxY) {
-            matched.push(lbl.id);
-          }
-        });
+        if (selectionFilter.symbols) {
+          activeSheet.symbols.forEach((sym) => {
+            const bb = SchematicHelper.getSymbolBoundingBox(sym);
+            if (bb.minX <= maxX && bb.maxX >= minX && bb.minY <= maxY && bb.maxY >= minY) {
+              matched.push(sym.id);
+            }
+          });
+        }
+        if (selectionFilter.wires) {
+          activeSheet.wires.forEach((wire) => {
+            const inBox =
+              (wire.x1 >= minX && wire.x1 <= maxX && wire.y1 >= minY && wire.y1 <= maxY) ||
+              (wire.x2 >= minX && wire.x2 <= maxX && wire.y2 >= minY && wire.y2 <= maxY);
+            if (inBox) matched.push(wire.id);
+          });
+        }
+        if (selectionFilter.buses && activeSheet.buses) {
+          activeSheet.buses.forEach((bus) => {
+            const inBox =
+              (bus.x1 >= minX && bus.x1 <= maxX && bus.y1 >= minY && bus.y1 <= maxY) ||
+              (bus.x2 >= minX && bus.x2 <= maxX && bus.y2 >= minY && bus.y2 <= maxY);
+            if (inBox) matched.push(bus.id);
+          });
+        }
+        if (selectionFilter.labels) {
+          activeSheet.labels.forEach((lbl) => {
+            if (lbl.x >= minX && lbl.x <= maxX && lbl.y >= minY && lbl.y <= maxY) {
+              matched.push(lbl.id);
+            }
+          });
+        }
 
         setSelectedIds((prev) => Array.from(new Set([...(e.shiftKey ? prev : []), ...matched])));
       }
@@ -1239,28 +1344,27 @@ export const SchematicEditor: React.FC<Props> = ({
       <SymbolLibrarySidebar
         isCollapsed={sidebarCollapsed}
         onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
-        onSelectSymbol={(sym) => {
-          setSelectedIds([]);
-        }}
+        onSelectSymbol={() => setSelectedIds([])}
         onArmPlacement={handleArmPlacement}
       />
 
       {/* 2. Central Schematic Canvas */}
       <div className="flex-1 h-full flex flex-col relative overflow-hidden">
-        {/* Schematic Top Toolbar */}
-        <div className="h-10 bg-cad-subpanel border-b border-cad-border px-3 flex items-center justify-between text-xs">
+        {/* Schematic Main Engineering Toolbar */}
+        <div className="h-9 bg-cad-panel border-b border-cad-border px-3 flex items-center justify-between text-xs select-none">
           <div className="flex items-center space-x-1">
             <button
               onClick={() => {
                 setActiveTool('select');
                 setActiveViolationPopup(null);
               }}
-              title="Select & Marquee Box Tool (Esc / V)"
-              className={`p-1.5 rounded flex items-center gap-1 font-semibold ${
-                activeTool === 'select' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-300 hover:bg-cad-border'
+              title="Select Tool (Esc / V)"
+              className={`px-2.5 py-1 rounded text-xs flex items-center gap-1.5 font-medium transition-colors ${
+                activeTool === 'select' ? 'bg-blue-600 text-white shadow-sm font-semibold' : 'text-cad-text hover:bg-cad-surfaceHover'
               }`}
             >
-              <Move size={14} /> Select
+              <Move size={13} />
+              <span>Select</span>
             </button>
 
             <button
@@ -1268,12 +1372,13 @@ export const SchematicEditor: React.FC<Props> = ({
                 setActiveTool('pan');
                 setActiveViolationPopup(null);
               }}
-              title="Pan Canvas Tool (H / Right Drag / Middle Drag)"
-              className={`p-1.5 rounded flex items-center gap-1 font-semibold ${
-                activeTool === 'pan' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-300 hover:bg-cad-border'
+              title="Pan Tool (H / Middle Drag)"
+              className={`px-2.5 py-1 rounded text-xs flex items-center gap-1.5 font-medium transition-colors ${
+                activeTool === 'pan' ? 'bg-blue-600 text-white shadow-sm font-semibold' : 'text-cad-text hover:bg-cad-surfaceHover'
               }`}
             >
-              <Hand size={14} /> Pan (H)
+              <Hand size={13} />
+              <span>Pan (H)</span>
             </button>
 
             <button
@@ -1282,124 +1387,123 @@ export const SchematicEditor: React.FC<Props> = ({
                 setWireStart(null);
                 setActiveViolationPopup(null);
               }}
-              title="Draw Electrical Wire (W)"
-              className={`p-1.5 rounded flex items-center gap-1 font-semibold ${
-                activeTool === 'wire' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-300 hover:bg-cad-border'
+              title="Draw Wire (W)"
+              className={`px-2.5 py-1 rounded text-xs flex items-center gap-1.5 font-medium transition-colors ${
+                activeTool === 'wire' ? 'bg-blue-600 text-white shadow-sm font-semibold' : 'text-cad-text hover:bg-cad-surfaceHover'
               }`}
             >
-              <Zap size={14} className="text-emerald-400" /> Wire (W)
+              <Zap size={13} className={activeTool === 'wire' ? 'text-white' : 'text-emerald-600 dark:text-emerald-400'} />
+              <span>Wire (W)</span>
+            </button>
+
+            <button
+              onClick={() => {
+                setActiveTool('bus');
+                setBusStart(null);
+                setActiveViolationPopup(null);
+              }}
+              title="Draw Multi-Signal Bus (B)"
+              className={`px-2.5 py-1 rounded text-xs flex items-center gap-1.5 font-medium transition-colors ${
+                activeTool === 'bus' ? 'bg-blue-600 text-white shadow-sm font-semibold' : 'text-cad-text hover:bg-cad-surfaceHover'
+              }`}
+            >
+              <Binary size={13} className={activeTool === 'bus' ? 'text-white' : 'text-indigo-600 dark:text-indigo-400'} />
+              <span>Bus (B)</span>
+            </button>
+
+            <button
+              onClick={() => {
+                setActiveTool('no_connect');
+                setActiveViolationPopup(null);
+              }}
+              title="Place No-Connect Flag (Q)"
+              className={`px-2.5 py-1 rounded text-xs flex items-center gap-1.5 font-medium transition-colors ${
+                activeTool === 'no_connect' ? 'bg-blue-600 text-white shadow-sm font-semibold' : 'text-cad-text hover:bg-cad-surfaceHover'
+              }`}
+            >
+              <X size={13} className={activeTool === 'no_connect' ? 'text-white' : 'text-red-600 dark:text-red-400'} />
+              <span>No-Connect (Q)</span>
             </button>
 
             <button
               onClick={onOpenSymbolChooser}
-              title="Search and Place Symbol (A)"
-              className="p-1.5 hover:bg-cad-border rounded text-slate-300 flex items-center gap-1 font-semibold"
+              title="Place Component Symbol (A)"
+              className="px-2.5 py-1 hover:bg-cad-surfaceHover rounded text-cad-text flex items-center gap-1.5 font-medium transition-colors"
             >
-              <Cpu size={14} className="text-blue-400" /> Place Symbol (A)
+              <Cpu size={13} className="text-blue-600 dark:text-blue-400" />
+              <span>Symbol (A)</span>
+            </button>
+
+            <div className="h-4 w-px bg-cad-border mx-1" />
+
+            <button
+              onClick={handleAutoAnnotate}
+              title="Auto-Annotate Schematic References (R? -> R1, R2...)"
+              className="px-2 py-1 hover:bg-cad-surfaceHover rounded text-cad-text flex items-center gap-1.5 font-medium transition-colors"
+            >
+              <GitCommit size={13} className="text-purple-600 dark:text-purple-400" />
+              <span>Annotate</span>
             </button>
 
             <button
-              onClick={() => {
-                if (selectedIds.length > 0) {
-                  onUpdateProject((prev) => {
-                    const sheet = prev.schematic.sheets.find((s) => s.id === prev.schematic.activeSheetId) || prev.schematic.sheets[0];
-                    return {
-                      ...prev,
-                      schematic: {
-                        ...prev.schematic,
-                        sheets: prev.schematic.sheets.map((s) =>
-                          s.id === sheet.id
-                            ? {
-                                ...s,
-                                symbols: s.symbols.map((sym) =>
-                                  selectedIds.includes(sym.id) ? { ...sym, rotation: ((sym.rotation + 90) % 360) as any } : sym
-                                ),
-                              }
-                            : s
-                        ),
-                      },
-                    };
-                  }, 'Rotate Symbol');
-                }
-              }}
-              disabled={selectedIds.length === 0}
-              title="Rotate Selected Symbols (R)"
-              className="p-1.5 hover:bg-cad-border disabled:opacity-40 rounded text-slate-300 flex items-center gap-1"
+              onClick={handleExportBOM}
+              title="Download Bill of Materials (BOM CSV)"
+              className="px-2 py-1 hover:bg-cad-surfaceHover rounded text-cad-text flex items-center gap-1.5 font-medium transition-colors"
             >
-              <RotateCw size={14} /> Rotate (R)
+              <FileSpreadsheet size={13} className="text-emerald-600 dark:text-emerald-400" />
+              <span>BOM CSV</span>
             </button>
 
             <button
-              onClick={() => {
-                if (selectedIds.length > 0) {
-                  onUpdateProject((prev) => {
-                    const sheet = prev.schematic.sheets.find((s) => s.id === prev.schematic.activeSheetId) || prev.schematic.sheets[0];
-                    return {
-                      ...prev,
-                      schematic: {
-                        ...prev.schematic,
-                        sheets: prev.schematic.sheets.map((s) =>
-                          s.id === sheet.id
-                            ? {
-                                ...s,
-                                symbols: s.symbols.map((sym) =>
-                                  selectedIds.includes(sym.id) ? { ...sym, mirrorX: !sym.mirrorX } : sym
-                                ),
-                              }
-                            : s
-                        ),
-                      },
-                    };
-                  }, 'Mirror Symbol');
-                }
-              }}
-              disabled={selectedIds.length === 0}
-              title="Mirror Selected Symbols (M)"
-              className="p-1.5 hover:bg-cad-border disabled:opacity-40 rounded text-slate-300 flex items-center gap-1"
-            >
-              <FlipHorizontal size={14} /> Mirror (M)
-            </button>
-
-            {/* Delete Selected Tool */}
-            <button
-              onClick={handleDeleteSelected}
-              disabled={selectedIds.length === 0}
-              title="Delete Selected Objects (Delete / Backspace)"
-              className={`p-1.5 rounded flex items-center gap-1 font-semibold transition-colors ${
-                selectedIds.length > 0
-                  ? 'bg-red-600/30 hover:bg-red-600/50 text-red-300 border border-red-500/40 shadow-sm'
-                  : 'text-slate-500 opacity-40 cursor-not-allowed'
+              onClick={() => setShowFilterBar(!showFilterBar)}
+              title="Toggle Selection Filters"
+              className={`px-2 py-1 rounded text-xs flex items-center gap-1.5 font-medium transition-colors ${
+                showFilterBar ? 'bg-cad-subpanel text-cad-textHeading border border-cad-border font-semibold' : 'text-cad-text hover:bg-cad-surfaceHover'
               }`}
             >
-              <Trash2 size={14} className={selectedIds.length > 0 ? 'text-red-400' : undefined} />
-              Delete {selectedIds.length > 0 && `(${selectedIds.length})`}
+              <SlidersHorizontal size={13} />
+              <span>Filter</span>
             </button>
+
+            {/* Delete Selected */}
+            {selectedIds.length > 0 && (
+              <button
+                onClick={handleDeleteSelected}
+                title="Delete Selected (Delete / Backspace)"
+                className="px-2.5 py-1 bg-red-600 text-white rounded flex items-center gap-1.5 font-semibold shadow-sm transition-colors"
+              >
+                <Trash2 size={13} />
+                <span>Delete ({selectedIds.length})</span>
+              </button>
+            )}
           </div>
 
-          {/* Right Status Badges */}
+          {/* Right Controls */}
           <div className="flex items-center space-x-3 text-[11px] font-mono">
             {ercViolations.length === 0 ? (
-              <span className="flex items-center gap-1 text-emerald-400">
-                <CheckCircle2 size={13} /> Schematic Clean
+              <span className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-semibold">
+                <CheckCircle2 size={13} />
+                <span>ERC Clean</span>
               </span>
             ) : (
-              <span
-                className="flex items-center gap-1 text-amber-400 cursor-pointer"
+              <button
+                className="flex items-center gap-1 px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-400 font-semibold cursor-pointer hover:bg-amber-500/20"
                 onClick={() => {
                   if (ercViolations.length > 0) setActiveViolationPopup(ercViolations[0]);
                 }}
               >
-                <AlertTriangle size={13} /> {ercViolations.length} ERC Issues
-              </span>
+                <AlertTriangle size={13} />
+                <span>{ercViolations.length} ERC</span>
+              </button>
             )}
 
-            {/* Grid Spacing Selector */}
+            {/* Grid Spacing */}
             <div className="flex items-center space-x-1.5 border-l border-cad-border pl-2.5">
               <Grid size={12} className="text-cad-textMuted" />
               <select
                 value={gridMil}
                 onChange={(e) => setGridMil(Number(e.target.value) as 100 | 50 | 25)}
-                className="bg-cad-bg border border-cad-border rounded px-1.5 py-0.5 text-xs text-cad-text outline-none cursor-pointer hover:border-blue-500"
+                className="bg-cad-inputBg border border-cad-inputBorder rounded px-1.5 py-0.5 text-xs text-cad-inputText outline-none cursor-pointer focus:border-blue-500 font-mono"
               >
                 <option value={100}>100 mil (2.54 mm)</option>
                 <option value={50}>50 mil (1.27 mm)</option>
@@ -1407,18 +1511,18 @@ export const SchematicEditor: React.FC<Props> = ({
               </select>
             </div>
 
-            <div className="flex items-center space-x-1 border-l border-cad-border pl-2">
+            <div className="flex items-center space-x-0.5 border-l border-cad-border pl-2">
               <button
                 onClick={() => setZoom((z) => Math.min(25, z * 1.2))}
                 title="Zoom In"
-                className="p-1 hover:bg-cad-border rounded text-slate-300"
+                className="p-1 hover:bg-cad-surfaceHover rounded text-cad-text transition-colors"
               >
                 <ZoomIn size={13} />
               </button>
               <button
                 onClick={() => setZoom((z) => Math.max(1, z * 0.8))}
                 title="Zoom Out"
-                className="p-1 hover:bg-cad-border rounded text-slate-300"
+                className="p-1 hover:bg-cad-surfaceHover rounded text-cad-text transition-colors"
               >
                 <ZoomOut size={13} />
               </button>
@@ -1428,13 +1532,67 @@ export const SchematicEditor: React.FC<Props> = ({
                   setZoom(4.0);
                 }}
                 title="Fit to Center"
-                className="p-1 hover:bg-cad-border rounded text-slate-300"
+                className="p-1 hover:bg-cad-surfaceHover rounded text-cad-text transition-colors"
               >
                 <Maximize2 size={13} />
               </button>
             </div>
           </div>
         </div>
+
+        {/* Selection Filter Bar */}
+        {showFilterBar && (
+          <div className="h-7 bg-cad-subpanel border-b border-cad-border px-3 flex items-center gap-4 text-[11px] text-cad-text select-none">
+            <span className="font-semibold text-cad-textHeading flex items-center gap-1">
+              <SlidersHorizontal size={11} /> Selection Filter:
+            </span>
+            <label className="flex items-center gap-1 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={selectionFilter.symbols}
+                onChange={(e) => setSelectionFilter((f) => ({ ...f, symbols: e.target.checked }))}
+                className="rounded text-blue-600 focus:ring-0 cursor-pointer"
+              />
+              <span>Symbols</span>
+            </label>
+            <label className="flex items-center gap-1 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={selectionFilter.wires}
+                onChange={(e) => setSelectionFilter((f) => ({ ...f, wires: e.target.checked }))}
+                className="rounded text-blue-600 focus:ring-0 cursor-pointer"
+              />
+              <span>Wires</span>
+            </label>
+            <label className="flex items-center gap-1 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={selectionFilter.buses}
+                onChange={(e) => setSelectionFilter((f) => ({ ...f, buses: e.target.checked }))}
+                className="rounded text-blue-600 focus:ring-0 cursor-pointer"
+              />
+              <span>Buses</span>
+            </label>
+            <label className="flex items-center gap-1 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={selectionFilter.labels}
+                onChange={(e) => setSelectionFilter((f) => ({ ...f, labels: e.target.checked }))}
+                className="rounded text-blue-600 focus:ring-0 cursor-pointer"
+              />
+              <span>Labels</span>
+            </label>
+            <label className="flex items-center gap-1 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={selectionFilter.noConnects}
+                onChange={(e) => setSelectionFilter((f) => ({ ...f, noConnects: e.target.checked }))}
+                className="rounded text-blue-600 focus:ring-0 cursor-pointer"
+              />
+              <span>No-Connects</span>
+            </label>
+          </div>
+        )}
 
         {/* Canvas Engine */}
         <canvas
@@ -1454,51 +1612,46 @@ export const SchematicEditor: React.FC<Props> = ({
               ? 'cursor-grabbing'
               : activeTool === 'pan'
               ? 'cursor-grab'
-              : activeTool === 'wire'
+              : activeTool === 'wire' || activeTool === 'bus' || activeTool === 'no_connect'
               ? 'cursor-crosshair'
               : 'cursor-default'
           }`}
         />
 
-        {/* On-Canvas Clicked ERC Violation Popover */}
+        {/* ERC Violation Popover */}
         {activeViolationPopup && (
-          <div className="absolute top-14 right-6 bg-cad-panel border border-amber-500/50 p-3 rounded-lg shadow-2xl max-w-sm text-xs space-y-2 z-20">
+          <div className="absolute top-12 right-4 bg-cad-panel border border-amber-500/60 p-3 rounded-lg shadow-xl max-w-sm text-xs space-y-2 z-20 text-cad-text animate-in fade-in zoom-in-95 duration-100">
             <div className="flex items-center justify-between">
-              <span className="font-bold text-amber-400 flex items-center gap-1.5">
+              <span className="font-semibold text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
                 <AlertTriangle size={14} /> {activeViolationPopup.code} - {activeViolationPopup.severity.toUpperCase()}
               </span>
               <button
                 onClick={() => setActiveViolationPopup(null)}
-                className="text-slate-400 hover:text-white font-mono text-xs px-1"
+                className="text-cad-textMuted hover:text-cad-text font-mono text-xs px-1"
               >
                 ✕
               </button>
             </div>
-            <div className="font-semibold text-white">{activeViolationPopup.title}</div>
-            <p className="text-[11px] text-slate-300 bg-cad-subpanel p-1.5 rounded border border-cad-border">
+            <div className="font-semibold text-cad-textHeading">{activeViolationPopup.title}</div>
+            <p className="text-[11px] text-cad-text bg-cad-subpanel p-2 rounded border border-cad-border">
               {activeViolationPopup.description}
             </p>
           </div>
         )}
 
-        {/* Live Coordinate & Armed Mode HUD overlay */}
-        <div className="absolute bottom-3 left-3 bg-cad-panel/85 backdrop-blur-sm border border-cad-border px-3 py-1.5 rounded-lg text-xs font-mono text-slate-300 flex items-center gap-3 shadow-lg pointer-events-none">
+        {/* Live Coordinate & Status HUD */}
+        <div className="absolute bottom-3 left-3 bg-cad-panel border border-cad-border px-3 py-1 rounded-md text-xs font-mono text-cad-text flex items-center gap-3 shadow-md pointer-events-none select-none">
           <span>X: {hoverWorldPos.x.toFixed(2)} mm</span>
           <span>Y: {hoverWorldPos.y.toFixed(2)} mm</span>
-          <span>Grid: {gridStep} mm</span>
+          <span className="text-cad-textMuted">Grid: {gridStep} mm</span>
           {selectedIds.length > 0 && (
-            <span className="text-blue-400 font-semibold">
-              Selected: {selectedIds.length} object(s) [Del to delete]
+            <span className="text-blue-600 dark:text-blue-400 font-semibold border-l border-cad-border pl-2">
+              Selected: {selectedIds.length} object(s)
             </span>
           )}
           {activeTool === 'place_symbol' && armedSymbolDef && (
-            <span className="text-blue-400 font-bold">
-              Placing: {armedSymbolDef.name} (Click to place, R to rotate)
-            </span>
-          )}
-          {highlightedNetName && (
-            <span className="text-amber-400 font-bold">
-              Highlighted Net: {highlightedNetName}
+            <span className="text-blue-600 dark:text-blue-400 font-semibold border-l border-cad-border pl-2">
+              Placing: {armedSymbolDef.name} (Click to drop, R: Rotate)
             </span>
           )}
         </div>

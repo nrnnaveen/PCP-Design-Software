@@ -1,13 +1,20 @@
 /**
- * FloZ ECA - 3-Pane Footprint Assignment Tool
- * Assigns physical PCB packages, pad-stacks, and 3D models to schematic symbols with live vector preview.
+ * FloZ ECA — Microsoft Fluent Footprint Assignment Dialog
+ * Interactive 3-pane modal to map schematic symbols to PCB footprint packages.
  */
 
-import React, { useState, useMemo, useEffect } from 'react';
-import { ApexProject, FootprintDefinition } from '../core/types';
-import { libraryRegistry } from './libraryRegistry';
+import React, { useState, useMemo } from 'react';
+import { ApexProject, SchematicSymbolInstance } from '../core/types';
+import { libraryRegistry, ApexFootprintDef } from './libraryRegistry';
 import { ComponentPreviewCanvas } from './ComponentPreviewCanvas';
-import { Layers, Search, Check, X, Box, CheckCircle2, AlertCircle } from 'lucide-react';
+import {
+  Layers,
+  Search,
+  Check,
+  X,
+  AlertCircle,
+  CheckCircle2,
+} from 'lucide-react';
 
 interface Props {
   project: ApexProject;
@@ -22,64 +29,32 @@ export const FootprintAssignment: React.FC<Props> = ({
   onClose,
   onUpdateProject,
 }) => {
-  const [allFootprints, setAllFootprints] = useState<FootprintDefinition[]>(() => libraryRegistry.getAllFootprints());
   const [selectedSymId, setSelectedSymId] = useState<string>('');
-  const [selectedFootprint, setSelectedFootprint] = useState<FootprintDefinition | null>(null);
-  const [searchFilter, setSearchFilter] = useState<string>('');
+  const [searchFilter, setSearchFilter] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('All');
+  const [selectedFootprint, setSelectedFootprint] = useState<ApexFootprintDef | undefined>();
+  const [displayLimit, setDisplayLimit] = useState<number>(60);
 
-  // Keep synced with library registry
-  useEffect(() => {
-    const unsub = libraryRegistry.subscribe(() => {
-      const fps = libraryRegistry.getAllFootprints();
-      setAllFootprints(fps);
-      if (!selectedFootprint && fps.length > 0) {
-        setSelectedFootprint(fps[0]);
-      }
-    });
-    return unsub;
-  }, [selectedFootprint]);
+  const activeSheet =
+    project.schematic.sheets.find((s) => s.id === project.schematic.activeSheetId) ||
+    project.schematic.sheets[0];
 
-  // Collect all schematic symbols requiring PCB footprints
   const schematicSymbols = useMemo(() => {
-    return project.schematic.sheets.flatMap((sheet) =>
-      sheet.symbols.filter((sym) => !sym.reference.startsWith('#'))
-    );
-  }, [project]);
+    if (!activeSheet) return [];
+    return activeSheet.symbols;
+  }, [activeSheet]);
 
-  // Set initial selected symbol
-  useEffect(() => {
-    if (schematicSymbols.length > 0 && !selectedSymId) {
-      setSelectedSymId(schematicSymbols[0].id);
-    }
-  }, [schematicSymbols, selectedSymId]);
-
-  const activeSymbol = schematicSymbols.find((s) => s.id === selectedSymId);
+  const activeSymbol = schematicSymbols.find((s) => s.id === selectedSymId) || schematicSymbols[0];
 
   const categories = useMemo(() => {
-    const cats = new Set<string>(['All']);
-    allFootprints.forEach((f) => cats.add(f.category || f.library || 'General'));
-    return Array.from(cats);
-  }, [allFootprints]);
+    const fps = libraryRegistry.getAllFootprints();
+    const set = new Set<string>();
+    fps.forEach((fp) => set.add(fp.category));
+    return ['All', ...Array.from(set).sort()];
+  }, []);
 
   const filteredFootprints = useMemo(() => {
-    return allFootprints.filter((fp) => {
-      const matchCat = categoryFilter === 'All' || fp.category === categoryFilter;
-      const q = searchFilter.toLowerCase().trim();
-      if (!q) return matchCat;
-      const matchSearch =
-        fp.name.toLowerCase().includes(q) ||
-        fp.description.toLowerCase().includes(q) ||
-        fp.library.toLowerCase().includes(q) ||
-        fp.keywords.some((k) => k.toLowerCase().includes(q));
-      return matchCat && matchSearch;
-    });
-  }, [allFootprints, searchFilter, categoryFilter]);
-
-  const [displayLimit, setDisplayLimit] = useState<number>(40);
-
-  useEffect(() => {
-    setDisplayLimit(40);
+    return libraryRegistry.searchFootprints(searchFilter, categoryFilter);
   }, [searchFilter, categoryFilter]);
 
   const visibleFootprints = useMemo(() => {
@@ -87,7 +62,8 @@ export const FootprintAssignment: React.FC<Props> = ({
   }, [filteredFootprints, displayLimit]);
 
   const handleAssignFootprint = (fpId: string) => {
-    if (!selectedSymId) return;
+    if (!selectedSymId && !activeSymbol) return;
+    const targetSymId = selectedSymId || activeSymbol?.id;
 
     onUpdateProject((prev) => {
       return {
@@ -97,7 +73,7 @@ export const FootprintAssignment: React.FC<Props> = ({
           sheets: prev.schematic.sheets.map((sheet) => ({
             ...sheet,
             symbols: sheet.symbols.map((sym) =>
-              sym.id === selectedSymId ? { ...sym, footprint: fpId } : sym
+              sym.id === targetSymId ? { ...sym, footprint: fpId } : sym
             ),
           })),
         },
@@ -108,60 +84,69 @@ export const FootprintAssignment: React.FC<Props> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm select-none">
-      <div className="bg-cad-panel border border-cad-border w-[1050px] h-[680px] rounded-xl shadow-2xl flex flex-col overflow-hidden text-cad-text">
+    <div
+      role="dialog"
+      aria-labelledby="fp-assign-title"
+      aria-modal="true"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 dark:bg-black/70 select-none p-3"
+    >
+      <div className="bg-cad-panel border border-cad-border w-[1050px] max-w-full h-[660px] max-h-full rounded-lg shadow-2xl flex flex-col overflow-hidden text-cad-text animate-in fade-in zoom-in-95 duration-100">
         {/* Header */}
-        <div className="h-12 bg-cad-header border-b border-cad-border px-4 flex items-center justify-between">
+        <div className="h-11 bg-cad-header border-b border-cad-border px-4 flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <Layers size={18} className="text-amber-400" />
-            <h2 className="text-sm font-semibold text-white flex items-center gap-2">
-              Assign PCB Footprints to Schematic Symbols — FloZ ECA
-              <span className="text-[10px] font-normal px-2 py-0.5 bg-amber-500/20 text-amber-300 rounded border border-amber-500/30 font-mono">
-                {filteredFootprints.length} Footprints Available
+            <Layers size={16} className="text-amber-600 dark:text-amber-400" />
+            <h2 id="fp-assign-title" className="text-xs sm:text-sm font-semibold text-cad-textHeading flex items-center gap-2">
+              <span>Assign PCB Footprints to Schematic Symbols</span>
+              <span className="text-[10px] font-mono font-medium px-1.5 py-0.2 bg-amber-500/15 text-amber-600 dark:text-amber-400 rounded border border-amber-500/30">
+                {filteredFootprints.length} Available
               </span>
             </h2>
           </div>
-          <button onClick={onClose} className="p-1 hover:bg-cad-subpanel rounded text-cad-textMuted hover:text-white">
-            <X size={18} />
+          <button
+            onClick={onClose}
+            aria-label="Close"
+            className="p-1 hover:bg-cad-surfaceHover rounded text-cad-textMuted hover:text-cad-text transition-colors focus-visible:outline-none"
+          >
+            <X size={15} />
           </button>
         </div>
 
         {/* 3-Pane Body */}
         <div className="flex-1 flex overflow-hidden">
           {/* Left Pane: Schematic Symbols List */}
-          <div className="w-[300px] border-r border-cad-border flex flex-col bg-cad-bg/30">
-            <div className="p-2.5 bg-cad-subpanel border-b border-cad-border text-xs font-semibold text-cad-textMuted uppercase font-mono">
+          <div className="w-[280px] border-r border-cad-border flex flex-col bg-cad-subpanel">
+            <div className="p-2 bg-cad-header border-b border-cad-border text-[11px] font-semibold text-cad-textMuted uppercase font-mono">
               Schematic Symbols ({schematicSymbols.length})
             </div>
             <div className="flex-1 overflow-y-auto p-2 space-y-1">
               {schematicSymbols.map((sym) => {
-                const isSelected = sym.id === selectedSymId;
+                const isSelected = sym.id === (selectedSymId || activeSymbol?.id);
                 const hasFp = Boolean(sym.footprint && sym.footprint.trim() !== '');
 
                 return (
                   <div
                     key={sym.id}
                     onClick={() => setSelectedSymId(sym.id)}
-                    className={`p-2.5 rounded-lg cursor-pointer transition-colors border ${
+                    className={`p-2 rounded cursor-pointer transition-colors border ${
                       isSelected
-                        ? 'bg-blue-600/20 border-blue-500/50'
-                        : 'hover:bg-cad-subpanel border-transparent'
+                        ? 'bg-blue-500/15 border-blue-500/50 shadow-sm'
+                        : 'hover:bg-cad-surfaceHover border-transparent'
                     }`}
                   >
                     <div className="flex items-center justify-between">
-                      <span className="font-bold text-xs text-white">{sym.reference}</span>
-                      <span className="text-xs text-slate-300 font-mono">{sym.value}</span>
+                      <span className="font-semibold text-xs text-cad-textHeading">{sym.reference}</span>
+                      <span className="text-xs text-cad-text font-mono">{sym.value}</span>
                     </div>
-                    <div className="text-[11px] text-cad-textMuted mt-1 truncate flex items-center gap-1 font-mono">
+                    <div className="text-[10px] text-cad-textMuted mt-0.5 truncate flex items-center gap-1 font-mono">
                       {hasFp ? (
                         <>
-                          <CheckCircle2 size={11} className="text-emerald-400 shrink-0" />
-                          <span className="text-slate-300">{sym.footprint.split(':').pop()}</span>
+                          <CheckCircle2 size={11} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+                          <span className="text-cad-text truncate">{sym.footprint.split(':').pop()}</span>
                         </>
                       ) : (
                         <>
-                          <AlertCircle size={11} className="text-amber-400 shrink-0" />
-                          <span className="text-amber-400/80 italic">Unassigned</span>
+                          <AlertCircle size={11} className="text-amber-600 dark:text-amber-400 shrink-0" />
+                          <span className="text-amber-600 dark:text-amber-400 italic">Unassigned</span>
                         </>
                       )}
                     </div>
@@ -172,51 +157,51 @@ export const FootprintAssignment: React.FC<Props> = ({
           </div>
 
           {/* Center Pane: Active Symbol & Vector Preview */}
-          <div className="flex-1 border-r border-cad-border p-4 flex flex-col overflow-y-auto bg-cad-bg/50 space-y-3">
+          <div className="flex-1 border-r border-cad-border p-3.5 flex flex-col overflow-y-auto bg-cad-bg space-y-3">
             {activeSymbol ? (
               <div className="space-y-3 flex flex-col h-full">
                 <div>
-                  <h3 className="text-base font-bold text-white flex items-center gap-2">
-                    {activeSymbol.reference}
+                  <h3 className="text-sm font-semibold text-cad-textHeading flex items-center gap-1.5">
+                    <span>{activeSymbol.reference}</span>
                     <span className="text-xs font-mono font-normal text-cad-textMuted">({activeSymbol.value})</span>
                   </h3>
-                  <p className="text-xs text-cad-textMuted mt-0.5">{activeSymbol.fields.Description || 'No description'}</p>
+                  <p className="text-[11px] text-cad-textMuted mt-0.5">{activeSymbol.fields.Description || 'No description'}</p>
                 </div>
 
-                <div className="bg-cad-panel border border-cad-border rounded-lg p-2.5 text-xs">
+                <div className="bg-cad-panel border border-cad-border rounded p-2 text-xs">
                   <div className="text-cad-textMuted text-[10px] uppercase font-mono tracking-wider">Current Assigned Footprint</div>
-                  <div className="font-mono text-white text-xs break-all mt-0.5">
+                  <div className="font-mono text-cad-textHeading text-xs break-all mt-0.5 font-medium">
                     {activeSymbol.footprint || 'None'}
                   </div>
                 </div>
 
                 {/* Vector Canvas Preview of Selected Footprint */}
                 {selectedFootprint && (
-                  <div className="h-44 min-h-[160px]">
+                  <div className="h-40 min-h-[140px]">
                     <ComponentPreviewCanvas footprint={selectedFootprint} className="h-full" />
                   </div>
                 )}
 
                 {/* Pin Configuration */}
-                <div className="flex-1 min-h-[120px]">
-                  <div className="text-xs font-semibold text-cad-textMuted uppercase font-mono mb-1">
+                <div className="flex-1 min-h-[110px]">
+                  <div className="text-[10px] font-semibold text-cad-textMuted uppercase font-mono mb-1">
                     Pin Configuration ({activeSymbol.pins.length} Pins)
                   </div>
-                  <div className="border border-cad-border rounded-lg overflow-hidden max-h-36 overflow-y-auto text-xs font-mono">
+                  <div className="border border-cad-border rounded overflow-hidden max-h-32 overflow-y-auto text-xs font-mono bg-cad-panel">
                     <table className="w-full text-left">
-                      <thead className="bg-cad-subpanel text-cad-textMuted border-b border-cad-border text-[10px]">
+                      <thead className="bg-cad-subpanel text-cad-textMuted border-b border-cad-border text-[9px] sticky top-0">
                         <tr>
-                          <th className="px-2.5 py-1">Pin #</th>
-                          <th className="px-2.5 py-1">Pin Name</th>
-                          <th className="px-2.5 py-1">Type</th>
+                          <th className="px-2 py-1 font-semibold">Pin #</th>
+                          <th className="px-2 py-1 font-semibold">Pin Name</th>
+                          <th className="px-2 py-1 font-semibold">Type</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-cad-border bg-cad-panel">
+                      <tbody className="divide-y divide-cad-border">
                         {activeSymbol.pins.map((p) => (
-                          <tr key={p.id} className="hover:bg-cad-subpanel">
-                            <td className="px-2.5 py-1 font-bold text-white">{p.number}</td>
-                            <td className="px-2.5 py-1 text-slate-300">{p.name}</td>
-                            <td className="px-2.5 py-1 text-cad-textMuted text-[10px]">{p.electricalType}</td>
+                          <tr key={p.id} className="hover:bg-cad-surfaceHover transition-colors">
+                            <td className="px-2 py-0.5 font-bold text-cad-textHeading">{p.number}</td>
+                            <td className="px-2 py-0.5 text-cad-text">{p.name}</td>
+                            <td className="px-2 py-0.5 text-cad-textMuted text-[10px]">{p.electricalType}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -228,16 +213,16 @@ export const FootprintAssignment: React.FC<Props> = ({
           </div>
 
           {/* Right Pane: Available Footprint Browser */}
-          <div className="w-[360px] flex flex-col bg-cad-bg/30">
-            <div className="p-2.5 bg-cad-subpanel border-b border-cad-border space-y-2">
+          <div className="w-[340px] flex flex-col bg-cad-panel">
+            <div className="p-2 bg-cad-subpanel border-b border-cad-border space-y-1.5">
               <div className="relative">
-                <Search size={14} className="absolute left-2.5 top-2 text-cad-textMuted" />
+                <Search size={13} className="absolute left-2.5 top-1.5 text-cad-textMuted" />
                 <input
                   type="text"
-                  placeholder="Filter footprints (e.g. 0805, SOIC, DIP, QFN, Battery)..."
+                  placeholder="Filter footprints (e.g. 0805, SOIC, DIP)..."
                   value={searchFilter}
                   onChange={(e) => setSearchFilter(e.target.value)}
-                  className="w-full bg-cad-bg border border-cad-border rounded pl-8 pr-2 py-1 text-xs text-cad-text focus:outline-none focus:border-blue-500 font-mono"
+                  className="w-full bg-cad-inputBg border border-cad-inputBorder rounded pl-7 pr-2 py-1 text-xs text-cad-inputText focus:outline-none focus:border-blue-500 font-mono"
                 />
               </div>
 
@@ -247,10 +232,10 @@ export const FootprintAssignment: React.FC<Props> = ({
                   <button
                     key={cat}
                     onClick={() => setCategoryFilter(cat)}
-                    className={`px-2 py-0.5 rounded text-[10px] font-mono transition-colors whitespace-nowrap ${
+                    className={`px-2 py-0.5 rounded text-[10px] font-mono transition-colors whitespace-nowrap font-medium ${
                       categoryFilter === cat
-                        ? 'bg-blue-600 text-white font-bold'
-                        : 'bg-cad-panel hover:bg-cad-border text-cad-textMuted hover:text-white'
+                        ? 'bg-blue-600 text-white font-semibold shadow-sm'
+                        : 'bg-cad-panel hover:bg-cad-surfaceHover text-cad-text border border-cad-border'
                     }`}
                   >
                     {cat}
@@ -262,11 +247,11 @@ export const FootprintAssignment: React.FC<Props> = ({
                     onChange={(e) => {
                       if (e.target.value) setCategoryFilter(e.target.value);
                     }}
-                    className="bg-cad-panel border border-cad-border text-cad-textMuted text-[10px] rounded px-1.5 py-0.5 focus:outline-none focus:border-blue-500 font-mono"
+                    className="bg-cad-panel border border-cad-border text-cad-text text-[10px] rounded px-1.5 py-0.5 focus:outline-none focus:border-blue-500 font-mono"
                   >
                     <option value="" disabled>More ({categories.length - 4})...</option>
                     {categories.slice(4).map((cat) => (
-                      <option key={cat} value={cat} className="bg-cad-panel text-white">
+                      <option key={cat} value={cat} className="bg-cad-panel text-cad-text">
                         {cat}
                       </option>
                     ))}
@@ -284,35 +269,35 @@ export const FootprintAssignment: React.FC<Props> = ({
                     key={fp.id}
                     onClick={() => setSelectedFootprint(fp)}
                     onDoubleClick={() => handleAssignFootprint(fp.id)}
-                    className={`p-2.5 rounded-lg cursor-pointer transition-colors border ${
+                    className={`p-2 rounded cursor-pointer transition-colors border ${
                       isCurrentAssigned
-                        ? 'bg-emerald-600/20 border-emerald-500/50'
+                        ? 'bg-emerald-500/15 border-emerald-500/50'
                         : selectedFootprint?.id === fp.id
-                        ? 'bg-blue-600/20 border-blue-500/50'
-                        : 'hover:bg-cad-subpanel border-transparent'
+                        ? 'bg-blue-500/15 border-blue-500/50'
+                        : 'hover:bg-cad-surfaceHover border-transparent'
                     }`}
                   >
                     <div className="flex items-center justify-between">
-                      <span className="font-semibold text-xs text-white">{fp.name}</span>
-                      <span className="text-[10px] px-1.5 py-0.2 bg-cad-border text-cad-textMuted rounded font-mono">
+                      <span className="font-semibold text-xs text-cad-textHeading">{fp.name}</span>
+                      <span className="text-[10px] px-1 py-0.2 bg-cad-subpanel text-cad-textMuted rounded font-mono border border-cad-border">
                         {fp.pads.length} pads
                       </span>
                     </div>
                     <p className="text-[11px] text-cad-textMuted mt-0.5 line-clamp-1">{fp.description}</p>
-                    <div className="mt-2 flex items-center justify-end">
+                    <div className="mt-1.5 flex items-center justify-end">
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           handleAssignFootprint(fp.id);
                         }}
-                        className={`px-2.5 py-0.5 rounded text-[11px] font-semibold flex items-center gap-1 shadow-sm ${
+                        className={`px-2 py-0.5 rounded text-[11px] font-medium flex items-center gap-1 shadow-sm transition-colors ${
                           isCurrentAssigned
-                            ? 'bg-emerald-600 text-white'
-                            : 'bg-cad-border hover:bg-blue-600 text-slate-200 hover:text-white'
+                            ? 'bg-emerald-600 text-white font-semibold'
+                            : 'bg-cad-subpanel hover:bg-blue-600 text-cad-text hover:text-white border border-cad-border'
                         }`}
                       >
                         {isCurrentAssigned ? <Check size={11} /> : null}
-                        {isCurrentAssigned ? 'Assigned' : 'Assign'}
+                        <span>{isCurrentAssigned ? 'Assigned' : 'Assign'}</span>
                       </button>
                     </div>
                   </div>
@@ -322,7 +307,7 @@ export const FootprintAssignment: React.FC<Props> = ({
               {filteredFootprints.length > displayLimit && (
                 <button
                   onClick={() => setDisplayLimit((prev) => prev + 40)}
-                  className="w-full py-2 bg-cad-subpanel hover:bg-cad-border text-blue-400 hover:text-blue-300 rounded text-xs font-mono font-semibold transition-colors"
+                  className="w-full py-1.5 bg-cad-subpanel hover:bg-cad-surfaceHover text-blue-600 dark:text-blue-400 rounded text-xs font-mono font-medium transition-colors"
                 >
                   Show More ({filteredFootprints.length - displayLimit} remaining)...
                 </button>
@@ -332,8 +317,11 @@ export const FootprintAssignment: React.FC<Props> = ({
         </div>
 
         {/* Footer */}
-        <div className="h-12 bg-cad-header border-t border-cad-border px-4 flex items-center justify-end">
-          <button onClick={onClose} className="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-xs font-semibold text-white rounded shadow-sm">
+        <div className="h-11 bg-cad-header border-t border-cad-border px-4 flex items-center justify-end">
+          <button
+            onClick={onClose}
+            className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-xs font-medium text-white rounded shadow-sm transition-colors focus-visible:outline-none"
+          >
             Done
           </button>
         </div>

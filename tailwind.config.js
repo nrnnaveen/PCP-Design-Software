@@ -4,7 +4,7 @@ export default {
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
-  darkMode: 'class',
+  darkMode: ['class', '[data-theme="dark"]'],
   theme: {
     extend: {
       colors: {
@@ -19,10 +19,11 @@ export default {
           accentHover: 'var(--cad-accent-hover)',
           text: 'var(--cad-text)',
           textMuted: 'var(--cad-text-muted)',
+          textHeading: 'var(--cad-text-heading)',
           active: 'var(--cad-active)',
-          danger: '#ef4444',
-          warning: '#f59e0b',
-          success: '#10b981',
+          danger: 'var(--cad-danger)',
+          warning: 'var(--cad-warning)',
+          success: 'var(--cad-success)',
           grid: 'var(--cad-grid)',
           copperTop: '#e05638',
           copperBot: '#3b82f6',
@@ -30,12 +31,17 @@ export default {
           silkBot: '#a855f7',
           maskTop: '#15803d',
           maskBot: '#047857',
-          edgeCut: '#eab308'
+          edgeCut: '#eab308',
+          surfaceHover: 'var(--cad-surface-hover)',
+          surfaceActive: 'var(--cad-surface-active)',
+          inputBg: 'var(--cad-input-bg)',
+          inputBorder: 'var(--cad-input-border)',
+          inputText: 'var(--cad-input-text)',
         }
       },
       fontFamily: {
-        mono: ['JetBrains Mono', 'Fira Code', 'Roboto Mono', 'monospace'],
-        sans: ['Inter', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif']
+        mono: ['Cascadia Code', 'Consolas', 'JetBrains Mono', 'Fira Code', 'Roboto Mono', 'monospace'],
+        sans: ['Segoe UI', '-apple-system', 'BlinkMacSystemFont', 'Inter', 'Roboto', 'sans-serif']
       }
     },
   },

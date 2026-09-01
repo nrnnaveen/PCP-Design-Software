@@ -171,68 +171,79 @@ export const BoardSetupModal: React.FC<Props> = ({ project, isOpen, onClose, onS
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4 backdrop-blur-xs select-none">
-      <div className="bg-cad-panel border border-cad-border rounded-xl shadow-2xl w-full max-w-4xl max-h-[85vh] flex flex-col overflow-hidden text-cad-text animate-fadeIn">
+    <div
+      role="dialog"
+      aria-labelledby="board-setup-title"
+      aria-modal="true"
+      className="fixed inset-0 z-50 bg-black/50 dark:bg-black/70 flex items-center justify-center p-4 select-none"
+    >
+      <div className="bg-cad-panel border border-cad-border rounded-lg shadow-2xl w-full max-w-4xl max-h-[85vh] flex flex-col overflow-hidden text-cad-text animate-in fade-in zoom-in-95 duration-100">
         {/* Modal Header */}
-        <div className="h-12 bg-cad-header border-b border-cad-border px-4 flex items-center justify-between shrink-0">
-          <div className="flex items-center space-x-2.5">
-            <Settings size={18} className="text-blue-500 dark:text-blue-400" />
-            <span className="font-bold text-sm text-cad-text">Board Setup & Fabrication Constraints</span>
+        <div className="h-11 bg-cad-header border-b border-cad-border px-4 flex items-center justify-between shrink-0">
+          <div className="flex items-center space-x-2">
+            <Settings size={16} className="text-blue-600 dark:text-blue-400" />
+            <h2 id="board-setup-title" className="font-semibold text-xs sm:text-sm text-cad-textHeading">
+              Board Setup &amp; Fabrication Constraints
+            </h2>
           </div>
-          <button onClick={onClose} className="p-1 hover:bg-cad-subpanel rounded text-cad-textMuted hover:text-white">
-            <X size={18} />
+          <button
+            onClick={onClose}
+            aria-label="Close"
+            className="p-1 hover:bg-cad-surfaceHover rounded text-cad-textMuted hover:text-cad-text transition-colors focus-visible:outline-none"
+          >
+            <X size={15} />
           </button>
         </div>
 
         {/* Modal Navigation Tabs */}
-        <div className="flex border-b border-cad-border bg-cad-bg/60 px-4 text-xs font-semibold shrink-0">
+        <div className="flex border-b border-cad-border bg-cad-subpanel px-4 text-xs font-medium shrink-0">
           <button
             onClick={() => setActiveTab('stackup')}
-            className={`py-2.5 px-3 border-b-2 flex items-center gap-1.5 transition-colors ${
+            className={`py-2 px-3 border-b-2 flex items-center gap-1.5 transition-colors ${
               activeTab === 'stackup'
-                ? 'border-blue-500 text-blue-500 dark:text-blue-400 font-bold'
+                ? 'border-blue-600 text-blue-600 dark:text-blue-400 font-semibold'
                 : 'border-transparent text-cad-textMuted hover:text-cad-text'
             }`}
           >
-            <Layers size={14} /> Physical Stackup
+            <Layers size={13} /> Physical Stackup
           </button>
 
           <button
             onClick={() => setActiveTab('finish')}
-            className={`py-2.5 px-3 border-b-2 flex items-center gap-1.5 transition-colors ${
+            className={`py-2 px-3 border-b-2 flex items-center gap-1.5 transition-colors ${
               activeTab === 'finish'
-                ? 'border-blue-500 text-blue-500 dark:text-blue-400 font-bold'
+                ? 'border-blue-600 text-blue-600 dark:text-blue-400 font-semibold'
                 : 'border-transparent text-cad-textMuted hover:text-cad-text'
             }`}
           >
-            <Palette size={14} /> Board Finish & Mask
+            <Palette size={13} /> Board Finish &amp; Mask
           </button>
 
           <button
             onClick={() => setActiveTab('netclasses')}
-            className={`py-2.5 px-3 border-b-2 flex items-center gap-1.5 transition-colors ${
+            className={`py-2 px-3 border-b-2 flex items-center gap-1.5 transition-colors ${
               activeTab === 'netclasses'
-                ? 'border-blue-500 text-blue-500 dark:text-blue-400 font-bold'
+                ? 'border-blue-600 text-blue-600 dark:text-blue-400 font-semibold'
                 : 'border-transparent text-cad-textMuted hover:text-cad-text'
             }`}
           >
-            <Sliders size={14} /> Net Classes
+            <Sliders size={13} /> Net Classes
           </button>
 
           <button
             onClick={() => setActiveTab('constraints')}
-            className={`py-2.5 px-3 border-b-2 flex items-center gap-1.5 transition-colors ${
+            className={`py-2 px-3 border-b-2 flex items-center gap-1.5 transition-colors ${
               activeTab === 'constraints'
-                ? 'border-blue-500 text-blue-500 dark:text-blue-400 font-bold'
+                ? 'border-blue-600 text-blue-600 dark:text-blue-400 font-semibold'
                 : 'border-transparent text-cad-textMuted hover:text-cad-text'
             }`}
           >
-            <ShieldCheck size={14} /> Design Rules (DRC)
+            <ShieldCheck size={13} /> Design Rules (DRC)
           </button>
         </div>
 
         {/* Modal Body */}
-        <div className="flex-1 overflow-y-auto p-5 text-xs">
+        <div className="flex-1 overflow-y-auto p-5 text-xs bg-cad-bg">
           {/* 1. PHYSICAL STACKUP TAB */}
           {activeTab === 'stackup' && (
             <div className="space-y-4">

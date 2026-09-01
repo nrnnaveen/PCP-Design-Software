@@ -152,28 +152,28 @@ export const AppearancePanel: React.FC<Props> = ({
       {activeTab === 'layers' && (
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* Quick Filter & Global Visibility Presets */}
-          <div className="p-2 border-b border-cad-border space-y-2 bg-cad-bg/50 shrink-0">
+          <div className="p-2 border-b border-cad-border space-y-2 bg-cad-panel shrink-0">
             <div className="relative">
-              <Search size={12} className="absolute left-2 top-2 text-cad-textMuted" />
+              <Search size={12} className="absolute left-2.5 top-2.5 text-cad-textMuted" />
               <input
                 type="text"
                 placeholder="Filter layers..."
                 value={layerSearch}
                 onChange={(e) => setLayerSearch(e.target.value)}
-                className="w-full bg-cad-bg border border-cad-border rounded pl-6 pr-2 py-1 text-xs text-cad-text placeholder:text-cad-textMuted/60 font-mono"
+                className="w-full bg-cad-inputBg border border-cad-inputBorder rounded pl-7 pr-2 py-1 text-xs text-cad-inputText placeholder:text-cad-textMuted font-mono focus:border-blue-500"
               />
             </div>
 
             <div className="flex items-center justify-between gap-1 text-[11px]">
               <button
                 onClick={() => onSetAllLayersVisibility(true)}
-                className="px-2 py-0.5 bg-cad-subpanel hover:bg-cad-border rounded border border-cad-border text-cad-textMuted hover:text-cad-text"
+                className="px-2 py-0.5 bg-cad-panel hover:bg-cad-surfaceHover rounded border border-cad-border text-cad-text font-medium transition-colors"
               >
                 All On
               </button>
               <button
                 onClick={() => onSetAllLayersVisibility(false)}
-                className="px-2 py-0.5 bg-cad-subpanel hover:bg-cad-border rounded border border-cad-border text-cad-textMuted hover:text-cad-text"
+                className="px-2 py-0.5 bg-cad-panel hover:bg-cad-surfaceHover rounded border border-cad-border text-cad-text font-medium transition-colors"
               >
                 All Off
               </button>
@@ -181,8 +181,8 @@ export const AppearancePanel: React.FC<Props> = ({
                 onClick={onToggleDimInactiveLayers}
                 className={`px-2 py-0.5 rounded border transition-colors ${
                   dimInactiveLayers
-                    ? 'bg-blue-600/20 border-blue-500 text-blue-400 font-semibold'
-                    : 'bg-cad-subpanel border-cad-border text-cad-textMuted'
+                    ? 'bg-blue-600 text-white border-blue-600 font-semibold shadow-sm'
+                    : 'bg-cad-panel border-cad-border text-cad-text hover:bg-cad-surfaceHover'
                 }`}
                 title="Dim inactive layers to highlight the active working copper layer"
               >
@@ -204,8 +204,8 @@ export const AppearancePanel: React.FC<Props> = ({
                   onClick={() => onSelectActiveLayer(layer.id)}
                   className={`flex items-center justify-between px-2.5 py-1.5 cursor-pointer transition-colors ${
                     isActive
-                      ? 'bg-blue-600/15 border-l-2 border-blue-500 text-cad-text font-semibold'
-                      : 'hover:bg-cad-subpanel/50 text-cad-textMuted'
+                      ? 'bg-blue-600/15 border-l-2 border-blue-500 text-cad-textHeading font-semibold'
+                      : 'hover:bg-cad-surfaceHover text-cad-text'
                   }`}
                 >
                   <div className="flex items-center space-x-2 truncate">
@@ -220,16 +220,16 @@ export const AppearancePanel: React.FC<Props> = ({
 
                     {/* Color Swatch */}
                     <div
-                      className="w-3.5 h-3.5 rounded-sm shrink-0 border border-black/30 shadow-xs"
+                      className="w-3.5 h-3.5 rounded-sm shrink-0 border border-cad-border shadow-xs"
                       style={{ backgroundColor: layerColor }}
                     />
 
                     {/* Layer Name & Type */}
                     <div className="truncate">
-                      <span className={`text-xs ${isActive ? 'text-cad-text font-bold' : 'text-cad-text'}`}>
+                      <span className={`text-xs ${isActive ? 'text-cad-textHeading font-bold' : 'text-cad-text'}`}>
                         {layer.id}
                       </span>
-                      <span className="text-[10px] text-cad-textMuted ml-1.5 opacity-70">
+                      <span className="text-[10px] text-cad-textMuted ml-1.5">
                         {layer.category}
                       </span>
                     </div>
@@ -242,7 +242,7 @@ export const AppearancePanel: React.FC<Props> = ({
                       onToggleLayerVisibility(layer.id);
                     }}
                     title={isVisible ? 'Hide Layer' : 'Show Layer'}
-                    className={`p-1 rounded hover:bg-cad-subpanel ${
+                    className={`p-1 rounded hover:bg-cad-surfaceHover transition-colors ${
                       isVisible ? 'text-cad-text' : 'text-cad-textMuted/40'
                     }`}
                   >
@@ -309,23 +309,23 @@ export const AppearancePanel: React.FC<Props> = ({
       {activeTab === 'nets' && (
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* Net Filter */}
-          <div className="p-2 border-b border-cad-border bg-cad-bg/50 shrink-0">
+          <div className="p-2 border-b border-cad-border bg-cad-panel shrink-0">
             <div className="relative">
-              <Search size={12} className="absolute left-2 top-2 text-cad-textMuted" />
+              <Search size={12} className="absolute left-2.5 top-2.5 text-cad-textMuted" />
               <input
                 type="text"
                 placeholder="Search nets (e.g. GND, VCC)..."
                 value={netSearch}
                 onChange={(e) => setNetSearch(e.target.value)}
-                className="w-full bg-cad-bg border border-cad-border rounded pl-6 pr-2 py-1 text-xs text-cad-text placeholder:text-cad-textMuted/60 font-mono"
+                className="w-full bg-cad-inputBg border border-cad-inputBorder rounded pl-7 pr-2 py-1 text-xs text-cad-inputText placeholder:text-cad-textMuted font-mono focus:border-blue-500"
               />
             </div>
             {highlightedNet && (
               <div className="mt-1.5 flex items-center justify-between bg-blue-600/15 border border-blue-500/40 rounded px-2 py-0.5 text-[11px]">
-                <span className="text-blue-400 font-semibold truncate">Highlighted: {highlightedNet}</span>
+                <span className="text-blue-600 dark:text-blue-400 font-semibold truncate">Highlighted: {highlightedNet}</span>
                 <button
                   onClick={() => onSelectHighlightNet(null)}
-                  className="text-cad-textMuted hover:text-white font-bold ml-2"
+                  className="text-cad-textMuted hover:text-cad-text font-bold ml-2"
                 >
                   ×
                 </button>
@@ -344,15 +344,15 @@ export const AppearancePanel: React.FC<Props> = ({
                   onClick={() => onSelectHighlightNet(isHighlighted ? null : netName)}
                   className={`p-2 cursor-pointer transition-colors ${
                     isHighlighted
-                      ? 'bg-blue-600/20 text-blue-400 font-bold border-l-2 border-blue-500'
-                      : 'hover:bg-cad-subpanel/60 text-cad-text'
+                      ? 'bg-blue-600/20 text-blue-600 dark:text-blue-400 font-bold border-l-2 border-blue-500'
+                      : 'hover:bg-cad-surfaceHover text-cad-text'
                   }`}
                 >
                   <div className="flex items-center justify-between mb-1">
-                    <span className="font-bold truncate text-cad-text">{netName}</span>
+                    <span className="font-bold truncate text-cad-textHeading">{netName}</span>
                     <span
-                      className={`text-[10px] px-1.5 py-0.2 rounded ${
-                        stats.padCount > 1 ? 'bg-emerald-600/20 text-emerald-400' : 'bg-cad-subpanel text-cad-textMuted'
+                      className={`text-[10px] px-1.5 py-0.2 rounded font-medium ${
+                        stats.padCount > 1 ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25' : 'bg-cad-panel text-cad-textMuted border border-cad-border'
                       }`}
                     >
                       {stats.padCount} Pads

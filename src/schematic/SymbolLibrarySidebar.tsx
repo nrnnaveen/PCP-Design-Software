@@ -1,5 +1,5 @@
 /**
- * FloZ ECA - Symbol Library Sidebar Component
+ * FloZ ECA — Microsoft Fluent Symbol Library Sidebar
  * Fast component browsing, category filtering, vector thumbnail previews, and Drag & Drop placement.
  */
 
@@ -9,14 +9,8 @@ import { libraryRegistry } from '../library/libraryRegistry';
 import {
   Search,
   Cpu,
-  Layers,
   ChevronLeft,
   ChevronRight,
-  Zap,
-  Radio,
-  Sliders,
-  Sparkles,
-  FolderOpen,
 } from 'lucide-react';
 
 interface Props {
@@ -88,16 +82,16 @@ export const SymbolLibrarySidebar: React.FC<Props> = ({
 
   if (isCollapsed) {
     return (
-      <div className="w-9 h-full bg-cad-panel border-r border-cad-border flex flex-col items-center py-3 select-none z-10">
+      <div className="w-9 h-full bg-cad-panel border-r border-cad-border flex flex-col items-center py-2.5 select-none z-10 text-cad-text">
         <button
           onClick={onToggleCollapse}
-          title="Expand Symbol Library (Components)"
-          className="p-1.5 hover:bg-cad-subpanel rounded text-cad-textMuted hover:text-white"
+          title="Expand Symbol Library"
+          className="p-1 hover:bg-cad-surfaceHover rounded text-cad-textMuted hover:text-cad-text transition-colors"
         >
-          <ChevronRight size={16} />
+          <ChevronRight size={15} />
         </button>
-        <div className="mt-8 [writing-mode:vertical-lr] text-[11px] font-bold uppercase tracking-wider text-cad-textMuted font-mono flex items-center gap-2">
-          <Cpu size={12} className="text-blue-400" />
+        <div className="mt-8 [writing-mode:vertical-lr] text-[11px] font-semibold uppercase tracking-wider text-cad-textMuted font-mono flex items-center gap-2">
+          <Cpu size={12} className="text-blue-600 dark:text-blue-400" />
           <span>Symbols Library</span>
         </div>
       </div>
@@ -105,34 +99,34 @@ export const SymbolLibrarySidebar: React.FC<Props> = ({
   }
 
   return (
-    <div className="w-64 h-full bg-cad-panel border-r border-cad-border flex flex-col select-none z-10">
+    <div className="w-64 h-full bg-cad-panel border-r border-cad-border flex flex-col select-none z-10 text-cad-text">
       {/* Header */}
-      <div className="h-10 bg-cad-header border-b border-cad-border px-3 flex items-center justify-between">
+      <div className="h-9 bg-cad-header border-b border-cad-border px-3 flex items-center justify-between">
         <div className="flex items-center space-x-2">
-          <Cpu size={15} className="text-blue-400" />
-          <span className="text-xs font-bold text-white uppercase font-mono tracking-wider">
+          <Cpu size={14} className="text-blue-600 dark:text-blue-400" />
+          <span className="text-xs font-semibold text-cad-textHeading uppercase font-mono tracking-wider">
             Symbol Library
           </span>
         </div>
         <button
           onClick={onToggleCollapse}
           title="Collapse Symbol Library"
-          className="p-1 hover:bg-cad-subpanel rounded text-cad-textMuted hover:text-white"
+          className="p-1 hover:bg-cad-surfaceHover rounded text-cad-textMuted hover:text-cad-text transition-colors"
         >
-          <ChevronLeft size={16} />
+          <ChevronLeft size={15} />
         </button>
       </div>
 
       {/* Search Bar */}
       <div className="p-2 bg-cad-subpanel border-b border-cad-border space-y-1.5">
         <div className="relative">
-          <Search size={13} className="absolute left-2.5 top-2 text-cad-textMuted" />
+          <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-cad-textMuted" />
           <input
             type="text"
             placeholder="Search (e.g. R, STM32, USB)..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-cad-bg border border-cad-border rounded pl-8 pr-2 py-1 text-xs text-white font-mono placeholder:text-slate-500 focus:outline-none focus:border-blue-500"
+            className="w-full bg-cad-inputBg border border-cad-inputBorder rounded pl-7 pr-2 py-1 text-xs text-cad-inputText font-mono placeholder:text-cad-textMuted focus:outline-none focus:border-blue-500"
           />
         </div>
 
@@ -142,10 +136,10 @@ export const SymbolLibrarySidebar: React.FC<Props> = ({
             <button
               key={cat}
               onClick={() => setSelectedCategory(cat)}
-              className={`px-2 py-0.5 rounded whitespace-nowrap font-mono font-medium transition-colors ${
+              className={`px-2 py-0.5 rounded whitespace-nowrap font-mono font-medium transition-colors border ${
                 selectedCategory === cat
-                  ? 'bg-blue-600 text-white shadow-sm'
-                  : 'bg-cad-bg text-cad-textMuted hover:text-white hover:bg-cad-border'
+                  ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+                  : 'bg-cad-panel text-cad-text border-cad-border hover:bg-cad-surfaceHover'
               }`}
             >
               {cat}
@@ -155,7 +149,7 @@ export const SymbolLibrarySidebar: React.FC<Props> = ({
       </div>
 
       {/* Symbols List */}
-      <div className="flex-1 overflow-y-auto p-2 space-y-1 bg-cad-bg/20">
+      <div className="flex-1 overflow-y-auto p-2 space-y-1 bg-cad-bg">
         {visibleSymbols.map((sym) => {
           const isSelected = selectedSymbolId === sym.id;
 
@@ -175,27 +169,27 @@ export const SymbolLibrarySidebar: React.FC<Props> = ({
                 onArmPlacement(sym);
               }}
               title="Double click or Drag onto canvas to place"
-              className={`p-2 rounded-lg cursor-grab active:cursor-grabbing border transition-all flex items-start gap-2.5 ${
+              className={`p-2 rounded border cursor-grab active:cursor-grabbing transition-all flex items-start gap-2 ${
                 isSelected
-                  ? 'bg-blue-600/20 border-blue-500/50 shadow-sm'
-                  : 'bg-cad-subpanel/50 hover:bg-cad-subpanel border-cad-border/60'
+                  ? 'bg-blue-500/10 border-blue-500 shadow-sm'
+                  : 'bg-cad-panel hover:bg-cad-surfaceHover border-cad-border'
               }`}
             >
-              <div className="p-1.5 rounded bg-cad-bg border border-cad-border text-blue-400 shrink-0 mt-0.5">
-                <Cpu size={14} />
+              <div className="p-1 rounded bg-cad-subpanel border border-cad-border text-blue-600 dark:text-blue-400 shrink-0 mt-0.5">
+                <Cpu size={13} />
               </div>
 
               <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-xs text-white truncate">{sym.name}</span>
-                  <span className="text-[10px] font-mono px-1 bg-cad-border text-slate-300 rounded shrink-0">
+                <div className="flex items-center justify-between gap-1">
+                  <span className="font-semibold text-xs text-cad-textHeading truncate">{sym.name}</span>
+                  <span className="text-[10px] font-mono px-1 py-0.2 bg-cad-subpanel border border-cad-border text-cad-text rounded shrink-0">
                     {sym.defaultPrefix}?
                   </span>
                 </div>
                 <p className="text-[11px] text-cad-textMuted truncate mt-0.5">{sym.description}</p>
-                <div className="flex items-center justify-between text-[10px] text-slate-400 font-mono mt-1">
-                  <span>{sym.library}</span>
-                  <span className="text-emerald-400">{sym.pins.length} pins</span>
+                <div className="flex items-center justify-between text-[10px] text-cad-textMuted font-mono mt-1">
+                  <span className="truncate">{sym.library}</span>
+                  <span className="text-emerald-600 dark:text-emerald-400 font-semibold">{sym.pins.length} pins</span>
                 </div>
               </div>
             </div>
@@ -205,7 +199,7 @@ export const SymbolLibrarySidebar: React.FC<Props> = ({
         {filteredSymbols.length > displayLimit && (
           <button
             onClick={() => setDisplayLimit((prev) => prev + 30)}
-            className="w-full py-1.5 mt-1 bg-cad-subpanel hover:bg-cad-border text-blue-400 hover:text-blue-300 rounded text-xs font-mono font-semibold transition-colors"
+            className="w-full py-1.5 mt-1 bg-cad-subpanel hover:bg-cad-surfaceHover border border-cad-border text-blue-600 dark:text-blue-400 rounded text-xs font-mono font-medium transition-colors"
           >
             Show More ({filteredSymbols.length - displayLimit} remaining)...
           </button>
@@ -221,7 +215,7 @@ export const SymbolLibrarySidebar: React.FC<Props> = ({
       {/* Footer Info */}
       <div className="p-2 bg-cad-subpanel border-t border-cad-border text-[10px] text-cad-textMuted font-mono flex items-center justify-between">
         <span>{filteredSymbols.length} Symbols</span>
-        <span className="text-blue-400">Drag to Place</span>
+        <span className="text-blue-600 dark:text-blue-400 font-semibold">Drag to Place</span>
       </div>
     </div>
   );

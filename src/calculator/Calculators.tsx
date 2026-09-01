@@ -101,33 +101,33 @@ export const Calculators: React.FC = () => {
               </h3>
 
               <div>
-                <label className="text-xs text-slate-300 block mb-1">Target Current (Amps)</label>
+                <label className="text-xs text-cad-text block mb-1">Target Current (Amps)</label>
                 <input
                   type="number"
                   step="0.1"
                   value={currentAmps}
                   onChange={(e) => setCurrentAmps(Math.max(0.01, parseFloat(e.target.value) || 0))}
-                  className="w-full bg-cad-bg border border-cad-border rounded px-3 py-1.5 text-xs text-white font-mono"
+                  className="w-full bg-cad-bg border border-cad-border rounded px-3 py-1.5 text-xs text-cad-inputText font-mono"
                 />
               </div>
 
               <div>
-                <label className="text-xs text-slate-300 block mb-1">Temperature Rise (°C)</label>
+                <label className="text-xs text-cad-text block mb-1">Temperature Rise (°C)</label>
                 <input
                   type="number"
                   value={tempRiseC}
                   onChange={(e) => setTempRiseC(Math.max(1, parseFloat(e.target.value) || 10))}
-                  className="w-full bg-cad-bg border border-cad-border rounded px-3 py-1.5 text-xs text-white font-mono"
+                  className="w-full bg-cad-bg border border-cad-border rounded px-3 py-1.5 text-xs text-cad-inputText font-mono"
                 />
               </div>
 
               <div>
-                <label className="text-xs text-slate-300 block mb-1">Copper Thickness</label>
+                <label className="text-xs text-cad-text block mb-1">Copper Thickness</label>
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     onClick={() => setCopperOz(1)}
                     className={`py-1.5 text-xs rounded font-mono border ${
-                      copperOz === 1 ? 'bg-blue-600/30 border-blue-500 text-white' : 'bg-cad-bg border-cad-border text-cad-textMuted'
+                      copperOz === 1 ? 'bg-blue-600/30 border-blue-500 text-cad-textHeading' : 'bg-cad-bg border-cad-border text-cad-text'
                     }`}
                   >
                     1 oz (35 µm)
@@ -135,7 +135,7 @@ export const Calculators: React.FC = () => {
                   <button
                     onClick={() => setCopperOz(2)}
                     className={`py-1.5 text-xs rounded font-mono border ${
-                      copperOz === 2 ? 'bg-blue-600/30 border-blue-500 text-white' : 'bg-cad-bg border-cad-border text-cad-textMuted'
+                      copperOz === 2 ? 'bg-blue-600/30 border-blue-500 text-cad-textHeading' : 'bg-cad-bg border-cad-border text-cad-text'
                     }`}
                   >
                     2 oz (70 µm)
@@ -144,12 +144,12 @@ export const Calculators: React.FC = () => {
               </div>
 
               <div>
-                <label className="text-xs text-slate-300 block mb-1">Layer Type</label>
+                <label className="text-xs text-cad-text block mb-1">Layer Type</label>
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     onClick={() => setIsExternal(true)}
                     className={`py-1.5 text-xs rounded font-mono border ${
-                      isExternal ? 'bg-blue-600/30 border-blue-500 text-white' : 'bg-cad-bg border-cad-border text-cad-textMuted'
+                      isExternal ? 'bg-blue-600/30 border-blue-500 text-cad-textHeading' : 'bg-cad-bg border-cad-border text-cad-text'
                     }`}
                   >
                     External Layer
@@ -157,7 +157,7 @@ export const Calculators: React.FC = () => {
                   <button
                     onClick={() => setIsExternal(false)}
                     className={`py-1.5 text-xs rounded font-mono border ${
-                      !isExternal ? 'bg-blue-600/30 border-blue-500 text-white' : 'bg-cad-bg border-cad-border text-cad-textMuted'
+                      !isExternal ? 'bg-blue-600/30 border-blue-500 text-cad-textHeading' : 'bg-cad-bg border-cad-border text-cad-text'
                     }`}
                   >
                     Internal Layer
@@ -175,28 +175,28 @@ export const Calculators: React.FC = () => {
 
                 <div className="space-y-3 font-mono">
                   <div className="bg-cad-panel p-3 rounded border border-cad-border flex justify-between items-center">
-                    <span className="text-xs text-slate-300">Minimum Track Width:</span>
-                    <span className="text-base font-bold text-white">
+                    <span className="text-xs text-cad-text">Minimum Track Width:</span>
+                    <span className="text-base font-bold text-cad-textHeading">
                       {trackResult.widthMm} mm ({trackResult.widthMils} mil)
                     </span>
                   </div>
 
                   <div className="bg-cad-panel p-3 rounded border border-cad-border flex justify-between items-center">
-                    <span className="text-xs text-slate-300">Resistance per Meter:</span>
+                    <span className="text-xs text-cad-text">Resistance per Meter:</span>
                     <span className="text-xs font-bold text-blue-400">
                       {trackResult.resistanceOhmsPerM} Ω/m
                     </span>
                   </div>
 
                   <div className="bg-cad-panel p-3 rounded border border-cad-border flex justify-between items-center">
-                    <span className="text-xs text-slate-300">Voltage Drop per Meter:</span>
+                    <span className="text-xs text-cad-text">Voltage Drop per Meter:</span>
                     <span className="text-xs font-bold text-amber-400">
                       {trackResult.voltageDropPerM} V/m
                     </span>
                   </div>
 
                   <div className="bg-cad-panel p-3 rounded border border-cad-border flex justify-between items-center">
-                    <span className="text-xs text-slate-300">Power Loss:</span>
+                    <span className="text-xs text-cad-text">Power Loss:</span>
                     <span className="text-xs font-bold text-emerald-400">
                       {trackResult.powerLossWattsPerM} W/m
                     </span>
@@ -216,35 +216,35 @@ export const Calculators: React.FC = () => {
               </h3>
 
               <div>
-                <label className="text-xs text-slate-300 block mb-1">Trace Width W (mm)</label>
+                <label className="text-xs text-cad-text block mb-1">Trace Width W (mm)</label>
                 <input
                   type="number"
                   step="0.05"
                   value={traceWidthMm}
                   onChange={(e) => setTraceWidthMm(parseFloat(e.target.value) || 0.1)}
-                  className="w-full bg-cad-bg border border-cad-border rounded px-3 py-1.5 text-xs text-white font-mono"
+                  className="w-full bg-cad-bg border border-cad-border rounded px-3 py-1.5 text-xs text-cad-inputText font-mono"
                 />
               </div>
 
               <div>
-                <label className="text-xs text-slate-300 block mb-1">Dielectric Height H (mm)</label>
+                <label className="text-xs text-cad-text block mb-1">Dielectric Height H (mm)</label>
                 <input
                   type="number"
                   step="0.05"
                   value={heightMm}
                   onChange={(e) => setHeightMm(parseFloat(e.target.value) || 0.1)}
-                  className="w-full bg-cad-bg border border-cad-border rounded px-3 py-1.5 text-xs text-white font-mono"
+                  className="w-full bg-cad-bg border border-cad-border rounded px-3 py-1.5 text-xs text-cad-inputText font-mono"
                 />
               </div>
 
               <div>
-                <label className="text-xs text-slate-300 block mb-1">Relative Permittivity Er (FR4 = 4.5)</label>
+                <label className="text-xs text-cad-text block mb-1">Relative Permittivity Er (FR4 = 4.5)</label>
                 <input
                   type="number"
                   step="0.1"
                   value={erVal}
                   onChange={(e) => setErVal(parseFloat(e.target.value) || 4.5)}
-                  className="w-full bg-cad-bg border border-cad-border rounded px-3 py-1.5 text-xs text-white font-mono"
+                  className="w-full bg-cad-bg border border-cad-border rounded px-3 py-1.5 text-xs text-cad-inputText font-mono"
                 />
               </div>
             </div>
@@ -255,23 +255,23 @@ export const Calculators: React.FC = () => {
               </h3>
 
               <div className="bg-cad-panel p-3 rounded border border-cad-border flex justify-between items-center">
-                <span className="text-xs text-slate-300">Characteristic Impedance Z₀:</span>
+                <span className="text-xs text-cad-text">Characteristic Impedance Z₀:</span>
                 <span className="text-lg font-bold text-blue-400">{impedanceResult.z0} Ω</span>
               </div>
 
               <div className="bg-cad-panel p-3 rounded border border-cad-border flex justify-between items-center">
-                <span className="text-xs text-slate-300">Propagation Delay:</span>
-                <span className="text-xs font-bold text-white">{impedanceResult.propDelayPsPerMm} ps/mm</span>
+                <span className="text-xs text-cad-text">Propagation Delay:</span>
+                <span className="text-xs font-bold text-cad-textHeading">{impedanceResult.propDelayPsPerMm} ps/mm</span>
               </div>
 
               <div className="bg-cad-panel p-3 rounded border border-cad-border flex justify-between items-center">
-                <span className="text-xs text-slate-300">Capacitance:</span>
-                <span className="text-xs font-bold text-white">{impedanceResult.capacitancePfPerMm} pF/mm</span>
+                <span className="text-xs text-cad-text">Capacitance:</span>
+                <span className="text-xs font-bold text-cad-textHeading">{impedanceResult.capacitancePfPerMm} pF/mm</span>
               </div>
 
               <div className="bg-cad-panel p-3 rounded border border-cad-border flex justify-between items-center">
-                <span className="text-xs text-slate-300">Inductance:</span>
-                <span className="text-xs font-bold text-white">{impedanceResult.inductanceNhPerMm} nH/mm</span>
+                <span className="text-xs text-cad-text">Inductance:</span>
+                <span className="text-xs font-bold text-cad-textHeading">{impedanceResult.inductanceNhPerMm} nH/mm</span>
               </div>
             </div>
           </div>
@@ -286,23 +286,23 @@ export const Calculators: React.FC = () => {
               </h3>
 
               <div>
-                <label className="text-xs text-slate-300 block mb-1">Attenuation (dB)</label>
+                <label className="text-xs text-cad-text block mb-1">Attenuation (dB)</label>
                 <input
                   type="number"
                   step="0.5"
                   value={attenDb}
                   onChange={(e) => setAttenDb(parseFloat(e.target.value) || 1)}
-                  className="w-full bg-cad-bg border border-cad-border rounded px-3 py-1.5 text-xs text-white font-mono"
+                  className="w-full bg-cad-bg border border-cad-border rounded px-3 py-1.5 text-xs text-cad-inputText font-mono"
                 />
               </div>
 
               <div>
-                <label className="text-xs text-slate-300 block mb-1">System Impedance Z₀ (Ω)</label>
+                <label className="text-xs text-cad-text block mb-1">System Impedance Z₀ (Ω)</label>
                 <input
                   type="number"
                   value={z0Val}
                   onChange={(e) => setZ0Val(parseFloat(e.target.value) || 50)}
-                  className="w-full bg-cad-bg border border-cad-border rounded px-3 py-1.5 text-xs text-white font-mono"
+                  className="w-full bg-cad-bg border border-cad-border rounded px-3 py-1.5 text-xs text-cad-inputText font-mono"
                 />
               </div>
             </div>
@@ -313,15 +313,15 @@ export const Calculators: React.FC = () => {
               </h3>
 
               <div className="bg-cad-panel p-3 rounded border border-cad-border">
-                <div className="text-xs font-bold text-white mb-2">Pi Network (π):</div>
-                <div className="text-xs text-cad-textMuted">R_Shunt: <span className="text-white font-bold">{attenuatorResult.piNetwork.rShunt} Ω</span></div>
-                <div className="text-xs text-cad-textMuted">R_Series: <span className="text-white font-bold">{attenuatorResult.piNetwork.rSeries} Ω</span></div>
+                <div className="text-xs font-bold text-cad-textHeading mb-2">Pi Network (π):</div>
+                <div className="text-xs text-cad-text">R_Shunt: <span className="text-cad-textHeading font-bold">{attenuatorResult.piNetwork.rShunt} Ω</span></div>
+                <div className="text-xs text-cad-text">R_Series: <span className="text-cad-textHeading font-bold">{attenuatorResult.piNetwork.rSeries} Ω</span></div>
               </div>
 
               <div className="bg-cad-panel p-3 rounded border border-cad-border">
-                <div className="text-xs font-bold text-white mb-2">T Network (T):</div>
-                <div className="text-xs text-cad-textMuted">R_Series: <span className="text-white font-bold">{attenuatorResult.tNetwork.rSeries} Ω</span></div>
-                <div className="text-xs text-cad-textMuted">R_Shunt: <span className="text-white font-bold">{attenuatorResult.tNetwork.rShunt} Ω</span></div>
+                <div className="text-xs font-bold text-cad-textHeading mb-2">T Network (T):</div>
+                <div className="text-xs text-cad-text">R_Series: <span className="text-cad-textHeading font-bold">{attenuatorResult.tNetwork.rSeries} Ω</span></div>
+                <div className="text-xs text-cad-text">R_Shunt: <span className="text-cad-textHeading font-bold">{attenuatorResult.tNetwork.rShunt} Ω</span></div>
               </div>
             </div>
           </div>
@@ -336,33 +336,33 @@ export const Calculators: React.FC = () => {
               </h3>
 
               <div>
-                <label className="text-xs text-slate-300 block mb-1">Resistor R1 (Ω)</label>
+                <label className="text-xs text-cad-text block mb-1">Resistor R1 (Ω)</label>
                 <input
                   type="number"
                   value={r1Val}
                   onChange={(e) => setR1Val(parseFloat(e.target.value) || 1000)}
-                  className="w-full bg-cad-bg border border-cad-border rounded px-3 py-1.5 text-xs text-white font-mono"
+                  className="w-full bg-cad-bg border border-cad-border rounded px-3 py-1.5 text-xs text-cad-inputText font-mono"
                 />
               </div>
 
               <div>
-                <label className="text-xs text-slate-300 block mb-1">Resistor R2 (Ω)</label>
+                <label className="text-xs text-cad-text block mb-1">Resistor R2 (Ω)</label>
                 <input
                   type="number"
                   value={r2Val}
                   onChange={(e) => setR2Val(parseFloat(e.target.value) || 1000)}
-                  className="w-full bg-cad-bg border border-cad-border rounded px-3 py-1.5 text-xs text-white font-mono"
+                  className="w-full bg-cad-bg border border-cad-border rounded px-3 py-1.5 text-xs text-cad-inputText font-mono"
                 />
               </div>
 
               <div>
-                <label className="text-xs text-slate-300 block mb-1">Timing Capacitor C (µF)</label>
+                <label className="text-xs text-cad-text block mb-1">Timing Capacitor C (µF)</label>
                 <input
                   type="number"
                   step="0.01"
                   value={cValUf}
                   onChange={(e) => setCValUf(parseFloat(e.target.value) || 0.01)}
-                  className="w-full bg-cad-bg border border-cad-border rounded px-3 py-1.5 text-xs text-white font-mono"
+                  className="w-full bg-cad-bg border border-cad-border rounded px-3 py-1.5 text-xs text-cad-inputText font-mono"
                 />
               </div>
             </div>
@@ -373,23 +373,23 @@ export const Calculators: React.FC = () => {
               </h3>
 
               <div className="bg-cad-panel p-3 rounded border border-cad-border flex justify-between items-center">
-                <span className="text-xs text-slate-300">Frequency:</span>
+                <span className="text-xs text-cad-text">Frequency:</span>
                 <span className="text-lg font-bold text-blue-400">{timerResult.frequencyHz} Hz</span>
               </div>
 
               <div className="bg-cad-panel p-3 rounded border border-cad-border flex justify-between items-center">
-                <span className="text-xs text-slate-300">Duty Cycle:</span>
+                <span className="text-xs text-cad-text">Duty Cycle:</span>
                 <span className="text-xs font-bold text-amber-400">{timerResult.dutyCyclePercent} %</span>
               </div>
 
               <div className="bg-cad-panel p-3 rounded border border-cad-border flex justify-between items-center">
-                <span className="text-xs text-slate-300">High Time (t₁):</span>
-                <span className="text-xs font-bold text-white">{timerResult.highTimeSec} s</span>
+                <span className="text-xs text-cad-text">High Time (t₁):</span>
+                <span className="text-xs font-bold text-cad-textHeading">{timerResult.highTimeSec} s</span>
               </div>
 
               <div className="bg-cad-panel p-3 rounded border border-cad-border flex justify-between items-center">
-                <span className="text-xs text-slate-300">Low Time (t₂):</span>
-                <span className="text-xs font-bold text-white">{timerResult.lowTimeSec} s</span>
+                <span className="text-xs text-cad-text">Low Time (t₂):</span>
+                <span className="text-xs font-bold text-cad-textHeading">{timerResult.lowTimeSec} s</span>
               </div>
             </div>
           </div>

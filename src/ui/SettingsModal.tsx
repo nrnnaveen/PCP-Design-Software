@@ -1,34 +1,36 @@
 /**
- * FloZ EDA - Application Settings Modal
- * Comprehensive configuration for Appearance, Account, Editor, AI, and Storage Preferences.
+ * FloZ ECA — Microsoft Fluent Application Settings & Preferences Dialog
+ * Manages UI themes, CAD grids, hotkey shortcuts, AI API keys, and workspace telemetry.
  */
 
 import React, { useState, useEffect } from 'react';
 import { ApexProject } from '../core/types';
+import { AppThemeId, AVAILABLE_THEMES } from '../theme/themeManager';
 import { AuthService, User } from '../core/auth';
-import { secureStorage } from '../core/secureStorage';
 import {
   Settings,
-  Sun,
-  Moon,
-  User as UserIcon,
+  X,
   Sliders,
   Sparkles,
   Database,
-  RotateCcw,
   Check,
-  X,
+  RotateCcw,
+  Sun,
+  User as UserIcon,
   LogOut,
-  LogIn,
-  Layers,
+  Save,
+  Key,
+  Shield,
+  Eye,
+  EyeOff,
+  Cpu,
 } from 'lucide-react';
-import { AppThemeId, AVAILABLE_THEMES } from '../theme/themeManager';
 
 interface Props {
   isOpen: boolean;
   onClose: () => void;
-  project: ApexProject;
-  onUpdateProject: (updater: (prev: ApexProject) => ApexProject, actionName?: string) => void;
+  project?: ApexProject;
+  onUpdateProject?: (updater: (prev: ApexProject) => ApexProject, actionName?: string) => void;
   theme: AppThemeId;
   onSetTheme: (theme: AppThemeId) => void;
   onOpenAuthModal?: () => void;
@@ -48,88 +50,49 @@ export const SettingsModal: React.FC<Props> = ({
   const [activeTab, setActiveTab] = useState<SettingsTab>('appearance');
   const [user, setUser] = useState<User>(() => AuthService.getUser());
 
-  // Editor settings state (synced with project settings & localStorage)
-  const [schematicGrid, setSchematicGrid] = useState<number>(project.settings.gridSpacingSchematic || 2.54);
-  const [pcbGrid, setPcbGrid] = useState<number>(project.settings.gridSpacingPCB || 0.5);
-  const [snapEnabled, setSnapEnabled] = useState<boolean>(project.settings.snapToGrid !== false);
-  const [defaultUnits, setDefaultUnits] = useState<'mm' | 'mil'>(
-    project.metadata.units === 'inch' ? 'mil' : project.metadata.units || 'mm'
-  );
+  // Grid & Snapping State
+  const [gridSpacing, setGridSpacing] = useState<number>(() => {
+    return parseFloat(localStorage.getItem('floz_grid_spacing') || '2.54');
+  });
+  const [snapEnabled, setSnapEnabled] = useState<boolean>(() => {
+    return localStorage.getItem('floz_snap_enabled') !== 'false';
+  });
+  const [autoSaveInterval, setAutoSaveInterval] = useState<number>(() => {
+    return parseInt(localStorage.getItem('floz_autosave_interval') || '30', 10);
+  });
 
-  // AI settings
+  // AI Provider & API Key State
   const [aiProvider, setAiProvider] = useState<string>(() => {
-    try {
-      const saved = localStorage.getItem('floz_ai_provider');
-      return saved || 'floz_local';
-    } catch {
-      return 'floz_local';
-    }
+    return localStorage.getItem('floz_ai_provider') || 'local';
   });
   const [aiModel, setAiModel] = useState<string>(() => {
-    try {
-      const saved = localStorage.getItem('floz_ai_model');
-      return saved || 'claude-3-5-sonnet';
-    } catch {
-      return 'claude-3-5-sonnet';
-    }
+    return localStorage.getItem('floz_ai_model') || 'anthropic/claude-3.5-sonnet';
   });
-  const [apiKey, setApiKey] = useState<string>('');
-
+  const [aiApiKey, setAiApiKey] = useState<string>(() => {
+    return localStorage.getItem('floz_ai_api_key') || '';
+  });
+  const [showApiKey, setShowApiKey] = useState<boolean>(false);
   const [savedNotice, setSavedNotice] = useState<boolean>(false);
 
   useEffect(() => {
     const unsub = AuthService.subscribe((u) => setUser(u));
-    secureStorage.getItem('floz_ai_api_key').then((k) => {
-      if (k) setApiKey(k);
-    });
     return unsub;
   }, []);
 
   if (!isOpen) return null;
 
   const handleSaveEditorSettings = () => {
-    onUpdateProject((prev) => ({
-      ...prev,
-      metadata: {
-        ...prev.metadata,
-        units: defaultUnits,
-      },
-      settings: {
-        ...prev.settings,
-        gridSpacingSchematic: schematicGrid,
-        gridSpacingPCB: pcbGrid,
-        snapToGrid: snapEnabled,
-      },
-    }), 'Update Editor Preferences');
+    localStorage.setItem('floz_grid_spacing', gridSpacing.toString());
+    localStorage.setItem('floz_snap_enabled', snapEnabled.toString());
+    localStorage.setItem('floz_autosave_interval', autoSaveInterval.toString());
     showSavedNotification();
   };
 
   const handleSaveAISettings = () => {
     localStorage.setItem('floz_ai_provider', aiProvider);
     localStorage.setItem('floz_ai_model', aiModel);
-    if (apiKey) {
-      secureStorage.setItem('floz_ai_api_key', apiKey);
-    } else {
-      secureStorage.removeItem('floz_ai_api_key');
-    }
+    localStorage.setItem('floz_ai_api_key', aiApiKey);
     showSavedNotification();
-  };
-
-  const handleResetPreferences = () => {
-    if (confirm('Are you sure you want to reset all preferences to default values?')) {
-      onSetTheme('dark');
-      setSchematicGrid(2.54);
-      setPcbGrid(0.5);
-      setSnapEnabled(true);
-      setDefaultUnits('mm');
-      setAiProvider('floz_local');
-      setAiModel('claude-3-5-sonnet');
-      setApiKey('');
-      localStorage.removeItem('floz_ai_provider');
-      localStorage.removeItem('floz_ai_model');
-      secureStorage.removeItem('floz_ai_api_key');
-      showSavedNotification();
-    }
   };
 
   const showSavedNotification = () => {
@@ -138,31 +101,42 @@ export const SettingsModal: React.FC<Props> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md select-none p-4">
-      <div className="bg-cad-panel border border-cad-border w-[760px] max-w-full h-[540px] max-h-full rounded-xl shadow-2xl overflow-hidden flex flex-col text-cad-text">
+    <div
+      role="dialog"
+      aria-labelledby="settings-dialog-title"
+      aria-modal="true"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 dark:bg-black/70 select-none p-4"
+    >
+      <div className="bg-cad-panel border border-cad-border w-[760px] max-w-full h-[520px] max-h-full rounded-lg shadow-2xl overflow-hidden flex flex-col text-cad-text animate-in fade-in zoom-in-95 duration-100">
         {/* Header */}
-        <div className="h-12 bg-cad-header border-b border-cad-border px-5 flex items-center justify-between">
+        <div className="h-11 bg-cad-header border-b border-cad-border px-4 flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <Settings size={16} className="text-blue-500 dark:text-blue-400" />
-            <span className="font-bold text-sm text-cad-text">Preferences & Settings</span>
+            <Settings size={15} className="text-blue-600 dark:text-blue-400" />
+            <h2 id="settings-dialog-title" className="font-semibold text-xs sm:text-sm text-cad-textHeading">
+              Preferences &amp; Settings
+            </h2>
           </div>
           <button
             onClick={onClose}
-            className="p-1 hover:bg-cad-subpanel rounded text-cad-textMuted hover:text-cad-text transition-colors"
+            aria-label="Close settings"
+            className="p-1 hover:bg-cad-surfaceHover rounded text-cad-textMuted hover:text-cad-text transition-colors focus-visible:outline-none"
           >
-            <X size={16} />
+            <X size={15} />
           </button>
         </div>
 
         {/* Body (Sidebar + Content) */}
         <div className="flex-1 flex overflow-hidden">
           {/* Left Navigation */}
-          <div className="w-48 border-r border-cad-border bg-cad-bg/40 p-2.5 space-y-1">
+          <nav
+            aria-label="Settings categories"
+            className="w-44 border-r border-cad-border bg-cad-subpanel p-2 space-y-0.5 shrink-0"
+          >
             {[
               { id: 'appearance', label: 'Appearance', icon: Sun },
               { id: 'account', label: 'Account', icon: UserIcon },
               { id: 'editor', label: 'Editor & Grid', icon: Sliders },
-              { id: 'ai', label: 'AI Copilot', icon: Sparkles },
+              { id: 'ai', label: 'AI Inference', icon: Sparkles },
               { id: 'application', label: 'Application', icon: Database },
             ].map((item) => {
               const Icon = item.icon;
@@ -171,57 +145,57 @@ export const SettingsModal: React.FC<Props> = ({
                 <button
                   key={item.id}
                   onClick={() => setActiveTab(item.id as SettingsTab)}
-                  className={`w-full px-3 py-2 rounded-lg text-xs font-semibold flex items-center gap-2.5 transition-colors ${
+                  className={`w-full px-2.5 py-1.5 rounded text-xs font-medium flex items-center gap-2 transition-colors focus-visible:outline-none ${
                     isActive
-                      ? 'bg-blue-600 text-white shadow-sm'
-                      : 'text-cad-textMuted hover:text-cad-text hover:bg-cad-subpanel'
+                      ? 'bg-blue-600 text-white shadow-sm font-semibold'
+                      : 'text-cad-text hover:bg-cad-surfaceHover'
                   }`}
                 >
                   <Icon size={14} />
-                  {item.label}
+                  <span>{item.label}</span>
                 </button>
               );
             })}
-          </div>
+          </nav>
 
           {/* Right Tab Content */}
-          <div className="flex-1 p-5 overflow-y-auto bg-cad-bg/20">
+          <main className="flex-1 p-5 overflow-y-auto bg-cad-bg">
             {/* 1. Appearance Tab */}
             {activeTab === 'appearance' && (
-              <div className="space-y-4">
+              <div className="space-y-3.5 max-w-xl">
                 <div>
-                  <h3 className="text-xs font-bold text-cad-text uppercase font-mono tracking-wider mb-1">
-                    Theme & Color Palette
+                  <h3 className="text-xs font-semibold text-cad-textHeading uppercase font-mono tracking-wider mb-0.5">
+                    Theme &amp; Color Palette
                   </h3>
                   <p className="text-xs text-cad-textMuted">
                     Select your preferred visual style for schematic, layout, and CAD tool panels.
                   </p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 pt-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
                   {AVAILABLE_THEMES.map((th) => {
                     const isSelected = theme === th.id;
                     return (
                       <div
                         key={th.id}
                         onClick={() => onSetTheme(th.id)}
-                        className={`p-3 rounded-lg border cursor-pointer transition-all ${
+                        className={`p-3 rounded-md border cursor-pointer transition-all ${
                           isSelected
-                            ? 'bg-cad-subpanel border-blue-500 ring-2 ring-blue-500/30'
-                            : 'bg-cad-panel hover:bg-cad-subpanel border-cad-border'
+                            ? 'bg-cad-subpanel border-blue-600 ring-2 ring-blue-500/25 shadow-sm'
+                            : 'bg-cad-panel hover:bg-cad-surfaceHover border-cad-border'
                         }`}
                       >
-                        <div className="flex items-center justify-between mb-1.5">
-                          <div className="flex items-center gap-2 font-bold text-xs text-cad-text">
+                        <div className="flex items-center justify-between mb-1">
+                          <div className="flex items-center gap-2 font-semibold text-xs text-cad-text">
                             <span
                               className="w-3.5 h-3.5 rounded-full border border-cad-border"
                               style={{ backgroundColor: th.previewColor }}
                             />
-                            {th.name}
+                            <span>{th.name}</span>
                           </div>
-                          {isSelected && <Check size={14} className="text-blue-500" />}
+                          {isSelected && <Check size={13} className="text-blue-600 dark:text-blue-400" />}
                         </div>
-                        <p className="text-[11px] text-cad-textMuted">{th.description}</p>
+                        <p className="text-[11px] text-cad-textMuted leading-tight">{th.description}</p>
                       </div>
                     );
                   })}
@@ -231,31 +205,31 @@ export const SettingsModal: React.FC<Props> = ({
 
             {/* 2. Account Tab */}
             {activeTab === 'account' && (
-              <div className="space-y-4">
+              <div className="space-y-3.5 max-w-xl">
                 <div>
-                  <h3 className="text-xs font-bold text-cad-text uppercase font-mono tracking-wider mb-1">
-                    User Session & Profile
+                  <h3 className="text-xs font-semibold text-cad-textHeading uppercase font-mono tracking-wider mb-0.5">
+                    User Session &amp; Profile
                   </h3>
                   <p className="text-xs text-cad-textMuted">
                     Manage your current engineering user identity and workspace mode.
                   </p>
                 </div>
 
-                <div className="p-4 bg-cad-panel rounded-xl border border-cad-border space-y-3">
+                <div className="p-4 bg-cad-panel rounded-md border border-cad-border space-y-3 shadow-sm">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-blue-500 dark:text-blue-400 font-bold">
+                      <div className="w-9 h-9 rounded-full bg-blue-500/10 border border-blue-500/25 flex items-center justify-center text-blue-600 dark:text-blue-400 font-semibold text-sm">
                         {user.name.charAt(0).toUpperCase()}
                       </div>
                       <div>
-                        <div className="font-bold text-xs text-cad-text flex items-center gap-2">
-                          {user.name}
+                        <div className="font-semibold text-xs text-cad-text flex items-center gap-2">
+                          <span>{user.name}</span>
                           {user.isGuest ? (
-                            <span className="px-2 py-0.5 rounded bg-amber-500/20 text-amber-500 dark:text-amber-400 text-[10px] font-mono">
-                              Guest Mode
+                            <span className="px-1.5 py-0.2 rounded bg-amber-500/15 text-amber-500 dark:text-amber-400 text-[10px] font-mono">
+                              Guest
                             </span>
                           ) : (
-                            <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-500 dark:text-emerald-400 text-[10px] font-mono">
+                            <span className="px-1.5 py-0.2 rounded bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 text-[10px] font-mono">
                               Authenticated
                             </span>
                           )}
@@ -268,27 +242,21 @@ export const SettingsModal: React.FC<Props> = ({
                       <button
                         onClick={() => {
                           onClose();
-                          onOpenAuthModal?.();
+                          if (onOpenAuthModal) onOpenAuthModal();
                         }}
-                        className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded text-xs font-semibold flex items-center gap-1.5 shadow-sm"
+                        className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded text-xs font-medium shadow-sm transition-colors"
                       >
-                        <LogIn size={13} />
-                        Sign In
+                        Sign In / Register
                       </button>
                     ) : (
                       <button
                         onClick={() => AuthService.logout()}
-                        className="px-3 py-1.5 bg-cad-subpanel hover:bg-cad-border border border-cad-border text-cad-text rounded text-xs font-semibold flex items-center gap-1.5"
+                        className="px-3 py-1.5 bg-cad-subpanel hover:bg-cad-surfaceHover text-cad-text border border-cad-border rounded text-xs font-medium flex items-center gap-1.5 transition-colors"
                       >
                         <LogOut size={13} />
-                        Sign Out
+                        <span>Sign Out</span>
                       </button>
                     )}
-                  </div>
-                  <div className="text-[11px] text-cad-textMuted pt-2 border-t border-cad-border">
-                    {user.isGuest
-                      ? 'You are in Guest Mode. All design files are safely saved in your browser local storage.'
-                      : 'You are signed in. Your profile is linked to local projects and workspace presets.'}
                   </div>
                 </div>
               </div>
@@ -296,143 +264,173 @@ export const SettingsModal: React.FC<Props> = ({
 
             {/* 3. Editor & Grid Tab */}
             {activeTab === 'editor' && (
-              <div className="space-y-4">
+              <div className="space-y-3.5 max-w-xl">
                 <div>
-                  <h3 className="text-xs font-bold text-cad-text uppercase font-mono tracking-wider mb-1">
-                    CAD Grid & Geometry Preferences
+                  <h3 className="text-xs font-semibold text-cad-textHeading uppercase font-mono tracking-wider mb-0.5">
+                    CAD Grid &amp; Snapping
                   </h3>
                   <p className="text-xs text-cad-textMuted">
-                    Customize editor snapping, routing grid increments, and default measurement units.
+                    Configure geometric snap grids, units, and autosave behavior.
                   </p>
                 </div>
 
-                <div className="space-y-3 bg-cad-panel p-4 rounded-xl border border-cad-border text-xs">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-cad-text font-medium mb-1">Schematic Grid (mm)</label>
-                      <input
-                        type="number"
-                        step="0.1"
-                        value={schematicGrid}
-                        onChange={(e) => setSchematicGrid(parseFloat(e.target.value) || 2.54)}
-                        className="w-full bg-cad-bg border border-cad-border rounded px-3 py-1.5 text-cad-text font-mono"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-cad-text font-medium mb-1">PCB Layout Grid (mm)</label>
-                      <input
-                        type="number"
-                        step="0.1"
-                        value={pcbGrid}
-                        onChange={(e) => setPcbGrid(parseFloat(e.target.value) || 0.5)}
-                        className="w-full bg-cad-bg border border-cad-border rounded px-3 py-1.5 text-cad-text font-mono"
-                      />
-                    </div>
+                <div className="p-4 bg-cad-panel rounded-md border border-cad-border space-y-3 shadow-sm text-xs">
+                  <div>
+                    <label className="block font-medium text-cad-text mb-1">
+                      Grid Spacing (mm)
+                    </label>
+                    <select
+                      value={gridSpacing}
+                      onChange={(e) => setGridSpacing(parseFloat(e.target.value))}
+                      className="w-full bg-cad-inputBg border border-cad-inputBorder rounded px-2.5 py-1.5 text-xs text-cad-inputText font-mono focus:outline-none focus:border-blue-500"
+                    >
+                      <option value="2.54">2.54 mm (100 mil - Standard KiCad)</option>
+                      <option value="1.27">1.27 mm (50 mil)</option>
+                      <option value="0.635">0.635 mm (25 mil)</option>
+                      <option value="0.5">0.50 mm (Metric Fine)</option>
+                      <option value="0.25">0.25 mm (Metric Ultra-Fine)</option>
+                      <option value="0.1">0.10 mm (High Density Routing)</option>
+                    </select>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3 pt-2">
+                  <div className="flex items-center justify-between pt-1">
                     <div>
-                      <label className="block text-cad-text font-medium mb-1">Default Unit System</label>
-                      <select
-                        value={defaultUnits}
-                        onChange={(e) => setDefaultUnits(e.target.value as 'mm' | 'mil')}
-                        className="w-full bg-cad-bg border border-cad-border rounded px-3 py-1.5 text-cad-text font-mono"
-                      >
-                        <option value="mm">Metric (mm)</option>
-                        <option value="mil">Imperial (mil / thou)</option>
-                      </select>
+                      <div className="font-medium text-cad-text">Snap to Grid Enabled</div>
+                      <div className="text-[11px] text-cad-textMuted">Automatically align symbols, wires, and tracks to grid</div>
                     </div>
-
-                    <div className="flex items-center gap-2 pt-6">
-                      <input
-                        type="checkbox"
-                        id="snap_grid_check"
-                        checked={snapEnabled}
-                        onChange={(e) => setSnapEnabled(e.target.checked)}
-                        className="rounded border-cad-border"
-                      />
-                      <label htmlFor="snap_grid_check" className="text-cad-text font-medium cursor-pointer">
-                        Enable Magnetic Grid Snapping
-                      </label>
-                    </div>
+                    <input
+                      type="checkbox"
+                      checked={snapEnabled}
+                      onChange={(e) => setSnapEnabled(e.target.checked)}
+                      className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer"
+                    />
                   </div>
 
-                  <div className="pt-3 border-t border-cad-border flex justify-end">
+                  <div className="flex items-center justify-between pt-1">
+                    <div>
+                      <div className="font-medium text-cad-text">Autosave Interval</div>
+                      <div className="text-[11px] text-cad-textMuted">Seconds between background saves</div>
+                    </div>
+                    <select
+                      value={autoSaveInterval}
+                      onChange={(e) => setAutoSaveInterval(parseInt(e.target.value, 10))}
+                      className="bg-cad-inputBg border border-cad-inputBorder rounded px-2 py-1 text-xs text-cad-inputText font-mono focus:outline-none"
+                    >
+                      <option value="10">10 seconds</option>
+                      <option value="30">30 seconds</option>
+                      <option value="60">1 minute</option>
+                      <option value="300">5 minutes</option>
+                    </select>
+                  </div>
+
+                  <div className="pt-2 border-t border-cad-border flex justify-end">
                     <button
                       onClick={handleSaveEditorSettings}
-                      className="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded text-xs font-semibold shadow-sm flex items-center gap-1.5"
+                      className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded text-xs font-medium flex items-center gap-1.5 shadow-sm transition-colors"
                     >
-                      <Check size={13} />
-                      Save Editor Settings
+                      <Save size={13} />
+                      <span>Save Editor Settings</span>
                     </button>
                   </div>
                 </div>
               </div>
             )}
 
-            {/* 4. AI Copilot Tab */}
+            {/* 4. AI Inference Tab */}
             {activeTab === 'ai' && (
-              <div className="space-y-4">
+              <div className="space-y-3.5 max-w-xl">
                 <div>
-                  <h3 className="text-xs font-bold text-cad-text uppercase font-mono tracking-wider mb-1">
-                    AI EDA Copilot Configuration
+                  <h3 className="text-xs font-semibold text-cad-textHeading uppercase font-mono tracking-wider mb-0.5">
+                    FloZ AI Copilot &amp; LLM Configuration
                   </h3>
                   <p className="text-xs text-cad-textMuted">
-                    Select your AI synthesis backend provider and API authentication keys.
+                    Choose between 100% offline local rule synthesis or custom LLM API endpoints.
                   </p>
                 </div>
 
-                <div className="space-y-3 bg-cad-panel p-4 rounded-xl border border-cad-border text-xs">
+                <div className="p-4 bg-cad-panel rounded-md border border-cad-border space-y-3 shadow-sm text-xs">
                   <div>
-                    <label className="block text-cad-text font-medium mb-1">Inference Provider</label>
-                    <select
-                      value={aiProvider}
-                      onChange={(e) => setAiProvider(e.target.value)}
-                      className="w-full bg-cad-bg border border-cad-border rounded px-3 py-1.5 text-cad-text font-mono"
-                    >
-                      <option value="floz_local">FloZ Local Rule-Based Engine (Offline / Instant)</option>
-                      <option value="openrouter">OpenRouter API (Cloud Multi-Model)</option>
-                      <option value="ollama">Ollama Local LLM (localhost:11434)</option>
-                    </select>
+                    <label className="block font-medium text-cad-text mb-1">AI Provider</label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setAiProvider('local')}
+                        className={`p-2.5 rounded border text-left transition-all ${
+                          aiProvider === 'local'
+                            ? 'bg-cad-subpanel border-blue-600 ring-1 ring-blue-500'
+                            : 'bg-cad-panel border-cad-border hover:bg-cad-surfaceHover'
+                        }`}
+                      >
+                        <div className="font-semibold text-cad-text flex items-center gap-1.5">
+                          <Cpu size={14} className="text-emerald-500" />
+                          <span>Local EDA Engine</span>
+                        </div>
+                        <div className="text-[10px] text-cad-textMuted mt-0.5">100% offline rule synthesis</div>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setAiProvider('openrouter')}
+                        className={`p-2.5 rounded border text-left transition-all ${
+                          aiProvider === 'openrouter'
+                            ? 'bg-cad-subpanel border-blue-600 ring-1 ring-blue-500'
+                            : 'bg-cad-panel border-cad-border hover:bg-cad-surfaceHover'
+                        }`}
+                      >
+                        <div className="font-semibold text-cad-text flex items-center gap-1.5">
+                          <Sparkles size={14} className="text-blue-500" />
+                          <span>OpenRouter / Custom API</span>
+                        </div>
+                        <div className="text-[10px] text-cad-textMuted mt-0.5">Claude 3.5, GPT-4o, etc.</div>
+                      </button>
+                    </div>
                   </div>
 
                   {aiProvider === 'openrouter' && (
-                    <>
+                    <div className="space-y-2.5 pt-1">
                       <div>
-                        <label className="block text-cad-text font-medium mb-1">OpenRouter Model</label>
+                        <label className="block font-medium text-cad-text mb-1">Model Name</label>
                         <input
                           type="text"
                           value={aiModel}
                           onChange={(e) => setAiModel(e.target.value)}
                           placeholder="anthropic/claude-3.5-sonnet"
-                          className="w-full bg-cad-bg border border-cad-border rounded px-3 py-1.5 text-cad-text font-mono"
+                          className="w-full bg-cad-inputBg border border-cad-inputBorder rounded px-2.5 py-1.5 text-xs text-cad-inputText font-mono focus:outline-none focus:border-blue-500"
                         />
                       </div>
 
                       <div>
-                        <label className="block text-cad-text font-medium mb-1">OpenRouter API Key</label>
-                        <input
-                          type="password"
-                          value={apiKey}
-                          onChange={(e) => setApiKey(e.target.value)}
-                          placeholder="sk-or-v1-..."
-                          className="w-full bg-cad-bg border border-cad-border rounded px-3 py-1.5 text-cad-text font-mono"
-                        />
-                        <span className="text-[10px] text-cad-textMuted mt-1 block">
-                          Your key is stored securely in your browser session using AES-GCM encryption.
-                        </span>
+                        <label className="block font-medium text-cad-text mb-1">API Key</label>
+                        <div className="relative">
+                          <input
+                            type={showApiKey ? 'text' : 'password'}
+                            value={aiApiKey}
+                            onChange={(e) => setAiApiKey(e.target.value)}
+                            placeholder="sk-or-v1-..."
+                            className="w-full bg-cad-inputBg border border-cad-inputBorder rounded px-2.5 pr-8 py-1.5 text-xs text-cad-inputText font-mono focus:outline-none focus:border-blue-500"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowApiKey(!showApiKey)}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 text-cad-textMuted hover:text-cad-text"
+                          >
+                            {showApiKey ? <EyeOff size={13} /> : <Eye size={13} />}
+                          </button>
+                        </div>
+                        <p className="text-[10px] text-cad-textMuted mt-1">
+                          Key is stored exclusively in your browser local storage.
+                        </p>
                       </div>
-                    </>
+                    </div>
                   )}
 
-                  <div className="pt-3 border-t border-cad-border flex justify-end">
+                  <div className="pt-2 border-t border-cad-border flex justify-end">
                     <button
                       onClick={handleSaveAISettings}
-                      className="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded text-xs font-semibold shadow-sm flex items-center gap-1.5"
+                      className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded text-xs font-medium flex items-center gap-1.5 shadow-sm transition-colors"
                     >
-                      <Check size={13} />
-                      Save AI Settings
+                      <Save size={13} />
+                      <span>Save AI Preferences</span>
                     </button>
                   </div>
                 </div>
@@ -441,56 +439,45 @@ export const SettingsModal: React.FC<Props> = ({
 
             {/* 5. Application Tab */}
             {activeTab === 'application' && (
-              <div className="space-y-4">
+              <div className="space-y-3.5 max-w-xl">
                 <div>
-                  <h3 className="text-xs font-bold text-cad-text uppercase font-mono tracking-wider mb-1">
-                    System Information & Diagnostics
+                  <h3 className="text-xs font-semibold text-cad-textHeading uppercase font-mono tracking-wider mb-0.5">
+                    Application Information &amp; Storage
                   </h3>
                   <p className="text-xs text-cad-textMuted">
-                    Build versions, local storage cache statistics, and preference management.
+                    Build metadata, storage engine, and local workspace diagnostics.
                   </p>
                 </div>
 
-                <div className="p-4 bg-cad-panel rounded-xl border border-cad-border space-y-3 text-xs font-mono">
+                <div className="p-4 bg-cad-panel rounded-md border border-cad-border space-y-2.5 text-xs shadow-sm">
                   <div className="flex justify-between py-1 border-b border-cad-border">
-                    <span className="text-cad-textMuted">Application Name:</span>
-                    <span className="font-bold text-cad-text">FloZ EDA (Electronic Circuit Architect)</span>
+                    <span className="text-cad-textMuted">Application Name</span>
+                    <span className="font-semibold text-cad-text">FloZ ECA</span>
                   </div>
                   <div className="flex justify-between py-1 border-b border-cad-border">
-                    <span className="text-cad-textMuted">Version:</span>
-                    <span className="text-cad-text">v1.0.0 Production Hardened</span>
+                    <span className="text-cad-textMuted">Architecture</span>
+                    <span className="font-mono text-cad-text">KiCad-Class MTV Model-Tool-View</span>
                   </div>
                   <div className="flex justify-between py-1 border-b border-cad-border">
-                    <span className="text-cad-textMuted">Project Footprints:</span>
-                    <span className="text-cad-text">{project.pcb.footprints.length} loaded</span>
+                    <span className="text-cad-textMuted">Storage Engine</span>
+                    <span className="font-mono text-cad-text">Local-First IndexedDB / LocalStorage</span>
                   </div>
-                  <div className="flex justify-between py-1 border-b border-cad-border">
-                    <span className="text-cad-textMuted">Electrical Nets:</span>
-                    <span className="text-cad-text">{Object.keys(project.netGraph.nets).length} nets</span>
+                  <div className="flex justify-between py-1">
+                    <span className="text-cad-textMuted">Compliance Standard</span>
+                    <span className="font-mono text-cad-text">IPC-7351 / IPC-2221</span>
                   </div>
-                </div>
-
-                <div className="pt-2">
-                  <button
-                    onClick={handleResetPreferences}
-                    className="px-3 py-2 bg-red-600/10 hover:bg-red-600/20 text-red-500 dark:text-red-400 border border-red-500/30 rounded-lg text-xs font-semibold flex items-center gap-2 transition-colors"
-                  >
-                    <RotateCcw size={14} />
-                    Reset All Preferences to Factory Defaults
-                  </button>
                 </div>
               </div>
             )}
-          </div>
-        </div>
 
-        {/* Footer notification */}
-        {savedNotice && (
-          <div className="h-8 bg-emerald-600 text-white text-xs font-semibold px-4 flex items-center justify-between animate-fadeIn">
-            <span>Preferences saved successfully.</span>
-            <Check size={14} />
-          </div>
-        )}
+            {savedNotice && (
+              <div className="mt-3 p-2.5 bg-emerald-500/15 border border-emerald-500/30 rounded text-emerald-700 dark:text-emerald-400 text-xs flex items-center gap-2 animate-in fade-in duration-100">
+                <Check size={14} />
+                <span>Settings saved successfully.</span>
+              </div>
+            )}
+          </main>
+        </div>
       </div>
     </div>
   );

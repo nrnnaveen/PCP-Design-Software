@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0b0f19" />
+      <stop offset="50%" stop-color="#111418" />
+      <stop offset="100%" stop-color="#181d24" />
+    </linearGradient>
+    <linearGradient id="primaryGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2563eb" />
+      <stop offset="100%" stop-color="#0ea5e9" />
+    </linearGradient>
+    <linearGradient id="glowGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.3" />
+      <stop offset="100%" stop-color="#2563eb" stop-opacity="0" />
+    </linearGradient>
+    <pattern id="gridPattern" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1e293b" stroke-width="1" stroke-opacity="0.6" />
+    </pattern>
+  </defs>
+
+  <!-- Dark Engineering Background -->
+  <rect width="1200" height="630" fill="url(#bgGrad)" />
+  <rect width="1200" height="630" fill="url(#gridPattern)" />
+
+  <!-- Subtle Radial Glow -->
+  <circle cx="200" cy="300" r="350" fill="url(#glowGrad)" />
+
+  <!-- PCB Traces Background Graphic -->
+  <g stroke="#334155" stroke-width="3" fill="none" opacity="0.4">
+    <path d="M100 150 L300 150 L400 250 L800 250" />
+    <circle cx="800" cy="250" r="6" fill="#38bdf8" />
+    <path d="M200 500 L500 500 L650 350 L1100 350" />
+    <circle cx="1100" cy="350" r="6" fill="#10b981" />
+  </g>
+
+  <!-- FloZ ECA Main Emblem -->
+  <g transform="translate(100, 160)">
+    <rect width="110" height="110" rx="24" fill="#1e293b" stroke="url(#primaryGrad)" stroke-width="4" />
+    <path d="M35 25 H75 V40 H50 V50 H65 V62 H50 V85 H35 Z" fill="url(#primaryGrad)" />
+  </g>
+
+  <!-- Typography & Branding -->
+  <text x="240" y="215" font-family="system-ui, -apple-system, 'Inter', sans-serif" font-weight="800" font-size="54" fill="#ffffff" letter-spacing="-1">
+    FloZ ECA
+  </text>
+  <text x="500" y="215" font-family="system-ui, -apple-system, 'Inter', sans-serif" font-weight="500" font-size="28" fill="#38bdf8">
+    — Electronic Circuit Architect
+  </text>
+  <text x="240" y="260" font-family="system-ui, -apple-system, 'Inter', sans-serif" font-weight="500" font-size="24" fill="#94a3b8">
+    Professional Desktop &amp; Web EDA Suite
+  </text>
+
+  <!-- Feature Badges -->
+  <g transform="translate(100, 360)">
+    <!-- Badge 1: Schematic -->
+    <rect x="0" y="0" width="220" height="60" rx="10" fill="#181d24" stroke="#2c3644" stroke-width="1.5" />
+    <text x="20" y="38" font-family="system-ui, sans-serif" font-weight="600" font-size="18" fill="#e2e8f0">⚡ Schematic Capture</text>
+
+    <!-- Badge 2: PCB Layout -->
+    <rect x="240" y="0" width="220" height="60" rx="10" fill="#181d24" stroke="#2c3644" stroke-width="1.5" />
+    <text x="260" y="38" font-family="system-ui, sans-serif" font-weight="600" font-size="18" fill="#e2e8f0">📐 8-Layer PCB Router</text>
+
+    <!-- Badge 3: 3D Raytracing -->
+    <rect x="480" y="0" width="220" height="60" rx="10" fill="#181d24" stroke="#2c3644" stroke-width="1.5" />
+    <text x="500" y="38" font-family="system-ui, sans-serif" font-weight="600" font-size="18" fill="#e2e8f0">🎲 WebGL 3D Viewer</text>
+
+    <!-- Badge 4: SPICE Simulation -->
+    <rect x="720" y="0" width="220" height="60" rx="10" fill="#181d24" stroke="#2c3644" stroke-width="1.5" />
+    <text x="740" y="38" font-family="system-ui, sans-serif" font-weight="600" font-size="18" fill="#e2e8f0">🔬 MNA SPICE Engine</text>
+  </g>
+
+  <!-- Footer Info -->
+  <text x="100" y="540" font-family="monospace" font-size="18" fill="#64748b">
+    Cross-Platform: Web · Windows · Linux · Native KiCad Import · RS-274X Gerber
+  </text>
+  <text x="1000" y="540" font-family="system-ui, sans-serif" font-weight="600" font-size="18" fill="#38bdf8" text-anchor="end">
+    floz-eda.com
+  </text>
+</svg>

@@ -1,11 +1,11 @@
 /**
- * FloZ EDA - Project Health & Validation Dashboard Modal
+ * FloZ ECA — Microsoft Fluent Project Health & Diagnostics Dialog
  * Displays real-time health checks across 8 design pillars.
  */
 
 import React from 'react';
 import { ApexProject } from '../core/types';
-import { ProjectHealthEvaluator, HealthCheckItem } from '../validation/projectHealth';
+import { ProjectHealthEvaluator } from '../validation/projectHealth';
 import { AutoFixEngine } from '../validation/autoFixEngine';
 import {
   CheckCircle2,
@@ -13,10 +13,7 @@ import {
   XCircle,
   Wrench,
   ShieldCheck,
-  Download,
-  Layers,
-  Cpu,
-  Zap,
+  X,
 } from 'lucide-react';
 
 interface Props {
@@ -32,7 +29,6 @@ export const ProjectHealthModal: React.FC<Props> = ({
   isOpen,
   onClose,
   onUpdateProject,
-  onNavigateTab,
 }) => {
   if (!isOpen) return null;
 
@@ -45,56 +41,67 @@ export const ProjectHealthModal: React.FC<Props> = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-cad-panel border border-cad-border w-full max-w-2xl rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
+    <div
+      role="dialog"
+      aria-labelledby="health-dialog-title"
+      aria-modal="true"
+      className="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center z-50 p-4 select-none"
+    >
+      <div className="bg-cad-panel border border-cad-border w-full max-w-2xl rounded-lg shadow-2xl overflow-hidden flex flex-col max-h-[85vh] text-cad-text animate-in fade-in zoom-in-95 duration-100">
         {/* Header */}
-        <div className="h-14 px-5 bg-cad-subpanel border-b border-cad-border flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <ShieldCheck size={20} className={health.readyForExport ? 'text-emerald-400' : 'text-amber-400'} />
+        <div className="h-12 px-5 bg-cad-header border-b border-cad-border flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <ShieldCheck size={18} className={health.readyForExport ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'} />
             <div>
-              <h2 className="text-sm font-bold text-white">Project Health & Validation Dashboard</h2>
-              <p className="text-[11px] text-cad-textMuted">Design verification & manufacturing readiness audit</p>
+              <h2 id="health-dialog-title" className="text-xs sm:text-sm font-semibold text-cad-textHeading">
+                Project Health &amp; Validation
+              </h2>
+              <p className="text-[10px] text-cad-textMuted">Design verification &amp; manufacturing readiness audit</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
             <span
-              className={`px-2.5 py-1 rounded-full text-xs font-bold font-mono ${
+              className={`px-2.5 py-0.5 rounded text-[11px] font-semibold font-mono ${
                 health.readyForExport
-                  ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
-                  : 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+                  ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30'
+                  : 'bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30'
               }`}
             >
               {health.overallScore}% READY {health.readyForExport && '• EXPORTABLE'}
             </span>
-            <button onClick={onClose} className="text-cad-textMuted hover:text-white text-lg">
-              ✕
+            <button
+              onClick={onClose}
+              aria-label="Close"
+              className="p-1 hover:bg-cad-surfaceHover rounded text-cad-textMuted hover:text-cad-text transition-colors focus-visible:outline-none"
+            >
+              <X size={15} />
             </button>
           </div>
         </div>
 
         {/* Body */}
-        <div className="p-5 space-y-4 overflow-y-auto flex-1 text-xs">
+        <div className="p-5 space-y-3.5 overflow-y-auto flex-1 text-xs">
           {/* Status Banner */}
           <div
-            className={`p-3.5 rounded-lg border flex items-center justify-between ${
+            className={`p-3 rounded-md border flex items-center justify-between ${
               health.readyForExport
-                ? 'bg-emerald-950/30 border-emerald-600/40 text-emerald-200'
-                : 'bg-amber-950/30 border-amber-600/40 text-amber-200'
+                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-800 dark:text-emerald-200'
+                : 'bg-amber-500/10 border-amber-500/30 text-amber-800 dark:text-amber-200'
             }`}
           >
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2.5">
               {health.readyForExport ? (
-                <CheckCircle2 size={24} className="text-emerald-400" />
+                <CheckCircle2 size={20} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
               ) : (
-                <AlertTriangle size={24} className="text-amber-400" />
+                <AlertTriangle size={20} className="text-amber-600 dark:text-amber-400 shrink-0" />
               )}
               <div>
-                <div className="font-bold text-sm text-white">
+                <div className="font-semibold text-xs text-cad-textHeading">
                   {health.readyForExport
                     ? 'Project is Clean & Ready for Fabrication'
                     : `${health.criticalIssuesCount} Critical Issue(s), ${health.warningsCount} Warning(s) Detected`}
                 </div>
-                <div className="text-[11px] opacity-80">
+                <div className="text-[11px] text-cad-textMuted">
                   {health.readyForExport
                     ? 'All 8 design pillars passed electrical, layout, and manufacturing validation.'
                     : 'Resolve issues or run Auto-Fix to achieve production-ready state.'}
@@ -105,39 +112,40 @@ export const ProjectHealthModal: React.FC<Props> = ({
             {!health.readyForExport && (
               <button
                 onClick={handleAutoFix}
-                className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded text-xs flex items-center gap-1.5 shadow"
+                className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-medium rounded text-xs flex items-center gap-1.5 shadow-sm transition-colors shrink-0 focus-visible:outline-none"
               >
-                <Wrench size={13} /> Fix Automatically
+                <Wrench size={12} />
+                <span>Auto-Fix</span>
               </button>
             )}
           </div>
 
           {/* 8 Health Pillars Grid */}
-          <div className="grid grid-cols-2 gap-2.5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {health.checks.map((check) => (
               <div
                 key={check.key}
-                className="p-3 bg-cad-subpanel border border-cad-border rounded-lg flex items-start gap-2.5"
+                className="p-2.5 bg-cad-subpanel border border-cad-border rounded flex items-start gap-2"
               >
-                {check.status === 'passed' && <CheckCircle2 size={16} className="text-emerald-400 mt-0.5" />}
-                {check.status === 'warning' && <AlertTriangle size={16} className="text-amber-400 mt-0.5" />}
-                {check.status === 'failed' && <XCircle size={16} className="text-red-400 mt-0.5" />}
+                {check.status === 'passed' && <CheckCircle2 size={15} className="text-emerald-600 dark:text-emerald-400 mt-0.5 shrink-0" />}
+                {check.status === 'warning' && <AlertTriangle size={15} className="text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />}
+                {check.status === 'failed' && <XCircle size={15} className="text-red-600 dark:text-red-400 mt-0.5 shrink-0" />}
                 <div className="flex-1 min-w-0">
-                  <div className="font-semibold text-white flex items-center justify-between">
+                  <div className="font-medium text-cad-textHeading flex items-center justify-between text-xs">
                     <span>{check.label}</span>
                     <span
-                      className={`text-[10px] font-mono uppercase ${
+                      className={`text-[10px] font-mono font-semibold uppercase ${
                         check.status === 'passed'
-                          ? 'text-emerald-400'
+                          ? 'text-emerald-600 dark:text-emerald-400'
                           : check.status === 'warning'
-                          ? 'text-amber-400'
-                          : 'text-red-400'
+                          ? 'text-amber-600 dark:text-amber-400'
+                          : 'text-red-600 dark:text-red-400'
                       }`}
                     >
                       {check.status}
                     </span>
                   </div>
-                  <p className="text-[11px] text-cad-textMuted truncate">{check.details}</p>
+                  <p className="text-[11px] text-cad-textMuted truncate mt-0.5">{check.details}</p>
                 </div>
               </div>
             ))}
@@ -145,18 +153,13 @@ export const ProjectHealthModal: React.FC<Props> = ({
         </div>
 
         {/* Footer */}
-        <div className="h-14 px-5 bg-cad-subpanel border-t border-cad-border flex items-center justify-between text-xs">
-          <span className="text-cad-textMuted text-[11px]">
-            Authoritative state: {project.metadata.name} (v{project.metadata.version})
-          </span>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={onClose}
-              className="px-4 py-1.5 bg-cad-panel hover:bg-cad-border text-slate-300 rounded font-semibold border border-cad-border"
-            >
-              Close
-            </button>
-          </div>
+        <div className="h-11 bg-cad-header border-t border-cad-border px-5 flex items-center justify-end">
+          <button
+            onClick={onClose}
+            className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded text-xs font-medium shadow-sm transition-colors focus-visible:outline-none"
+          >
+            Close
+          </button>
         </div>
       </div>
     </div>

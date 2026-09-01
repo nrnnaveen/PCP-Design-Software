@@ -181,6 +181,43 @@ class ComponentLibraryRegistry {
     return this.getAllFootprints().find((f) => f.id === id || f.name === id);
   }
 
+  public getAllLibraries(): LibraryPackage[] {
+    return this.getLibraries();
+  }
+
+  public unregisterLibrary(id: string): boolean {
+    return this.removeLibrary(id);
+  }
+
+  public searchSymbols(query: string = '', category: string = 'All'): SymbolDefinition[] {
+    const q = query.toLowerCase().trim();
+    return this.getAllSymbols().filter((sym) => {
+      const matchCat = category === 'All' || sym.category === category || sym.library === category;
+      if (!matchCat) return false;
+      if (!q) return true;
+      return (
+        sym.name.toLowerCase().includes(q) ||
+        sym.description.toLowerCase().includes(q) ||
+        sym.defaultPrefix.toLowerCase().includes(q) ||
+        sym.keywords?.some((k) => k.toLowerCase().includes(q))
+      );
+    });
+  }
+
+  public searchFootprints(query: string = '', category: string = 'All'): FootprintDefinition[] {
+    const q = query.toLowerCase().trim();
+    return this.getAllFootprints().filter((fp) => {
+      const matchCat = category === 'All' || fp.category === category || fp.library === category;
+      if (!matchCat) return false;
+      if (!q) return true;
+      return (
+        fp.name.toLowerCase().includes(q) ||
+        fp.description.toLowerCase().includes(q) ||
+        fp.keywords?.some((k) => k.toLowerCase().includes(q))
+      );
+    });
+  }
+
   // Modifications
   public addLibrary(lib: LibraryPackage): void {
     this.libraries.set(lib.id, lib);
@@ -222,5 +259,9 @@ class ComponentLibraryRegistry {
     this.saveToStorage();
   }
 }
+
+export type ApexLibrary = LibraryPackage;
+export type ApexSymbolDef = SymbolDefinition;
+export type ApexFootprintDef = FootprintDefinition;
 
 export const libraryRegistry = new ComponentLibraryRegistry();

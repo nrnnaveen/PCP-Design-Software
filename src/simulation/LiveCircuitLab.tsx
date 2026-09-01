@@ -260,18 +260,25 @@ export const LiveCircuitLab: React.FC<Props> = ({ project, isOpen, onClose }) =>
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md select-none p-4">
-      <div className="bg-cad-panel border border-cad-border w-[940px] max-w-full h-[620px] max-h-full rounded-xl shadow-2xl overflow-hidden flex flex-col text-cad-text font-sans">
+    <div
+      role="dialog"
+      aria-labelledby="circuit-lab-title"
+      aria-modal="true"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 dark:bg-black/70 select-none p-4"
+    >
+      <div className="bg-cad-panel border border-cad-border w-[940px] max-w-full h-[620px] max-h-full rounded-lg shadow-2xl overflow-hidden flex flex-col text-cad-text font-sans animate-in fade-in zoom-in-95 duration-100">
         {/* Header */}
-        <div className="h-12 bg-cad-header border-b border-cad-border px-5 flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div className="w-7 h-7 rounded-lg bg-blue-600 flex items-center justify-center text-white font-bold text-xs shadow-sm">
-              <Activity size={15} />
+        <div className="h-11 bg-cad-header border-b border-cad-border px-4 flex items-center justify-between">
+          <div className="flex items-center space-x-2.5">
+            <div className="w-6 h-6 rounded bg-blue-600 flex items-center justify-center text-white font-bold text-xs shadow-sm">
+              <Activity size={14} />
             </div>
             <div>
-              <span className="font-bold text-sm text-cad-text">Live Circuit Lab & Code Analysis</span>
+              <h2 id="circuit-lab-title" className="font-semibold text-xs sm:text-sm text-cad-textHeading inline">
+                Live Circuit Lab &amp; Code Analysis
+              </h2>
               <span className="text-[10px] text-cad-textMuted font-mono ml-2">
-                Embedded C/C++, Arduino & SPICE Static Analyzer
+                Embedded C/C++, Arduino &amp; SPICE Static Analyzer
               </span>
             </div>
           </div>
@@ -286,14 +293,14 @@ export const LiveCircuitLab: React.FC<Props> = ({ project, isOpen, onClose }) =>
             />
             <button
               onClick={() => fileInputRef.current?.click()}
-              className="px-2.5 py-1 bg-cad-subpanel hover:bg-cad-border border border-cad-border rounded text-xs font-semibold flex items-center gap-1.5 transition-colors"
+              className="px-2.5 py-1 bg-cad-subpanel hover:bg-cad-surfaceHover border border-cad-border rounded text-xs font-medium flex items-center gap-1.5 transition-colors focus-visible:outline-none"
             >
-              <Upload size={13} className="text-emerald-500 dark:text-emerald-400" />
-              Upload File
+              <Upload size={12} className="text-emerald-600 dark:text-emerald-400" />
+              <span>Upload File</span>
             </button>
             <button
               onClick={onClose}
-              className="px-3 py-1 bg-cad-subpanel hover:bg-cad-border border border-cad-border rounded text-xs font-semibold"
+              className="px-3 py-1 bg-cad-subpanel hover:bg-cad-surfaceHover border border-cad-border rounded text-xs font-medium transition-colors focus-visible:outline-none"
             >
               Close
             </button>

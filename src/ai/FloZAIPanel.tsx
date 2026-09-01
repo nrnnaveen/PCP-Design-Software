@@ -69,10 +69,10 @@ export const FloZAIPanel: React.FC<Props> = ({
     {
       id: 'msg_welcome',
       role: 'assistant',
-      content: `## FloZ AI — Electronic Design Assistant
-I am your engineering copilot for schematic capture, PCB layout, ERC/DRC audits, and circuit synthesis.
+      content: `## Circuit Copilot
+Engineering assistant for schematic capture, PCB layout, ERC/DRC diagnostics, and circuit analysis.
 
-Ask any question about your design, or click a suggestion below:`,
+Ask questions about your design, inspect nets and components, or choose a quick action below:`,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     },
   ]);
@@ -351,14 +351,14 @@ Ask any question about your design, or click a suggestion below:`,
           <button
             onClick={handleNewChat}
             title="New Chat Session"
-            className="p-1 hover:bg-cad-subpanel rounded text-cad-textMuted hover:text-cad-text"
+            className="p-1 hover:bg-cad-surfaceHover rounded text-cad-textMuted hover:text-cad-text transition-colors"
           >
             <Plus size={14} />
           </button>
           <button
             onClick={() => setShowSettingsModal(true)}
             title="AI Assistant Settings"
-            className="p-1 hover:bg-cad-subpanel rounded text-cad-textMuted hover:text-cad-text"
+            className="p-1 hover:bg-cad-surfaceHover rounded text-cad-textMuted hover:text-cad-text transition-colors"
           >
             <Settings size={14} />
           </button>
@@ -366,34 +366,34 @@ Ask any question about your design, or click a suggestion below:`,
       </div>
 
       {/* 2. Context Pills */}
-      <div className="px-3 py-1.5 bg-cad-subpanel border-b border-cad-border flex items-center gap-1 overflow-x-auto text-[10px] font-mono no-scrollbar">
-        <span className="text-cad-textMuted shrink-0">Context:</span>
-        <span className="px-1.5 py-0.5 rounded bg-blue-950/40 border border-blue-500/30 text-blue-400 shrink-0">
+      <div className="px-3 py-1.5 bg-cad-subpanel border-b border-cad-border flex items-center gap-1.5 overflow-x-auto text-[10px] font-mono no-scrollbar">
+        <span className="text-cad-textMuted shrink-0 font-medium">Context:</span>
+        <span className="px-1.5 py-0.5 rounded bg-blue-500/10 border border-blue-500/30 text-blue-600 dark:text-blue-400 shrink-0 font-medium">
           Schematic ({project.schematic.sheets[0].symbols.length} parts)
         </span>
-        <span className="px-1.5 py-0.5 rounded bg-emerald-950/40 border border-emerald-500/30 text-emerald-400 shrink-0">
+        <span className="px-1.5 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 shrink-0 font-medium">
           PCB ({project.pcb.footprints.length} footprints)
         </span>
-        <span className="px-1.5 py-0.5 rounded bg-amber-950/40 border border-amber-500/30 text-amber-400 shrink-0">
+        <span className="px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400 shrink-0 font-medium">
           ERC Active
         </span>
       </div>
 
       {/* Post-Apply Notification Banner */}
       {postApplyNotice && (
-        <div className="px-3 py-1.5 bg-amber-950/70 border-b border-amber-500/40 text-amber-300 text-[10px] font-mono flex items-center justify-between">
-          <span className="flex items-center gap-1.5">
-            <AlertTriangle size={12} className="shrink-0 text-amber-400" />
+        <div className="px-3 py-1.5 bg-amber-500/15 border-b border-amber-500/40 text-amber-700 dark:text-amber-300 text-[10px] font-mono flex items-center justify-between">
+          <span className="flex items-center gap-1.5 font-medium">
+            <AlertTriangle size={12} className="shrink-0 text-amber-500" />
             {postApplyNotice}
           </span>
-          <button onClick={() => setPostApplyNotice(null)} className="hover:text-white">
+          <button onClick={() => setPostApplyNotice(null)} className="hover:text-cad-textHeading">
             <X size={12} />
           </button>
         </div>
       )}
 
       {/* 3. Messages Stream Area */}
-      <div className="flex-1 overflow-y-auto p-3 space-y-3 bg-cad-bg/25">
+      <div className="flex-1 overflow-y-auto p-3 space-y-3 bg-cad-bg">
         {messages.map((msg) => {
           const isUser = msg.role === 'user';
 
@@ -404,7 +404,7 @@ Ask any question about your design, or click a suggestion below:`,
             >
               {/* Message Header */}
               <div className="flex items-center space-x-1.5 text-[10px] font-mono text-cad-textMuted px-1">
-                <span className="font-semibold text-cad-text">{isUser ? 'You' : 'AI Assistant'}</span>
+                <span className="font-semibold text-cad-textHeading">{isUser ? 'You' : 'Copilot'}</span>
                 <span>•</span>
                 <span>{msg.timestamp}</span>
               </div>
@@ -413,8 +413,8 @@ Ask any question about your design, or click a suggestion below:`,
               <div
                 className={`p-3 rounded-lg max-w-[95%] border leading-relaxed text-xs ${
                   isUser
-                    ? 'bg-blue-600/15 border-blue-500/40 text-cad-text'
-                    : 'bg-cad-subpanel border-cad-border text-cad-text'
+                    ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+                    : 'bg-cad-panel border-cad-border text-cad-text shadow-sm'
                 }`}
               >
                 {/* Tool Activities Chips */}
@@ -423,14 +423,14 @@ Ask any question about your design, or click a suggestion below:`,
                     {msg.toolActivities.map((act) => (
                       <div
                         key={act.id}
-                        className="flex items-center gap-1.5 text-[10px] font-mono text-slate-400"
+                        className="flex items-center gap-1.5 text-[10px] font-mono text-cad-textMuted"
                       >
                         {act.status === 'completed' ? (
-                          <CheckCircle2 size={11} className="text-emerald-400 shrink-0" />
+                          <CheckCircle2 size={11} className="text-emerald-500 dark:text-emerald-400 shrink-0" />
                         ) : act.status === 'warning' ? (
-                          <AlertTriangle size={11} className="text-amber-400 shrink-0" />
+                          <AlertTriangle size={11} className="text-amber-500 dark:text-amber-400 shrink-0" />
                         ) : (
-                          <RefreshCw size={11} className="animate-spin text-blue-400 shrink-0" />
+                          <RefreshCw size={11} className="animate-spin text-blue-500 dark:text-blue-400 shrink-0" />
                         )}
                         <span>{act.description}</span>
                       </div>
@@ -439,7 +439,7 @@ Ask any question about your design, or click a suggestion below:`,
                 )}
 
                 {/* Formatted Markdown Content */}
-                <div className="space-y-1.5 whitespace-pre-wrap font-sans">
+                <div className="space-y-1.5 whitespace-pre-wrap font-sans text-xs">
                   {msg.content}
                 </div>
 
@@ -449,44 +449,44 @@ Ask any question about your design, or click a suggestion below:`,
                     {msg.proposals.map((prop) => (
                       <div
                         key={prop.id}
-                        className="p-2.5 rounded-lg bg-cad-bg border border-blue-500/40 space-y-2 text-xs font-mono"
+                        className="p-2.5 rounded-lg bg-cad-subpanel border border-blue-500/40 space-y-2 text-xs font-mono"
                       >
                         <div className="flex items-center justify-between">
-                          <span className="font-bold text-blue-400 flex items-center gap-1">
+                          <span className="font-bold text-blue-600 dark:text-blue-400 flex items-center gap-1">
                             <Zap size={13} /> {prop.title}
                           </span>
                           <span
                             className={`px-1.5 py-0.2 rounded text-[10px] font-bold uppercase ${
                               prop.status === 'applied'
-                                ? 'bg-emerald-900 text-emerald-300'
+                                ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
                                 : prop.status === 'rejected'
-                                ? 'bg-red-900 text-red-300'
-                                : 'bg-amber-900 text-amber-300'
+                                ? 'bg-red-500/15 text-red-600 dark:text-red-400 border border-red-500/30'
+                                : 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30'
                             }`}
                           >
                             {prop.status}
                           </span>
                         </div>
 
-                        <p className="text-[11px] text-slate-300 font-sans">{prop.description}</p>
+                        <p className="text-[11px] text-cad-text font-sans">{prop.description}</p>
 
                         {/* Visual Diff Box */}
-                        <div className="bg-cad-subpanel p-2 rounded border border-cad-border text-[10px] space-y-1">
+                        <div className="bg-cad-panel p-2 rounded border border-cad-border text-[10px] space-y-1">
                           <div className="text-cad-textMuted uppercase font-bold text-[9px]">
                             Proposed Modification Diff:
                           </div>
                           {prop.diff.addedComponents?.map((c) => (
-                            <div key={c.reference} className="text-emerald-400">
+                            <div key={c.reference} className="text-emerald-600 dark:text-emerald-400 font-semibold">
                               + ADD Component: <span className="font-bold">{c.reference}</span> ({c.value}) at ({c.position.x}, {c.position.y}) mm
                             </div>
                           ))}
                           {prop.diff.connectedNets?.map((net) => (
-                            <div key={net} className="text-blue-400">
+                            <div key={net} className="text-blue-600 dark:text-blue-400 font-semibold">
                               ~ CONNECT Net: <span className="font-bold">{net}</span>
                             </div>
                           ))}
                           {prop.diff.notes?.map((n, idx) => (
-                            <div key={idx} className="text-slate-400 italic">
+                            <div key={idx} className="text-cad-textMuted italic">
                               • {n}
                             </div>
                           ))}
@@ -497,14 +497,14 @@ Ask any question about your design, or click a suggestion below:`,
                           <div
                             className={`px-2 py-1 rounded text-[10px] flex items-center gap-1.5 border ${
                               prop.validation.valid
-                                ? 'bg-emerald-950/40 border-emerald-500/30 text-emerald-300'
-                                : 'bg-red-950/40 border-red-500/30 text-red-300'
+                                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-300 font-medium'
+                                : 'bg-red-500/10 border-red-500/30 text-red-700 dark:text-red-300 font-medium'
                             }`}
                           >
                             {prop.validation.valid ? (
-                              <ShieldCheck size={12} className="text-emerald-400 shrink-0" />
+                              <ShieldCheck size={12} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
                             ) : (
-                              <AlertTriangle size={12} className="text-red-400 shrink-0" />
+                              <AlertTriangle size={12} className="text-red-600 dark:text-red-400 shrink-0" />
                             )}
                             <span>{prop.validation.ercImpact || 'Validated'}</span>
                           </div>
@@ -515,14 +515,14 @@ Ask any question about your design, or click a suggestion below:`,
                           <div className="flex items-center justify-end space-x-2 pt-1">
                             <button
                               onClick={() => handleRejectProposal(prop, msg.id)}
-                              className="px-2.5 py-1 hover:bg-cad-border text-slate-400 hover:text-white rounded text-[11px] flex items-center gap-1 font-semibold"
+                              className="px-2.5 py-1 hover:bg-cad-surfaceHover text-cad-text border border-cad-border rounded text-[11px] flex items-center gap-1 font-medium transition-colors"
                             >
                               <X size={12} /> Cancel
                             </button>
                             <button
                               onClick={() => handleApplyProposal(prop, msg.id)}
                               disabled={prop.validation && !prop.validation.valid}
-                              className="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 text-white rounded text-[11px] font-semibold flex items-center gap-1 shadow-sm"
+                              className="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 text-white rounded text-[11px] font-semibold flex items-center gap-1 shadow-sm transition-colors"
                             >
                               <Check size={12} /> Apply Change
                             </button>
@@ -539,14 +539,14 @@ Ask any question about your design, or click a suggestion below:`,
 
         {/* Live Active Tool Stream Indicator */}
         {isStreaming && (
-          <div className="p-2 rounded bg-cad-subpanel border border-cad-border text-[10px] font-mono flex items-center justify-between text-slate-400">
+          <div className="p-2 rounded bg-cad-panel border border-cad-border text-[10px] font-mono flex items-center justify-between text-cad-textMuted">
             <div className="flex items-center gap-1.5">
-              <RefreshCw size={11} className="animate-spin text-blue-400 shrink-0" />
-              <span>FloZ AI is analyzing design...</span>
+              <RefreshCw size={11} className="animate-spin text-blue-600 dark:text-blue-400 shrink-0" />
+              <span>Analyzing design...</span>
             </div>
             <button
               onClick={handleStopGenerating}
-              className="px-2 py-0.5 bg-red-600/20 hover:bg-red-600/30 border border-red-500/40 text-red-300 rounded text-[10px] font-mono flex items-center gap-1"
+              className="px-2 py-0.5 bg-red-600/15 hover:bg-red-600/25 border border-red-500/40 text-red-600 dark:text-red-400 rounded text-[10px] font-mono flex items-center gap-1 transition-colors"
             >
               <Square size={10} /> Stop
             </button>
@@ -557,7 +557,7 @@ Ask any question about your design, or click a suggestion below:`,
       </div>
 
       {/* 4. Quick Suggestion Prompt Chips */}
-      <div className="p-2 bg-cad-subpanel border-t border-cad-border space-y-1.5">
+      <div className="p-2.5 bg-cad-panel border-t border-cad-border space-y-2">
         <div className="flex flex-wrap gap-1 text-[10px] font-mono">
           {[
             'Explain this schematic',
@@ -572,7 +572,7 @@ Ask any question about your design, or click a suggestion below:`,
               key={prompt}
               onClick={() => handleSendMessage(prompt)}
               disabled={isStreaming}
-              className="px-2 py-0.5 rounded bg-cad-bg hover:bg-cad-border text-cad-text hover:text-blue-500 border border-cad-border transition-colors truncate font-medium"
+              className="px-2 py-0.5 rounded bg-cad-subpanel hover:bg-cad-surfaceHover text-cad-text border border-cad-border transition-colors truncate font-medium"
             >
               {prompt}
             </button>
@@ -583,7 +583,7 @@ Ask any question about your design, or click a suggestion below:`,
         <div className="relative flex items-center">
           <input
             type="text"
-            placeholder="Ask FloZ AI about your design..."
+            placeholder="Ask Copilot about your design..."
             value={inputPrompt}
             onChange={(e) => setInputPrompt(e.target.value)}
             onKeyDown={(e) => {
@@ -593,13 +593,13 @@ Ask any question about your design, or click a suggestion below:`,
               }
             }}
             disabled={isStreaming}
-            className="w-full bg-cad-bg border border-cad-border rounded-lg pl-3 pr-10 py-2 text-xs text-cad-text font-mono placeholder:text-cad-textMuted focus:outline-none focus:border-blue-500 shadow-inner"
+            className="w-full bg-cad-inputBg border border-cad-inputBorder rounded-md pl-3 pr-10 py-1.5 text-xs text-cad-inputText font-mono placeholder:text-cad-textMuted focus:outline-none focus:border-blue-500 shadow-xs"
           />
           {isStreaming ? (
             <button
               onClick={handleStopGenerating}
               title="Stop Generating"
-              className="absolute right-1.5 p-1.5 bg-red-600 hover:bg-red-500 text-white rounded-md transition-colors"
+              className="absolute right-1.5 p-1 bg-red-600 hover:bg-red-500 text-white rounded transition-colors"
             >
               <Square size={13} />
             </button>
@@ -607,7 +607,7 @@ Ask any question about your design, or click a suggestion below:`,
             <button
               onClick={() => handleSendMessage()}
               disabled={!inputPrompt.trim()}
-              className="absolute right-1.5 p-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 text-white rounded-md transition-colors"
+              className="absolute right-1.5 p-1 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 text-white rounded transition-colors"
             >
               <Send size={13} />
             </button>

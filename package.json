@@ -3,7 +3,7 @@
   "private": true,
   "version": "1.0.0",
   "description": "FloZ ECA — Electronic Circuit Architect",
-  "author": "FloZ EDA Team <contact@floz-eda.com>",
+  "author": "FloZ EDA Engineering Team",
   "main": "dist-electron/main.cjs",
   "type": "module",
   "scripts": {

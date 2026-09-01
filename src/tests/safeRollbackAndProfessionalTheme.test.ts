@@ -69,10 +69,7 @@ describe('FloZ EDA — Safe Rollback, Multi-Theme & Performance Suite', () => {
       const themeIds = AVAILABLE_THEMES.map((t) => t.id);
       expect(themeIds).toContain('dark');
       expect(themeIds).toContain('light');
-      expect(themeIds).toContain('midnight');
-      expect(themeIds).toContain('slate');
-      expect(themeIds).toContain('high-contrast');
-      expect(AVAILABLE_THEMES.length).toBe(5);
+      expect(AVAILABLE_THEMES.length).toBe(2);
     });
 
     it('applies and persists theme changes across localStorage keys', () => {
@@ -93,7 +90,7 @@ describe('FloZ EDA — Safe Rollback, Multi-Theme & Performance Suite', () => {
         },
       } as any;
 
-      const testThemes: AppThemeId[] = ['light', 'midnight', 'slate', 'high-contrast', 'dark'];
+      const testThemes: AppThemeId[] = ['light', 'dark'];
 
       testThemes.forEach((t) => {
         ThemeManager.applyTheme(t);
@@ -104,28 +101,16 @@ describe('FloZ EDA — Safe Rollback, Multi-Theme & Performance Suite', () => {
       });
     });
 
-    it('resolves correct canvas background, grid, and text colors for all 5 themes', () => {
+    it('resolves correct canvas background, grid, and text colors for Dark and Light themes', () => {
       const darkColors = getCanvasColors('dark');
       expect(darkColors.isLight).toBe(false);
-      expect(darkColors.canvasBg).toBe('#111418');
+      expect(darkColors.canvasBg).toBe('#1e1e1e');
+      expect(darkColors.textColor).toBe('#cccccc');
 
       const lightColors = getCanvasColors('light');
       expect(lightColors.isLight).toBe(true);
       expect(lightColors.canvasBg).toBe('#ffffff');
       expect(lightColors.textColor).toBe('#0f172a');
-
-      const midnightColors = getCanvasColors('midnight');
-      expect(midnightColors.isLight).toBe(false);
-      expect(midnightColors.canvasBg).toBe('#0b0f19');
-
-      const slateColors = getCanvasColors('slate');
-      expect(slateColors.isLight).toBe(false);
-      expect(slateColors.canvasBg).toBe('#1e293b');
-
-      const hcColors = getCanvasColors('high-contrast');
-      expect(hcColors.isLight).toBe(false);
-      expect(hcColors.canvasBg).toBe('#000000');
-      expect(hcColors.textColor).toBe('#ffffff');
     });
   });
 

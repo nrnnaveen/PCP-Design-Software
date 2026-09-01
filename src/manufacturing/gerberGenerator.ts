@@ -49,7 +49,7 @@ export class GerberGenerator {
     };
 
     // 1. Board Outline (Edge.Cuts)
-    if (layer === 'Edge.Cuts' || project.mfgConfig.includeEdgeCuts) {
+    if (layer === 'Edge.Cuts' || project.mfgConfig?.includeEdgeCuts) {
       if (layer === 'Edge.Cuts') {
         gbr += `D10*\n`;
         const outline = pcb.boardOutline;

@@ -119,28 +119,40 @@ export const GerberViewer: React.FC<Props> = ({ project }) => {
   }, [layers, zoom, pan, worldToScreen]);
 
   return (
-    <div className="relative w-full h-full flex flex-row bg-cad-bg select-none overflow-hidden">
+    <div className="relative w-full h-full flex flex-row bg-cad-bg select-none overflow-hidden font-sans">
       {/* Main Canvas Area */}
       <div className="flex-1 flex flex-col">
         {/* Top Control Bar */}
-        <div className="h-10 bg-cad-panel border-b border-cad-border px-4 flex items-center justify-between z-10">
+        <div className="h-9 bg-cad-panel border-b border-cad-border px-3 flex items-center justify-between z-10 text-xs">
           <div className="flex items-center space-x-2">
-            <FileCode size={16} className="text-amber-400" />
-            <span className="text-xs font-bold text-white">Gerber & Drill File Viewer</span>
+            <FileCode size={15} className="text-amber-500 dark:text-amber-400" />
+            <span className="text-xs font-semibold text-cad-textHeading">Gerber RS-274X & Excellon Drill Viewer</span>
           </div>
 
-          <div className="flex items-center space-x-3 text-xs text-cad-textMuted font-mono">
+          <div className="flex items-center space-x-3 text-xs text-cad-text font-mono">
             <span>X: {hoverPos.x.toFixed(2)} mm</span>
             <span>Y: {hoverPos.y.toFixed(2)} mm</span>
             <div className="h-4 w-px bg-cad-border" />
-            <button onClick={() => setZoom((z) => Math.min(30, z * 1.2))} className="p-1 hover:text-white">
-              <ZoomIn size={14} />
+            <button
+              onClick={() => setZoom((z) => Math.min(30, z * 1.2))}
+              title="Zoom In (+)"
+              className="p-1 hover:bg-cad-surfaceHover rounded text-cad-text hover:text-cad-textHeading transition-colors"
+            >
+              <ZoomIn size={13} />
             </button>
-            <button onClick={() => setZoom((z) => Math.max(1.5, z * 0.8))} className="p-1 hover:text-white">
-              <ZoomOut size={14} />
+            <button
+              onClick={() => setZoom((z) => Math.max(1.5, z * 0.8))}
+              title="Zoom Out (-)"
+              className="p-1 hover:bg-cad-surfaceHover rounded text-cad-text hover:text-cad-textHeading transition-colors"
+            >
+              <ZoomOut size={13} />
             </button>
-            <button onClick={() => { setPan({ x: 300, y: 250 }); setZoom(6.0); }} className="p-1 hover:text-white">
-              <Maximize2 size={14} />
+            <button
+              onClick={() => { setPan({ x: 300, y: 250 }); setZoom(6.0); }}
+              title="Zoom to Fit Board"
+              className="p-1 hover:bg-cad-surfaceHover rounded text-cad-text hover:text-cad-textHeading transition-colors"
+            >
+              <Maximize2 size={13} />
             </button>
           </div>
         </div>
@@ -172,10 +184,10 @@ export const GerberViewer: React.FC<Props> = ({ project }) => {
       </div>
 
       {/* Right: Layer Manager Panel */}
-      <div className="w-64 bg-cad-panel border-l border-cad-border flex flex-col">
-        <div className="p-3 bg-cad-header border-b border-cad-border flex items-center justify-between">
-          <span className="text-xs font-bold text-white uppercase tracking-wider font-mono flex items-center gap-1.5">
-            <Layers size={14} className="text-blue-400" />
+      <aside className="w-64 bg-cad-panel border-l border-cad-border flex flex-col shrink-0">
+        <div className="h-9 p-3 bg-cad-header border-b border-cad-border flex items-center justify-between">
+          <span className="text-xs font-semibold text-cad-textHeading uppercase tracking-wider font-mono flex items-center gap-1.5">
+            <Layers size={13} className="text-blue-600 dark:text-blue-400" />
             Fabrication Layers
           </span>
         </div>
@@ -184,11 +196,16 @@ export const GerberViewer: React.FC<Props> = ({ project }) => {
           {layers.map((layer, index) => (
             <div
               key={layer.layerName}
-              className="p-2 bg-cad-subpanel border border-cad-border rounded flex items-center justify-between"
+              className={`p-2 bg-cad-subpanel border rounded flex items-center justify-between transition-colors ${
+                layer.visible ? 'border-cad-border' : 'border-cad-border opacity-60'
+              }`}
             >
-              <div className="flex items-center space-x-2">
-                <div className="w-3.5 h-3.5 rounded" style={{ backgroundColor: layer.color }} />
-                <span className="text-xs font-medium text-slate-200">{layer.layerName}</span>
+              <div className="flex items-center space-x-2.5">
+                <div
+                  className="w-3.5 h-3.5 rounded border border-cad-border shrink-0 shadow-sm"
+                  style={{ backgroundColor: layer.color }}
+                />
+                <span className="text-xs font-semibold text-cad-textHeading">{layer.layerName}</span>
               </div>
 
               <button
@@ -197,14 +214,15 @@ export const GerberViewer: React.FC<Props> = ({ project }) => {
                     prev.map((l, i) => (i === index ? { ...l, visible: !l.visible } : l))
                   )
                 }
-                className="p-1 hover:bg-cad-border rounded text-cad-textMuted hover:text-white"
+                title={layer.visible ? 'Hide Layer' : 'Show Layer'}
+                className="p-1 hover:bg-cad-surfaceHover rounded text-cad-text hover:text-cad-textHeading transition-colors"
               >
-                {layer.visible ? <Eye size={13} className="text-blue-400" /> : <EyeOff size={13} />}
+                {layer.visible ? <Eye size={13} className="text-blue-600 dark:text-blue-400" /> : <EyeOff size={13} className="text-cad-textMuted" />}
               </button>
             </div>
           ))}
         </div>
-      </div>
+      </aside>
     </div>
   );
 };

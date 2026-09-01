@@ -1,5 +1,5 @@
 /**
- * FloZ EDA - Object Properties Inspector Panel
+ * FloZ ECA — Microsoft Fluent Properties Inspector Panel
  * Context-aware properties inspector for schematic symbols, pins, wires, nets, PCB footprints, tracks, vias, zones.
  */
 
@@ -13,23 +13,16 @@ import {
   PCBLayerId,
 } from '../core/types';
 import { NetConnectivitySolver } from '../schematic/connectivity';
-import { libraryRegistry } from '../library/libraryRegistry';
 import {
   Sliders,
-  Tag,
   Layers,
   Cpu,
-  Hash,
-  Zap,
-  Activity,
   Route,
   CircleDot,
   Square,
   Lock,
   Unlock,
   RotateCw,
-  FlipHorizontal,
-  Compass,
 } from 'lucide-react';
 
 interface Props {
@@ -64,9 +57,6 @@ export const PropertiesPanel: React.FC<Props> = ({
   const selectedZone = project.pcb.zones.find((z) => z.id === selectedZoneId);
   const selectedWire = activeSheet?.wires.find((w) => w.id === selectedWireId);
 
-  // Compute live connectivity
-  const connectivity = activeSheet ? NetConnectivitySolver.solveSheet(activeSheet) : null;
-
   if (
     !selectedSymbol &&
     !selectedFootprint &&
@@ -77,10 +67,10 @@ export const PropertiesPanel: React.FC<Props> = ({
   ) {
     return (
       <div className="w-full h-full bg-cad-panel border-l border-cad-border flex flex-col items-center justify-center p-4 text-center text-cad-textMuted select-none">
-        <Sliders size={24} className="opacity-40 mb-2 text-cad-textMuted" />
-        <span className="text-xs font-semibold text-cad-text">No Object Selected</span>
-        <span className="text-[11px] mt-1 opacity-70">
-          Click on any schematic symbol, wire, PCB footprint, track, via, or zone to inspect and edit properties.
+        <Sliders size={22} className="opacity-40 mb-2 text-cad-textMuted" />
+        <span className="text-xs font-semibold text-cad-textHeading">No Object Selected</span>
+        <span className="text-[11px] mt-1 text-cad-textMuted max-w-[200px] leading-relaxed">
+          Select any symbol, wire, footprint, track, via, or zone to inspect and edit properties.
         </span>
       </div>
     );
@@ -89,25 +79,25 @@ export const PropertiesPanel: React.FC<Props> = ({
   return (
     <div className="w-full h-full bg-cad-panel border-l border-cad-border flex flex-col select-none overflow-y-auto text-cad-text text-xs">
       {/* Header */}
-      <div className="h-10 bg-cad-header border-b border-cad-border px-3 flex items-center justify-between shrink-0">
-        <span className="text-xs font-bold text-cad-text uppercase font-mono tracking-wider flex items-center gap-1.5">
-          <Sliders size={14} className="text-blue-500 dark:text-blue-400" />
+      <div className="h-9 bg-cad-header border-b border-cad-border px-3 flex items-center justify-between shrink-0">
+        <span className="text-[11px] font-semibold text-cad-textHeading uppercase font-mono tracking-wider flex items-center gap-1.5">
+          <Sliders size={13} className="text-blue-600 dark:text-blue-400" />
           Properties Inspector
         </span>
       </div>
 
-      <div className="p-3 space-y-4">
+      <div className="p-3 space-y-3.5">
         {/* ----------------------------------------------------------- */}
         {/* 1. PCB Footprint Inspector */}
         {/* ----------------------------------------------------------- */}
         {selectedFootprint && (
           <div className="space-y-3">
-            <div className="flex items-center space-x-2">
-              <div className="p-2 bg-amber-600/20 text-amber-500 dark:text-amber-400 rounded-lg border border-amber-500/30">
-                <Layers size={18} />
+            <div className="flex items-center space-x-2.5 p-2 bg-cad-subpanel rounded border border-cad-border">
+              <div className="p-1.5 bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded border border-amber-500/20">
+                <Layers size={16} />
               </div>
               <div className="truncate flex-1">
-                <div className="text-sm font-bold text-cad-text flex items-center justify-between">
+                <div className="text-xs font-semibold text-cad-textHeading flex items-center justify-between">
                   <span>{selectedFootprint.reference}</span>
                   <button
                     onClick={() => {
@@ -122,11 +112,13 @@ export const PropertiesPanel: React.FC<Props> = ({
                       }), 'Toggle Lock Footprint');
                     }}
                     title={selectedFootprint.locked ? 'Unlock Footprint' : 'Lock Footprint'}
-                    className={`p-1 rounded ${
-                      selectedFootprint.locked ? 'text-amber-400 bg-amber-400/10' : 'text-cad-textMuted hover:text-cad-text'
+                    className={`p-1 rounded transition-colors ${
+                      selectedFootprint.locked
+                        ? 'text-amber-600 dark:text-amber-400 bg-amber-500/15'
+                        : 'text-cad-textMuted hover:text-cad-text hover:bg-cad-surfaceHover'
                     }`}
                   >
-                    {selectedFootprint.locked ? <Lock size={14} /> : <Unlock size={14} />}
+                    {selectedFootprint.locked ? <Lock size={13} /> : <Unlock size={13} />}
                   </button>
                 </div>
                 <div className="text-[11px] text-cad-textMuted font-mono truncate">{selectedFootprint.value}</div>
@@ -136,7 +128,7 @@ export const PropertiesPanel: React.FC<Props> = ({
             <div className="space-y-2.5">
               {/* Reference */}
               <div>
-                <label className="text-[11px] text-cad-textMuted block mb-1">Reference Designator</label>
+                <label className="text-[11px] font-medium text-cad-textMuted block mb-1">Reference Designator</label>
                 <input
                   type="text"
                   value={selectedFootprint.reference}
@@ -152,13 +144,13 @@ export const PropertiesPanel: React.FC<Props> = ({
                       },
                     }));
                   }}
-                  className="w-full bg-cad-bg border border-cad-border rounded px-2.5 py-1 text-cad-text font-mono"
+                  className="w-full bg-cad-inputBg border border-cad-inputBorder rounded px-2.5 py-1 text-cad-inputText font-mono text-xs focus:outline-none focus:border-blue-500"
                 />
               </div>
 
               {/* Value */}
               <div>
-                <label className="text-[11px] text-cad-textMuted block mb-1">Component Value</label>
+                <label className="text-[11px] font-medium text-cad-textMuted block mb-1">Component Value</label>
                 <input
                   type="text"
                   value={selectedFootprint.value}
@@ -174,22 +166,22 @@ export const PropertiesPanel: React.FC<Props> = ({
                       },
                     }));
                   }}
-                  className="w-full bg-cad-bg border border-cad-border rounded px-2.5 py-1 text-cad-text font-mono"
+                  className="w-full bg-cad-inputBg border border-cad-inputBorder rounded px-2.5 py-1 text-cad-inputText font-mono text-xs focus:outline-none focus:border-blue-500"
                 />
               </div>
 
               {/* Footprint Def */}
               <div>
-                <label className="text-[11px] text-cad-textMuted block mb-1">Footprint Package</label>
-                <div className="bg-cad-bg p-1.5 rounded border border-cad-border font-mono text-[11px] text-cad-text truncate">
+                <label className="text-[11px] font-medium text-cad-textMuted block mb-1">Footprint Package</label>
+                <div className="bg-cad-subpanel p-1.5 rounded border border-cad-border font-mono text-[11px] text-cad-text truncate">
                   {selectedFootprint.footprintDefId}
                 </div>
               </div>
 
               {/* Board Layer Side (F.Cu / B.Cu) */}
               <div>
-                <label className="text-[11px] text-cad-textMuted block mb-1">Placement Layer Side</label>
-                <div className="flex gap-2">
+                <label className="text-[11px] font-medium text-cad-textMuted block mb-1">Placement Layer Side</label>
+                <div className="flex gap-1.5">
                   {(['F.Cu', 'B.Cu'] as const).map((side) => (
                     <button
                       key={side}
@@ -204,10 +196,10 @@ export const PropertiesPanel: React.FC<Props> = ({
                           },
                         }), `Change Footprint Side to ${side}`);
                       }}
-                      className={`flex-1 py-1 rounded text-xs font-semibold border transition-colors ${
+                      className={`flex-1 py-1 rounded text-xs font-medium border transition-colors ${
                         selectedFootprint.layer === side
-                          ? 'bg-blue-600 border-blue-500 text-white'
-                          : 'bg-cad-bg border-cad-border text-cad-textMuted hover:text-cad-text'
+                          ? 'bg-blue-600 border-blue-600 text-white font-semibold shadow-sm'
+                          : 'bg-cad-subpanel border-cad-border text-cad-text hover:bg-cad-surfaceHover'
                       }`}
                     >
                       {side === 'F.Cu' ? 'Top (F.Cu)' : 'Bottom (B.Cu)'}
@@ -236,7 +228,7 @@ export const PropertiesPanel: React.FC<Props> = ({
                         },
                       }));
                     }}
-                    className="w-full bg-cad-bg border border-cad-border rounded p-1 text-xs text-cad-text"
+                    className="w-full bg-cad-inputBg border border-cad-inputBorder rounded p-1 text-xs text-cad-inputText focus:outline-none focus:border-blue-500"
                   />
                 </div>
                 <div>
@@ -257,7 +249,7 @@ export const PropertiesPanel: React.FC<Props> = ({
                         },
                       }));
                     }}
-                    className="w-full bg-cad-bg border border-cad-border rounded p-1 text-xs text-cad-text"
+                    className="w-full bg-cad-inputBg border border-cad-inputBorder rounded p-1 text-xs text-cad-inputText focus:outline-none focus:border-blue-500"
                   />
                 </div>
               </div>
@@ -282,7 +274,7 @@ export const PropertiesPanel: React.FC<Props> = ({
                         },
                       }));
                     }}
-                    className="w-24 bg-cad-bg border border-cad-border rounded p-1 text-xs text-cad-text font-mono"
+                    className="w-24 bg-cad-inputBg border border-cad-inputBorder rounded p-1 text-xs text-cad-inputText font-mono focus:outline-none focus:border-blue-500"
                   />
                   <button
                     onClick={() => {
@@ -298,7 +290,7 @@ export const PropertiesPanel: React.FC<Props> = ({
                         },
                       }), 'Rotate Footprint 90°');
                     }}
-                    className="p-1 bg-cad-subpanel hover:bg-cad-border border border-cad-border rounded text-cad-text flex items-center gap-1 text-[11px]"
+                    className="px-2 py-1 bg-cad-subpanel hover:bg-cad-surfaceHover border border-cad-border rounded text-cad-text flex items-center gap-1 text-[11px] font-medium transition-colors"
                   >
                     <RotateCw size={12} /> +90°
                   </button>
@@ -307,24 +299,24 @@ export const PropertiesPanel: React.FC<Props> = ({
 
               {/* Pads List */}
               <div>
-                <label className="text-[10px] text-cad-textMuted block mb-1 uppercase font-mono tracking-wider">
+                <label className="text-[10px] font-semibold text-cad-textMuted block mb-1 uppercase font-mono tracking-wider">
                   Connected Pads ({selectedFootprint.pads.length})
                 </label>
-                <div className="border border-cad-border rounded max-h-36 overflow-y-auto text-[11px] font-mono">
+                <div className="border border-cad-border rounded max-h-36 overflow-y-auto text-[11px] font-mono bg-cad-panel">
                   <table className="w-full text-left">
-                    <thead className="bg-cad-subpanel text-cad-textMuted border-b border-cad-border text-[9px]">
+                    <thead className="bg-cad-subpanel text-cad-textMuted border-b border-cad-border text-[9px] sticky top-0">
                       <tr>
-                        <th className="px-2 py-1">Pad</th>
-                        <th className="px-2 py-1">Type</th>
-                        <th className="px-2 py-1">Net</th>
+                        <th className="px-2 py-1 font-semibold">Pad</th>
+                        <th className="px-2 py-1 font-semibold">Type</th>
+                        <th className="px-2 py-1 font-semibold">Net</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-cad-border bg-cad-bg/40">
+                    <tbody className="divide-y divide-cad-border">
                       {selectedFootprint.pads.map((pad) => (
-                        <tr key={pad.id} className="hover:bg-cad-subpanel/50">
-                          <td className="px-2 py-0.5 font-bold text-cad-text">{pad.number}</td>
+                        <tr key={pad.id} className="hover:bg-cad-surfaceHover transition-colors">
+                          <td className="px-2 py-0.5 font-bold text-cad-textHeading">{pad.number}</td>
                           <td className="px-2 py-0.5 text-cad-textMuted capitalize">{pad.type}</td>
-                          <td className="px-2 py-0.5 text-blue-400 font-semibold truncate">
+                          <td className="px-2 py-0.5 text-blue-600 dark:text-blue-400 font-semibold truncate">
                             {pad.netName || 'Unconnected'}
                           </td>
                         </tr>
@@ -342,19 +334,19 @@ export const PropertiesPanel: React.FC<Props> = ({
         {/* ----------------------------------------------------------- */}
         {selectedTrack && !selectedFootprint && (
           <div className="space-y-3">
-            <div className="flex items-center space-x-2">
-              <div className="p-2 bg-orange-600/20 text-orange-500 dark:text-orange-400 rounded-lg border border-orange-500/30">
-                <Route size={18} />
+            <div className="flex items-center space-x-2.5 p-2 bg-cad-subpanel rounded border border-cad-border">
+              <div className="p-1.5 bg-orange-500/10 text-orange-600 dark:text-orange-400 rounded border border-orange-500/20">
+                <Route size={16} />
               </div>
               <div>
-                <div className="text-sm font-bold text-cad-text">Track Segment</div>
-                <div className="text-[11px] text-blue-400 font-mono font-bold">Net: {selectedTrack.netName}</div>
+                <div className="text-xs font-semibold text-cad-textHeading">Track Segment</div>
+                <div className="text-[11px] text-blue-600 dark:text-blue-400 font-mono font-bold">Net: {selectedTrack.netName}</div>
               </div>
             </div>
 
             <div className="space-y-2.5 font-mono">
               <div>
-                <label className="text-[11px] text-cad-textMuted block mb-1">Track Width (mm)</label>
+                <label className="text-[11px] font-medium text-cad-textMuted block mb-1">Track Width (mm)</label>
                 <input
                   type="number"
                   step="0.05"
@@ -371,31 +363,31 @@ export const PropertiesPanel: React.FC<Props> = ({
                       },
                     }), 'Change Track Width');
                   }}
-                  className="w-full bg-cad-bg border border-cad-border rounded p-1 text-xs text-cad-text"
+                  className="w-full bg-cad-inputBg border border-cad-inputBorder rounded p-1 text-xs text-cad-inputText focus:outline-none focus:border-blue-500"
                 />
               </div>
 
               <div>
-                <label className="text-[11px] text-cad-textMuted block mb-1">Layer</label>
-                <div className="bg-cad-bg p-1.5 rounded border border-cad-border text-xs text-cad-text font-bold">
+                <label className="text-[11px] font-medium text-cad-textMuted block mb-1">Layer</label>
+                <div className="bg-cad-subpanel p-1.5 rounded border border-cad-border text-xs text-cad-textHeading font-semibold">
                   {selectedTrack.layer}
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-2 text-[11px]">
-                <div className="bg-cad-bg p-1.5 rounded border border-cad-border">
-                  <span className="text-cad-textMuted text-[10px] block">Start (X1, Y1):</span>
-                  <span>({selectedTrack.x1.toFixed(2)}, {selectedTrack.y1.toFixed(2)}) mm</span>
+                <div className="bg-cad-subpanel p-1.5 rounded border border-cad-border">
+                  <span className="text-cad-textMuted text-[10px] block">Start:</span>
+                  <span className="text-cad-text">({selectedTrack.x1.toFixed(2)}, {selectedTrack.y1.toFixed(2)}) mm</span>
                 </div>
-                <div className="bg-cad-bg p-1.5 rounded border border-cad-border">
-                  <span className="text-cad-textMuted text-[10px] block">End (X2, Y2):</span>
-                  <span>({selectedTrack.x2.toFixed(2)}, {selectedTrack.y2.toFixed(2)}) mm</span>
+                <div className="bg-cad-subpanel p-1.5 rounded border border-cad-border">
+                  <span className="text-cad-textMuted text-[10px] block">End:</span>
+                  <span className="text-cad-text">({selectedTrack.x2.toFixed(2)}, {selectedTrack.y2.toFixed(2)}) mm</span>
                 </div>
               </div>
 
               <div className="bg-cad-subpanel p-2 rounded border border-cad-border flex justify-between items-center text-[11px]">
                 <span className="text-cad-textMuted">Segment Length:</span>
-                <span className="text-cad-text font-bold">
+                <span className="text-cad-textHeading font-semibold">
                   {Math.hypot(selectedTrack.x2 - selectedTrack.x1, selectedTrack.y2 - selectedTrack.y1).toFixed(2)} mm
                 </span>
               </div>
@@ -408,13 +400,13 @@ export const PropertiesPanel: React.FC<Props> = ({
         {/* ----------------------------------------------------------- */}
         {selectedVia && !selectedFootprint && !selectedTrack && (
           <div className="space-y-3">
-            <div className="flex items-center space-x-2">
-              <div className="p-2 bg-amber-600/20 text-amber-500 dark:text-amber-400 rounded-lg border border-amber-500/30">
-                <CircleDot size={18} />
+            <div className="flex items-center space-x-2.5 p-2 bg-cad-subpanel rounded border border-cad-border">
+              <div className="p-1.5 bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded border border-amber-500/20">
+                <CircleDot size={16} />
               </div>
               <div>
-                <div className="text-sm font-bold text-cad-text">Through-Hole Via</div>
-                <div className="text-[11px] text-blue-400 font-mono font-bold">Net: {selectedVia.netName}</div>
+                <div className="text-xs font-semibold text-cad-textHeading">Through-Hole Via</div>
+                <div className="text-[11px] text-blue-600 dark:text-blue-400 font-mono font-bold">Net: {selectedVia.netName}</div>
               </div>
             </div>
 
@@ -438,7 +430,7 @@ export const PropertiesPanel: React.FC<Props> = ({
                         },
                       }));
                     }}
-                    className="w-full bg-cad-bg border border-cad-border rounded p-1 text-xs text-cad-text"
+                    className="w-full bg-cad-inputBg border border-cad-inputBorder rounded p-1 text-xs text-cad-inputText focus:outline-none focus:border-blue-500"
                   />
                 </div>
                 <div>
@@ -459,7 +451,7 @@ export const PropertiesPanel: React.FC<Props> = ({
                         },
                       }));
                     }}
-                    className="w-full bg-cad-bg border border-cad-border rounded p-1 text-xs text-cad-text"
+                    className="w-full bg-cad-inputBg border border-cad-inputBorder rounded p-1 text-xs text-cad-inputText focus:outline-none focus:border-blue-500"
                   />
                 </div>
               </div>
@@ -483,7 +475,7 @@ export const PropertiesPanel: React.FC<Props> = ({
                         },
                       }));
                     }}
-                    className="w-full bg-cad-bg border border-cad-border rounded p-1 text-xs text-cad-text"
+                    className="w-full bg-cad-inputBg border border-cad-inputBorder rounded p-1 text-xs text-cad-inputText focus:outline-none focus:border-blue-500"
                   />
                 </div>
                 <div>
@@ -504,7 +496,7 @@ export const PropertiesPanel: React.FC<Props> = ({
                         },
                       }));
                     }}
-                    className="w-full bg-cad-bg border border-cad-border rounded p-1 text-xs text-cad-text"
+                    className="w-full bg-cad-inputBg border border-cad-inputBorder rounded p-1 text-xs text-cad-inputText focus:outline-none focus:border-blue-500"
                   />
                 </div>
               </div>
@@ -517,19 +509,19 @@ export const PropertiesPanel: React.FC<Props> = ({
         {/* ----------------------------------------------------------- */}
         {selectedZone && !selectedFootprint && !selectedTrack && !selectedVia && (
           <div className="space-y-3">
-            <div className="flex items-center space-x-2">
-              <div className="p-2 bg-blue-600/20 text-blue-500 dark:text-blue-400 rounded-lg border border-blue-500/30">
-                <Square size={18} />
+            <div className="flex items-center space-x-2.5 p-2 bg-cad-subpanel rounded border border-cad-border">
+              <div className="p-1.5 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded border border-blue-500/20">
+                <Square size={16} />
               </div>
               <div>
-                <div className="text-sm font-bold text-cad-text">Copper Pour Zone</div>
-                <div className="text-[11px] text-blue-400 font-mono font-bold">Net: {selectedZone.netName}</div>
+                <div className="text-xs font-semibold text-cad-textHeading">Copper Pour Zone</div>
+                <div className="text-[11px] text-blue-600 dark:text-blue-400 font-mono font-bold">Net: {selectedZone.netName}</div>
               </div>
             </div>
 
             <div className="space-y-2.5 font-mono">
               <div>
-                <label className="text-[11px] text-cad-textMuted block mb-1">Assigned Net</label>
+                <label className="text-[11px] font-medium text-cad-textMuted block mb-1">Assigned Net</label>
                 <input
                   type="text"
                   value={selectedZone.netName}
@@ -545,12 +537,12 @@ export const PropertiesPanel: React.FC<Props> = ({
                       },
                     }));
                   }}
-                  className="w-full bg-cad-bg border border-cad-border rounded p-1 text-xs text-cad-text"
+                  className="w-full bg-cad-inputBg border border-cad-inputBorder rounded p-1 text-xs text-cad-inputText focus:outline-none focus:border-blue-500"
                 />
               </div>
 
               <div>
-                <label className="text-[11px] text-cad-textMuted block mb-1">Clearance Margin (mm)</label>
+                <label className="text-[11px] font-medium text-cad-textMuted block mb-1">Clearance Margin (mm)</label>
                 <input
                   type="number"
                   step="0.05"
@@ -567,20 +559,20 @@ export const PropertiesPanel: React.FC<Props> = ({
                       },
                     }));
                   }}
-                  className="w-full bg-cad-bg border border-cad-border rounded p-1 text-xs text-cad-text"
+                  className="w-full bg-cad-inputBg border border-cad-inputBorder rounded p-1 text-xs text-cad-inputText focus:outline-none focus:border-blue-500"
                 />
               </div>
 
               <div>
-                <label className="text-[11px] text-cad-textMuted block mb-1">Layer</label>
-                <div className="bg-cad-bg p-1.5 rounded border border-cad-border text-xs text-cad-text font-bold">
+                <label className="text-[11px] font-medium text-cad-textMuted block mb-1">Layer</label>
+                <div className="bg-cad-subpanel p-1.5 rounded border border-cad-border text-xs text-cad-textHeading font-semibold">
                   {selectedZone.layer}
                 </div>
               </div>
 
               <div className="flex items-center justify-between p-2 rounded bg-cad-subpanel border border-cad-border">
-                <span className="text-cad-text font-semibold">Filled Status:</span>
-                <span className={`font-bold ${selectedZone.isFilled ? 'text-emerald-400' : 'text-amber-400'}`}>
+                <span className="text-cad-text font-medium">Filled Status:</span>
+                <span className={`font-semibold ${selectedZone.isFilled ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}`}>
                   {selectedZone.isFilled ? 'Filled' : 'Unfilled'}
                 </span>
               </div>
@@ -589,16 +581,16 @@ export const PropertiesPanel: React.FC<Props> = ({
         )}
 
         {/* ----------------------------------------------------------- */}
-        {/* 5. Schematic Symbol Inspector (Preserved) */}
+        {/* 5. Schematic Symbol Inspector */}
         {/* ----------------------------------------------------------- */}
         {selectedSymbol && !selectedFootprint && (
           <div className="space-y-3">
-            <div className="flex items-center space-x-2">
-              <div className="p-2 bg-blue-600/20 text-blue-500 dark:text-blue-400 rounded-lg border border-blue-500/30">
-                <Cpu size={18} />
+            <div className="flex items-center space-x-2.5 p-2 bg-cad-subpanel rounded border border-cad-border">
+              <div className="p-1.5 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded border border-blue-500/20">
+                <Cpu size={16} />
               </div>
               <div>
-                <div className="text-sm font-bold text-cad-text">
+                <div className="text-xs font-semibold text-cad-textHeading">
                   {selectedSymbol.reference}
                   {selectedSymbol.unitSuffix ? ` (${selectedSymbol.unitSuffix})` : ''}
                 </div>
@@ -608,7 +600,7 @@ export const PropertiesPanel: React.FC<Props> = ({
 
             <div className="space-y-2.5">
               <div>
-                <label className="text-[11px] text-cad-textMuted block mb-1">Reference Designator</label>
+                <label className="text-[11px] font-medium text-cad-textMuted block mb-1">Reference Designator</label>
                 <input
                   type="text"
                   value={selectedSymbol.reference}
@@ -627,12 +619,12 @@ export const PropertiesPanel: React.FC<Props> = ({
                       },
                     }));
                   }}
-                  className="w-full bg-cad-bg border border-cad-border rounded px-2.5 py-1 text-cad-text font-mono"
+                  className="w-full bg-cad-inputBg border border-cad-inputBorder rounded px-2.5 py-1 text-cad-inputText font-mono text-xs focus:outline-none focus:border-blue-500"
                 />
               </div>
 
               <div>
-                <label className="text-[11px] text-cad-textMuted block mb-1">Component Value</label>
+                <label className="text-[11px] font-medium text-cad-textMuted block mb-1">Component Value</label>
                 <input
                   type="text"
                   value={selectedSymbol.value}
@@ -651,7 +643,7 @@ export const PropertiesPanel: React.FC<Props> = ({
                       },
                     }));
                   }}
-                  className="w-full bg-cad-bg border border-cad-border rounded px-2.5 py-1 text-cad-text font-mono"
+                  className="w-full bg-cad-inputBg border border-cad-inputBorder rounded px-2.5 py-1 text-cad-inputText font-mono text-xs focus:outline-none focus:border-blue-500"
                 />
               </div>
             </div>

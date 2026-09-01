@@ -63,7 +63,7 @@ interface Props {
 
 type PCBTool = 'select' | 'pan' | 'route' | 'via' | 'zone' | 'measure';
 
-export const PCBEditor: React.FC<Props> = ({ project, onUpdateProject, onRunDRC, theme = 'dark' }) => {
+export const PCBEditor: React.FC<Props> = ({ project, onUpdateProject, onRunDRC, theme = 'high-contrast' }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   // Viewport Transform
@@ -77,6 +77,19 @@ export const PCBEditor: React.FC<Props> = ({ project, onUpdateProject, onRunDRC,
   const [routingPosture, setRoutingPosture] = useState<0 | 1>(0);
   const [trackWidthPreset, setTrackWidthPreset] = useState<number | 'netclass'>('netclass');
   const [customTrackWidth, setCustomTrackWidth] = useState<number>(0.25);
+  const [isDiffPairMode, setIsDiffPairMode] = useState<boolean>(false);
+  const [diffPairGap, setDiffPairGap] = useState<number>(0.2);
+
+  // Selection Filters
+  const [showFilterBar, setShowFilterBar] = useState<boolean>(false);
+  const [selectionFilter, setSelectionFilter] = useState({
+    footprints: true,
+    tracks: true,
+    vias: true,
+    zones: true,
+    dimensions: true,
+    texts: true,
+  });
 
   // Grid Configuration
   const [gridSpacing, setGridSpacing] = useState<number>(0.5);
@@ -1029,8 +1042,8 @@ export const PCBEditor: React.FC<Props> = ({ project, onUpdateProject, onRunDRC,
       className="relative w-full h-full flex flex-col bg-cad-bg overflow-hidden select-none font-sans"
     >
       {/* 1. TOP PROFESSIONAL PCB TOOLBAR */}
-      <div className="h-10 bg-cad-panel border-b border-cad-border px-3 flex items-center justify-between z-10 shrink-0">
-        <div className="flex items-center space-x-1.5">
+      <div className="h-9 bg-cad-panel border-b border-cad-border px-3 flex items-center justify-between z-10 shrink-0 select-none text-xs">
+        <div className="flex items-center space-x-1">
           {/* Tool Selectors */}
           <button
             onClick={() => {
@@ -1038,11 +1051,11 @@ export const PCBEditor: React.FC<Props> = ({ project, onUpdateProject, onRunDRC,
               setRouteStart(null);
             }}
             title="Select & Move Footprint (Esc)"
-            className={`p-1.5 rounded transition-colors flex items-center gap-1 text-xs font-semibold ${
-              activeTool === 'select' ? 'bg-blue-600 text-white shadow-sm' : 'hover:bg-cad-subpanel text-cad-textMuted'
+            className={`px-2.5 py-1 rounded transition-colors flex items-center gap-1.5 text-xs font-medium ${
+              activeTool === 'select' ? 'bg-blue-600 text-white shadow-sm font-semibold' : 'hover:bg-cad-surfaceHover text-cad-text'
             }`}
           >
-            <Move size={15} />
+            <Move size={13} />
             <span className="hidden sm:inline">Select</span>
           </button>
 
@@ -1052,32 +1065,34 @@ export const PCBEditor: React.FC<Props> = ({ project, onUpdateProject, onRunDRC,
               setRouteStart(null);
             }}
             title="Pan Canvas Tool (H / Middle Drag / Right Drag)"
-            className={`p-1.5 rounded transition-colors flex items-center gap-1 text-xs font-semibold ${
-              activeTool === 'pan' ? 'bg-blue-600 text-white shadow-sm' : 'hover:bg-cad-subpanel text-cad-textMuted'
+            className={`px-2.5 py-1 rounded transition-colors flex items-center gap-1.5 text-xs font-medium ${
+              activeTool === 'pan' ? 'bg-blue-600 text-white shadow-sm font-semibold' : 'hover:bg-cad-surfaceHover text-cad-text'
             }`}
           >
-            <Hand size={15} />
+            <Hand size={13} />
             <span className="hidden sm:inline">Pan (H)</span>
           </button>
 
           <button
             onClick={() => setActiveTool('route')}
             title="Interactive Route Track (X)"
-            className={`p-1.5 rounded transition-colors ${
-              activeTool === 'route' ? 'bg-orange-600 text-white' : 'hover:bg-cad-subpanel text-cad-textMuted'
+            className={`px-2.5 py-1 rounded transition-colors flex items-center gap-1.5 text-xs font-medium ${
+              activeTool === 'route' ? 'bg-orange-600 text-white shadow-sm font-semibold' : 'hover:bg-cad-surfaceHover text-cad-text'
             }`}
           >
-            <RouteIcon size={15} />
+            <RouteIcon size={13} />
+            <span className="hidden md:inline">Route</span>
           </button>
 
           <button
             onClick={() => setActiveTool('via')}
             title="Place Via (V)"
-            className={`p-1.5 rounded transition-colors ${
-              activeTool === 'via' ? 'bg-amber-600 text-white' : 'hover:bg-cad-subpanel text-cad-textMuted'
+            className={`px-2 py-1 rounded transition-colors flex items-center gap-1.5 text-xs font-medium ${
+              activeTool === 'via' ? 'bg-amber-600 text-white shadow-sm font-semibold' : 'hover:bg-cad-surfaceHover text-cad-text'
             }`}
           >
-            <CircleDot size={15} />
+            <CircleDot size={13} />
+            <span className="hidden md:inline">Via</span>
           </button>
 
           <button
@@ -1086,40 +1101,41 @@ export const PCBEditor: React.FC<Props> = ({ project, onUpdateProject, onRunDRC,
               setZonePoints([]);
             }}
             title="Draw Copper Zone Polygon"
-            className={`p-1.5 rounded transition-colors ${
-              activeTool === 'zone' ? 'bg-emerald-600 text-white' : 'hover:bg-cad-subpanel text-cad-textMuted'
+            className={`px-2 py-1 rounded transition-colors flex items-center gap-1.5 text-xs font-medium ${
+              activeTool === 'zone' ? 'bg-emerald-600 text-white shadow-sm font-semibold' : 'hover:bg-cad-surfaceHover text-cad-text'
             }`}
           >
-            <Square size={15} />
+            <Square size={13} />
+            <span className="hidden md:inline">Zone</span>
           </button>
 
           <button
             onClick={() => setActiveTool('measure')}
             title="Measurement Ruler"
             className={`p-1.5 rounded transition-colors ${
-              activeTool === 'measure' ? 'bg-pink-600 text-white' : 'hover:bg-cad-subpanel text-cad-textMuted'
+              activeTool === 'measure' ? 'bg-pink-600 text-white shadow-sm' : 'hover:bg-cad-surfaceHover text-cad-text'
             }`}
           >
-            <Ruler size={15} />
+            <Ruler size={13} />
           </button>
 
           <div className="h-4 w-px bg-cad-border mx-1" />
 
           {/* Active Copper Layer Selector */}
           <div className="flex items-center space-x-1 bg-cad-subpanel px-2 py-0.5 rounded border border-cad-border">
-            <span className="text-[10px] text-cad-textMuted">Layer:</span>
+            <span className="text-[10px] text-cad-textMuted font-mono">Layer:</span>
             {(['F.Cu', 'B.Cu', 'In1.Cu', 'In2.Cu'] as PCBLayerId[]).map((layer) => (
               <button
                 key={layer}
                 onClick={() => setActiveLayer(layer)}
-                className={`px-2 py-0.5 rounded text-[11px] font-semibold transition-colors ${
+                className={`px-2 py-0.5 rounded text-[11px] font-mono font-semibold transition-colors ${
                   activeLayer === layer
                     ? layer === 'F.Cu'
-                      ? 'bg-[#e05638] text-white'
+                      ? 'bg-[#e05638] text-white shadow-sm'
                       : layer === 'B.Cu'
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-amber-500 text-slate-900'
-                    : 'text-cad-textMuted hover:text-white'
+                      ? 'bg-blue-600 text-white shadow-sm'
+                      : 'bg-amber-500 text-slate-950 font-bold'
+                    : 'text-cad-text hover:bg-cad-surfaceHover'
                 }`}
               >
                 {layer}
@@ -1132,13 +1148,13 @@ export const PCBEditor: React.FC<Props> = ({ project, onUpdateProject, onRunDRC,
           {/* Routing Mode Selector */}
           {activeTool === 'route' && (
             <div className="flex items-center space-x-1 bg-cad-subpanel px-2 py-0.5 rounded border border-cad-border">
-              <span className="text-[10px] text-cad-textMuted">Mode:</span>
+              <span className="text-[10px] text-cad-textMuted font-mono">Mode:</span>
               {(['45', '90', 'free'] as RoutingMode[]).map((mode) => (
                 <button
                   key={mode}
                   onClick={() => setRoutingMode(mode)}
-                  className={`px-1.5 py-0.5 rounded text-[11px] font-mono ${
-                    routingMode === mode ? 'bg-cad-border text-white font-bold' : 'text-cad-textMuted'
+                  className={`px-1.5 py-0.5 rounded text-[11px] font-mono transition-colors ${
+                    routingMode === mode ? 'bg-cad-border text-cad-textHeading font-semibold' : 'text-cad-text hover:bg-cad-surfaceHover'
                   }`}
                 >
                   {mode === '45' ? '45°' : mode === '90' ? '90°' : 'Free'}
@@ -1150,14 +1166,14 @@ export const PCBEditor: React.FC<Props> = ({ project, onUpdateProject, onRunDRC,
           {/* Track Width Preset */}
           {activeTool === 'route' && (
             <div className="flex items-center space-x-1 bg-cad-subpanel px-2 py-0.5 rounded border border-cad-border text-[11px]">
-              <span className="text-[10px] text-cad-textMuted">Width:</span>
+              <span className="text-[10px] text-cad-textMuted font-mono">Width:</span>
               <select
                 value={trackWidthPreset}
                 onChange={(e) => {
                   const val = e.target.value;
                   setTrackWidthPreset(val === 'netclass' ? 'netclass' : parseFloat(val));
                 }}
-                className="bg-cad-bg border border-cad-border rounded px-1.5 py-0.5 text-cad-text text-[11px] font-mono"
+                className="bg-cad-inputBg border border-cad-inputBorder rounded px-1.5 py-0.5 text-cad-inputText text-[11px] font-mono focus:border-blue-500"
               >
                 <option value="netclass">NetClass (Auto)</option>
                 <option value="0.15">0.15 mm (Fine)</option>
@@ -1167,6 +1183,22 @@ export const PCBEditor: React.FC<Props> = ({ project, onUpdateProject, onRunDRC,
                 <option value="1.00">1.00 mm (Heavy)</option>
               </select>
             </div>
+          )}
+
+          {/* Differential Pair Routing Toggle */}
+          {activeTool === 'route' && (
+            <button
+              onClick={() => setIsDiffPairMode(!isDiffPairMode)}
+              title="Toggle Differential Pair Routing"
+              className={`px-2 py-1 rounded text-xs flex items-center gap-1 font-mono border transition-colors ${
+                isDiffPairMode
+                  ? 'bg-purple-600 text-white border-purple-400 font-bold'
+                  : 'bg-cad-panel text-cad-text border-cad-border hover:bg-cad-surfaceHover'
+              }`}
+            >
+              <Activity size={13} />
+              <span>Diff Pair</span>
+            </button>
           )}
 
           {/* Refill Copper Zones Button */}
@@ -1179,32 +1211,44 @@ export const PCBEditor: React.FC<Props> = ({ project, onUpdateProject, onRunDRC,
               }), 'Refill Copper Zones');
             }}
             title="Refill Copper Zones (B)"
-            className="px-2 py-1 bg-cad-subpanel hover:bg-cad-border text-cad-text rounded text-xs flex items-center gap-1.5 border border-cad-border"
+            className="px-2.5 py-1 bg-cad-panel hover:bg-cad-surfaceHover text-cad-text rounded text-xs flex items-center gap-1.5 border border-cad-border transition-colors font-medium"
           >
-            <Zap size={13} className="text-blue-400" />
-            Fill Zones (B)
+            <Zap size={13} className="text-blue-600 dark:text-blue-400" />
+            <span>Fill Zones (B)</span>
+          </button>
+
+          {/* Selection Filter Toggle */}
+          <button
+            onClick={() => setShowFilterBar(!showFilterBar)}
+            title="Toggle PCB Selection Filters"
+            className={`px-2.5 py-1 rounded text-xs flex items-center gap-1 font-medium border transition-colors ${
+              showFilterBar ? 'bg-cad-subpanel text-cad-textHeading border-cad-border font-semibold' : 'bg-cad-panel text-cad-text border-cad-border hover:bg-cad-surfaceHover'
+            }`}
+          >
+            <Sliders size={13} />
+            <span>Filter</span>
           </button>
 
           {/* Board Setup Button */}
           <button
             onClick={() => setShowBoardSetup(true)}
             title="Board Setup & Stackup Dialog"
-            className="px-2 py-1 bg-cad-subpanel hover:bg-cad-border text-cad-text rounded text-xs flex items-center gap-1.5 border border-cad-border"
+            className="px-2.5 py-1 bg-cad-panel hover:bg-cad-surfaceHover text-cad-text rounded text-xs flex items-center gap-1.5 border border-cad-border transition-colors font-medium"
           >
             <Settings size={13} />
-            Board Setup
+            <span>Board Setup</span>
           </button>
         </div>
 
         {/* Status & Viewport Controls */}
-        <div className="flex items-center space-x-3 text-xs text-cad-textMuted font-mono">
+        <div className="flex items-center space-x-3 text-xs text-cad-text font-mono">
           {/* Grid Selection */}
-          <div className="flex items-center space-x-1">
-            <span className="text-[10px]">Grid:</span>
+          <div className="flex items-center space-x-1.5">
+            <span className="text-[10px] text-cad-textMuted">Grid:</span>
             <select
               value={gridSpacing}
               onChange={(e) => setGridSpacing(parseFloat(e.target.value))}
-              className="bg-cad-bg border border-cad-border rounded px-1 py-0.5 text-xs text-cad-text"
+              className="bg-cad-inputBg border border-cad-inputBorder rounded px-1.5 py-0.5 text-xs text-cad-inputText font-mono focus:border-blue-500"
             >
               <option value="0.05">0.05 mm</option>
               <option value="0.1">0.10 mm</option>
@@ -1222,11 +1266,11 @@ export const PCBEditor: React.FC<Props> = ({ project, onUpdateProject, onRunDRC,
 
           <div className="h-4 w-px bg-cad-border" />
 
-          <button onClick={() => setZoom((z) => Math.min(35, z * 1.2))} className="p-1 hover:text-cad-text">
-            <ZoomIn size={14} />
+          <button onClick={() => setZoom((z) => Math.min(35, z * 1.2))} className="p-1 hover:bg-cad-surfaceHover rounded text-cad-text transition-colors">
+            <ZoomIn size={13} />
           </button>
-          <button onClick={() => setZoom((z) => Math.max(1.5, z * 0.8))} className="p-1 hover:text-cad-text">
-            <ZoomOut size={14} />
+          <button onClick={() => setZoom((z) => Math.max(1.5, z * 0.8))} className="p-1 hover:bg-cad-surfaceHover rounded text-cad-text transition-colors">
+            <ZoomOut size={13} />
           </button>
           <button
             onClick={() => {
@@ -1234,29 +1278,83 @@ export const PCBEditor: React.FC<Props> = ({ project, onUpdateProject, onRunDRC,
               setZoom(6.0);
             }}
             title="Zoom to Fit Board"
-            className="p-1 hover:text-cad-text"
+            className="p-1 hover:bg-cad-surfaceHover rounded text-cad-text transition-colors"
           >
-            <Maximize2 size={14} />
+            <Maximize2 size={13} />
           </button>
 
           {/* Toggle Panels Buttons */}
           <button
             onClick={() => setShowLeftInspector((v) => !v)}
             title="Toggle Left Inspector"
-            className={`p-1 rounded ${showLeftInspector ? 'bg-cad-border text-cad-text' : 'text-cad-textMuted'}`}
+            className={`p-1 rounded transition-colors ${showLeftInspector ? 'bg-blue-600 text-white shadow-sm' : 'text-cad-text hover:bg-cad-surfaceHover'}`}
           >
-            <Sliders size={14} />
+            <Sliders size={13} />
           </button>
 
           <button
             onClick={() => setShowRightAppearance((v) => !v)}
             title="Toggle Right Appearance Panel"
-            className={`p-1 rounded ${showRightAppearance ? 'bg-cad-border text-cad-text' : 'text-cad-textMuted'}`}
+            className={`p-1 rounded transition-colors ${showRightAppearance ? 'bg-blue-600 text-white shadow-sm' : 'text-cad-text hover:bg-cad-surfaceHover'}`}
           >
-            <Layers size={14} />
+            <Layers size={13} />
           </button>
         </div>
       </div>
+
+      {/* Selection Filter Bar */}
+      {showFilterBar && (
+        <div className="h-7 bg-cad-panel border-b border-cad-border px-3 flex items-center gap-4 text-[11px] text-cad-textMuted z-10 shrink-0">
+          <span className="font-semibold text-cad-text flex items-center gap-1">
+            <Sliders size={11} /> Selection Filter:
+          </span>
+          <label className="flex items-center gap-1 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={selectionFilter.footprints}
+              onChange={(e) => setSelectionFilter((f) => ({ ...f, footprints: e.target.checked }))}
+              className="rounded text-blue-600 focus:ring-0 cursor-pointer"
+            />
+            <span>Footprints</span>
+          </label>
+          <label className="flex items-center gap-1 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={selectionFilter.tracks}
+              onChange={(e) => setSelectionFilter((f) => ({ ...f, tracks: e.target.checked }))}
+              className="rounded text-blue-600 focus:ring-0 cursor-pointer"
+            />
+            <span>Tracks</span>
+          </label>
+          <label className="flex items-center gap-1 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={selectionFilter.vias}
+              onChange={(e) => setSelectionFilter((f) => ({ ...f, vias: e.target.checked }))}
+              className="rounded text-blue-600 focus:ring-0 cursor-pointer"
+            />
+            <span>Vias</span>
+          </label>
+          <label className="flex items-center gap-1 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={selectionFilter.zones}
+              onChange={(e) => setSelectionFilter((f) => ({ ...f, zones: e.target.checked }))}
+              className="rounded text-blue-600 focus:ring-0 cursor-pointer"
+            />
+            <span>Zones</span>
+          </label>
+          <label className="flex items-center gap-1 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={selectionFilter.dimensions}
+              onChange={(e) => setSelectionFilter((f) => ({ ...f, dimensions: e.target.checked }))}
+              className="rounded text-blue-600 focus:ring-0 cursor-pointer"
+            />
+            <span>Dimensions</span>
+          </label>
+        </div>
+      )}
 
       {/* 2. CENTRAL LAYOUT & CANVAS AREA */}
       <div className="flex-1 flex overflow-hidden relative">
@@ -1296,7 +1394,10 @@ export const PCBEditor: React.FC<Props> = ({ project, onUpdateProject, onRunDRC,
           {routeStart && !routeError && (
             <div className="absolute top-3 left-4 z-20 bg-cad-panel/95 border border-blue-500/50 text-cad-text px-3 py-1.5 rounded-lg text-xs font-mono flex items-center gap-3 shadow-lg backdrop-blur">
               <span className="flex items-center gap-1.5 text-blue-400 font-bold">
-                <RouteIcon size={14} /> Routing Net: {routeNetName}
+                <RouteIcon size={14} /> Routing Net: {routeNetName} {isDiffPairMode && '(Diff Pair Mode)'}
+              </span>
+              <span className="text-emerald-400 font-semibold">
+                [Net Length: {pcb.tracks.filter(t => t.netName === routeNetName).reduce((acc, t) => acc + Math.hypot(t.x2 - t.x1, t.y2 - t.y1), 0).toFixed(1)} mm]
               </span>
               <span className="text-cad-textMuted text-[11px]">
                 (Press 'V' to place via & switch layer, '\' to flip posture, Esc to cancel)
@@ -1378,6 +1479,11 @@ export const PCBEditor: React.FC<Props> = ({ project, onUpdateProject, onRunDRC,
           <span>Vias: {pcb.vias.length}</span>
           <span>Tracks: {pcb.tracks.length}</span>
           <span>Unrouted: {ratsnestLines.length}</span>
+          {routeStart && (
+            <span className="text-blue-400 font-semibold">
+              Tuned Length: {pcb.tracks.filter(t => t.netName === routeNetName).reduce((acc, t) => acc + Math.hypot(t.x2 - t.x1, t.y2 - t.y1), 0).toFixed(1)} mm
+            </span>
+          )}
         </div>
 
         <div className="flex items-center space-x-3">
