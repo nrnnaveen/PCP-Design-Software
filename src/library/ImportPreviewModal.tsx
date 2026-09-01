@@ -181,48 +181,48 @@ export const ImportPreviewModal: React.FC<Props> = ({
   const selectedCount = items.filter((i) => i.selected).length;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md select-none">
-      <div className="bg-cad-panel border border-cad-border w-[1050px] h-[680px] rounded-xl shadow-2xl flex flex-col overflow-hidden text-cad-text">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 select-none p-4 font-sans">
+      <div className="bg-cad-panel border border-cad-border w-[1050px] max-w-full h-[680px] max-h-full rounded-lg shadow-2xl flex flex-col overflow-hidden text-cad-text">
         {/* Header */}
-        <div className="h-14 bg-cad-header border-b border-cad-border px-6 flex items-center justify-between">
+        <div className="h-12 bg-cad-header border-b border-cad-border px-5 flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className="p-2 bg-blue-600/20 text-blue-400 rounded-lg border border-blue-500/30">
-              <Layers size={20} />
+            <div className="p-1.5 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-md border border-blue-500/20">
+              <Layers size={18} />
             </div>
             <div>
-              <h2 className="text-sm font-bold text-white">Import Library Preview & Inspection</h2>
+              <h2 className="text-xs sm:text-sm font-semibold text-cad-textHeading">Import Library Preview &amp; Inspection</h2>
               <div className="text-[11px] text-cad-textMuted flex items-center gap-3 font-mono mt-0.5">
                 <span>{analysis.totalCount} items detected</span>
                 <span>•</span>
-                <span className="text-blue-400">{analysis.symbolCount} Symbols</span>
+                <span className="text-blue-600 dark:text-blue-400 font-semibold">{analysis.symbolCount} Symbols</span>
                 <span>•</span>
-                <span className="text-emerald-400">{analysis.footprintCount} Footprints</span>
+                <span className="text-emerald-600 dark:text-emerald-400 font-semibold">{analysis.footprintCount} Footprints</span>
                 {analysis.duplicateCount > 0 && (
                   <>
                     <span>•</span>
-                    <span className="text-amber-400">{analysis.duplicateCount} Duplicates</span>
+                    <span className="text-amber-600 dark:text-amber-400 font-semibold">{analysis.duplicateCount} Duplicates</span>
                   </>
                 )}
                 {analysis.unsupportedCount > 0 && (
                   <>
                     <span>•</span>
-                    <span className="text-red-400">{analysis.unsupportedCount} Unsupported</span>
+                    <span className="text-red-600 dark:text-red-400 font-semibold">{analysis.unsupportedCount} Unsupported</span>
                   </>
                 )}
               </div>
             </div>
           </div>
-          <button onClick={onClose} className="p-1 hover:bg-cad-subpanel rounded text-cad-textMuted hover:text-white">
-            <X size={18} />
+          <button onClick={onClose} className="p-1 hover:bg-cad-surfaceHover rounded text-cad-textMuted hover:text-cad-text transition-colors">
+            <X size={16} />
           </button>
         </div>
 
         {/* 2-Pane Inspection Content */}
         <div className="flex-1 flex overflow-hidden">
           {/* Left Pane: Items List & Checkboxes */}
-          <div className="w-[450px] border-r border-cad-border flex flex-col bg-cad-bg/30">
+          <div className="w-[450px] border-r border-cad-border flex flex-col bg-cad-bg">
             {/* Filter Toolbar */}
-            <div className="p-3 bg-cad-subpanel border-b border-cad-border space-y-2">
+            <div className="p-2.5 bg-cad-panel border-b border-cad-border space-y-2">
               <div className="flex items-center gap-2">
                 <div className="relative flex-1">
                   <Search size={13} className="absolute left-2.5 top-2 text-cad-textMuted" />
@@ -231,20 +231,20 @@ export const ImportPreviewModal: React.FC<Props> = ({
                     placeholder="Search items..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full bg-cad-bg border border-cad-border rounded pl-8 pr-2 py-1 text-xs text-white font-mono"
+                    className="w-full bg-cad-inputBg border border-cad-inputBorder rounded pl-8 pr-2 py-1 text-xs text-cad-inputText font-mono focus:border-blue-500"
                   />
                 </div>
 
                 <div className="flex items-center gap-1">
                   <button
                     onClick={() => handleSelectAll(true)}
-                    className="px-2 py-1 bg-cad-bg hover:bg-cad-border rounded text-[11px] text-slate-300 font-semibold"
+                    className="px-2 py-1 bg-cad-panel hover:bg-cad-surfaceHover border border-cad-border rounded text-[11px] text-cad-text font-medium transition-colors"
                   >
                     Select All
                   </button>
                   <button
                     onClick={() => handleSelectAll(false)}
-                    className="px-2 py-1 bg-cad-bg hover:bg-cad-border rounded text-[11px] text-slate-300 font-semibold"
+                    className="px-2 py-1 bg-cad-panel hover:bg-cad-surfaceHover border border-cad-border rounded text-[11px] text-cad-text font-medium transition-colors"
                   >
                     Deselect
                   </button>
@@ -257,10 +257,10 @@ export const ImportPreviewModal: React.FC<Props> = ({
                   <button
                     key={type}
                     onClick={() => setTypeFilter(type)}
-                    className={`px-2.5 py-0.5 rounded text-[10px] uppercase font-mono font-semibold transition-colors ${
+                    className={`px-2.5 py-0.5 rounded text-[10px] uppercase font-mono font-semibold transition-colors border ${
                       typeFilter === type
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-cad-bg text-cad-textMuted hover:text-white'
+                        ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+                        : 'bg-cad-panel text-cad-text border-cad-border hover:bg-cad-surfaceHover'
                     }`}
                   >
                     {type}
@@ -448,7 +448,7 @@ export const ImportPreviewModal: React.FC<Props> = ({
         </div>
 
         {/* Footer */}
-        <div className="h-14 bg-cad-header border-t border-cad-border px-6 flex items-center justify-between">
+        <div className="h-12 bg-cad-header border-t border-cad-border px-5 flex items-center justify-between">
           <div className="text-xs text-cad-textMuted font-mono">
             <span>{selectedCount} items selected for import</span>
           </div>
@@ -457,14 +457,14 @@ export const ImportPreviewModal: React.FC<Props> = ({
             <button
               onClick={onClose}
               disabled={isImporting}
-              className="px-4 py-1.5 bg-cad-subpanel hover:bg-cad-border text-xs rounded text-slate-300"
+              className="px-4 py-1.5 bg-cad-panel hover:bg-cad-surfaceHover border border-cad-border text-xs rounded text-cad-text font-medium transition-colors"
             >
               Cancel
             </button>
             <button
               onClick={handleCommitImport}
               disabled={isImporting || selectedCount === 0}
-              className="px-5 py-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-xs font-semibold text-white rounded flex items-center gap-1.5 shadow-md"
+              className="px-5 py-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-xs font-semibold text-white rounded flex items-center gap-1.5 shadow-sm transition-colors"
             >
               {isImporting ? (
                 <>

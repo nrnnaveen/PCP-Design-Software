@@ -440,9 +440,9 @@ export const ComponentPreviewCanvas: React.FC<Props> = ({
     <div className={`relative w-full h-full bg-cad-bg rounded-lg overflow-hidden border border-cad-border flex flex-col ${className || ''}`}>
       {/* Unit Selector Toolbar for Multi-Unit Symbols */}
       {hasMultipleUnits && symbol?.units && (
-        <div className="absolute top-2 left-2 flex items-center space-x-1 bg-cad-panel/90 backdrop-blur-md p-1 rounded-md border border-cad-border z-10 max-w-[calc(100%-140px)] overflow-x-auto">
+        <div className="absolute top-2 left-2 flex items-center space-x-1 bg-cad-panel p-1 rounded-md border border-cad-border z-10 max-w-[calc(100%-140px)] overflow-x-auto shadow-sm">
           <span className="text-[10px] font-mono text-cad-textMuted px-1.5 flex items-center gap-1">
-            <Layers size={11} className="text-blue-400" />
+            <Layers size={11} className="text-blue-600 dark:text-blue-400" />
             Unit:
           </span>
 
@@ -453,7 +453,7 @@ export const ComponentPreviewCanvas: React.FC<Props> = ({
               className={`px-2 py-0.5 rounded text-[10px] font-mono font-semibold transition-colors whitespace-nowrap ${
                 activeUnit === idx
                   ? 'bg-blue-600 text-white shadow-sm'
-                  : 'bg-cad-subpanel text-slate-300 hover:bg-cad-border hover:text-white'
+                  : 'bg-cad-subpanel text-cad-text hover:bg-cad-surfaceHover hover:text-cad-textHeading'
               }`}
             >
               Unit {u.name || u.unit}
@@ -465,7 +465,7 @@ export const ComponentPreviewCanvas: React.FC<Props> = ({
             className={`px-2 py-0.5 rounded text-[10px] font-mono font-semibold transition-colors whitespace-nowrap ${
               activeUnit === 'all'
                 ? 'bg-emerald-600 text-white shadow-sm'
-                : 'bg-cad-subpanel text-emerald-400 hover:bg-cad-border'
+                : 'bg-cad-subpanel text-emerald-600 dark:text-emerald-400 hover:bg-cad-surfaceHover'
             }`}
           >
             All Units (Grid)
@@ -474,18 +474,26 @@ export const ComponentPreviewCanvas: React.FC<Props> = ({
       )}
 
       {/* Viewport Controls */}
-      <div className="absolute top-2 right-2 flex items-center space-x-1 bg-cad-panel/80 backdrop-blur-sm p-1 rounded-md border border-cad-border z-10">
+      <div className="absolute top-2 right-2 flex items-center space-x-1 bg-cad-panel p-1 rounded-md border border-cad-border z-10 shadow-sm">
         <button
           onClick={() => setShowGrid(!showGrid)}
           title="Toggle Grid"
-          className={`p-1 rounded text-xs ${showGrid ? 'text-blue-400 bg-cad-subpanel' : 'text-cad-textMuted'}`}
+          className={`p-1 rounded text-xs transition-colors ${showGrid ? 'text-blue-600 dark:text-blue-400 bg-cad-subpanel' : 'text-cad-text hover:bg-cad-surfaceHover'}`}
         >
           <Grid size={13} />
         </button>
-        <button onClick={() => setZoom((z) => Math.min(30, z * 1.2))} title="Zoom In" className="p-1 hover:text-white text-cad-textMuted">
+        <button
+          onClick={() => setZoom((z) => Math.min(30, z * 1.2))}
+          title="Zoom In"
+          className="p-1 hover:bg-cad-surfaceHover rounded text-cad-text transition-colors"
+        >
           <ZoomIn size={13} />
         </button>
-        <button onClick={() => setZoom((z) => Math.max(0.5, z * 0.8))} title="Zoom Out" className="p-1 hover:text-white text-cad-textMuted">
+        <button
+          onClick={() => setZoom((z) => Math.max(0.5, z * 0.8))}
+          title="Zoom Out"
+          className="p-1 hover:bg-cad-surfaceHover rounded text-cad-text transition-colors"
+        >
           <ZoomOut size={13} />
         </button>
         <button
@@ -494,7 +502,7 @@ export const ComponentPreviewCanvas: React.FC<Props> = ({
             setZoom(activeUnit === 'all' ? 2.8 : (symbol ? 4.5 : 8.0));
           }}
           title="Fit to Center"
-          className="p-1 hover:text-white text-cad-textMuted"
+          className="p-1 hover:bg-cad-surfaceHover rounded text-cad-text transition-colors"
         >
           <Maximize2 size={13} />
         </button>
