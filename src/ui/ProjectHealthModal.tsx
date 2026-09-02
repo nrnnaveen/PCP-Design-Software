@@ -45,13 +45,13 @@ export const ProjectHealthModal: React.FC<Props> = ({
       role="dialog"
       aria-labelledby="health-dialog-title"
       aria-modal="true"
-      className="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center z-50 p-4 select-none"
+      className="fixed inset-0 bg-theme-modalBackdrop flex items-center justify-center z-50 p-4 select-none"
     >
-      <div className="bg-cad-panel border border-cad-border w-full max-w-2xl rounded-lg shadow-2xl overflow-hidden flex flex-col max-h-[85vh] text-cad-text animate-in fade-in zoom-in-95 duration-100">
+      <div className="bg-cad-panel border border-cad-border w-full max-w-2xl rounded-sm shadow-xl overflow-hidden flex flex-col max-h-[85vh] text-cad-text animate-in fade-in zoom-in-95 duration-100">
         {/* Header */}
-        <div className="h-12 px-5 bg-cad-header border-b border-cad-border flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <ShieldCheck size={18} className={health.readyForExport ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'} />
+        <div className="h-9 px-3.5 bg-cad-header border-b border-cad-border flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <ShieldCheck size={16} className={health.readyForExport ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'} />
             <div>
               <h2 id="health-dialog-title" className="text-xs sm:text-sm font-semibold text-cad-textHeading">
                 Project Health &amp; Validation
@@ -59,9 +59,9 @@ export const ProjectHealthModal: React.FC<Props> = ({
               <p className="text-[10px] text-cad-textMuted">Design verification &amp; manufacturing readiness audit</p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
             <span
-              className={`px-2.5 py-0.5 rounded text-[11px] font-semibold font-mono ${
+              className={`px-2 py-0.2 rounded-xs text-[10px] font-semibold font-mono ${
                 health.readyForExport
                   ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30'
                   : 'bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30'
@@ -72,7 +72,7 @@ export const ProjectHealthModal: React.FC<Props> = ({
             <button
               onClick={onClose}
               aria-label="Close"
-              className="p-1 hover:bg-cad-surfaceHover rounded text-cad-textMuted hover:text-cad-text transition-colors focus-visible:outline-none"
+              className="p-1 hover:bg-cad-surfaceHover rounded-xs text-cad-textMuted hover:text-cad-text transition-colors duration-fast focus-visible:outline-none"
             >
               <X size={15} />
             </button>
@@ -80,20 +80,20 @@ export const ProjectHealthModal: React.FC<Props> = ({
         </div>
 
         {/* Body */}
-        <div className="p-5 space-y-3.5 overflow-y-auto flex-1 text-xs">
+        <div className="p-4 space-y-3 overflow-y-auto flex-1 text-xs">
           {/* Status Banner */}
           <div
-            className={`p-3 rounded-md border flex items-center justify-between ${
+            className={`p-2.5 rounded-xs border flex items-center justify-between ${
               health.readyForExport
                 ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-800 dark:text-emerald-200'
                 : 'bg-amber-500/10 border-amber-500/30 text-amber-800 dark:text-amber-200'
             }`}
           >
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-2">
               {health.readyForExport ? (
-                <CheckCircle2 size={20} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+                <CheckCircle2 size={18} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
               ) : (
-                <AlertTriangle size={20} className="text-amber-600 dark:text-amber-400 shrink-0" />
+                <AlertTriangle size={18} className="text-amber-600 dark:text-amber-400 shrink-0" />
               )}
               <div>
                 <div className="font-semibold text-xs text-cad-textHeading">
@@ -112,7 +112,7 @@ export const ProjectHealthModal: React.FC<Props> = ({
             {!health.readyForExport && (
               <button
                 onClick={handleAutoFix}
-                className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-medium rounded text-xs flex items-center gap-1.5 shadow-sm transition-colors shrink-0 focus-visible:outline-none"
+                className="px-2.5 py-1 bg-blue-600 hover:bg-blue-500 text-white font-medium rounded-xs text-xs flex items-center gap-1.5 shadow-xs transition-colors duration-fast shrink-0 focus-visible:outline-none"
               >
                 <Wrench size={12} />
                 <span>Auto-Fix</span>
@@ -125,11 +125,11 @@ export const ProjectHealthModal: React.FC<Props> = ({
             {health.checks.map((check) => (
               <div
                 key={check.key}
-                className="p-2.5 bg-cad-subpanel border border-cad-border rounded flex items-start gap-2"
+                className="p-2 bg-cad-subpanel border border-cad-border rounded-xs flex items-start gap-2"
               >
-                {check.status === 'passed' && <CheckCircle2 size={15} className="text-emerald-600 dark:text-emerald-400 mt-0.5 shrink-0" />}
-                {check.status === 'warning' && <AlertTriangle size={15} className="text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />}
-                {check.status === 'failed' && <XCircle size={15} className="text-red-600 dark:text-red-400 mt-0.5 shrink-0" />}
+                {check.status === 'passed' && <CheckCircle2 size={14} className="text-emerald-600 dark:text-emerald-400 mt-0.5 shrink-0" />}
+                {check.status === 'warning' && <AlertTriangle size={14} className="text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />}
+                {check.status === 'failed' && <XCircle size={14} className="text-red-600 dark:text-red-400 mt-0.5 shrink-0" />}
                 <div className="flex-1 min-w-0">
                   <div className="font-medium text-cad-textHeading flex items-center justify-between text-xs">
                     <span>{check.label}</span>
@@ -153,10 +153,10 @@ export const ProjectHealthModal: React.FC<Props> = ({
         </div>
 
         {/* Footer */}
-        <div className="h-11 bg-cad-header border-t border-cad-border px-5 flex items-center justify-end">
+        <div className="h-9 bg-cad-header border-t border-cad-border px-3.5 flex items-center justify-end">
           <button
             onClick={onClose}
-            className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded text-xs font-medium shadow-sm transition-colors focus-visible:outline-none"
+            className="px-3 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded-xs text-xs font-medium shadow-xs transition-colors duration-fast focus-visible:outline-none"
           >
             Close
           </button>

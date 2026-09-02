@@ -39,34 +39,34 @@ export const ThankYouModal: React.FC<Props> = ({
     <div
       role="dialog"
       aria-modal="true"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 dark:bg-black/70 p-4 select-none"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-theme-modalBackdrop p-4 select-none"
     >
-      <div className="bg-cad-panel border border-cad-border w-[460px] max-w-full rounded-lg shadow-2xl p-6 text-center text-cad-text space-y-4 animate-in fade-in zoom-in-95 duration-100">
-        <div className="w-12 h-12 mx-auto rounded-full bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
-          <CheckCircle2 size={28} />
+      <div className="bg-cad-panel border border-cad-border w-[440px] max-w-full rounded-sm shadow-xl p-5 text-center text-cad-text space-y-3.5 animate-in fade-in zoom-in-95 duration-100">
+        <div className="w-10 h-10 mx-auto rounded-xs bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+          <CheckCircle2 size={22} />
         </div>
 
         <div className="space-y-1">
-          <h2 className="text-sm font-semibold text-cad-textHeading">{title}</h2>
+          <h2 className="text-xs sm:text-sm font-semibold text-cad-textHeading">{title}</h2>
           <p className="text-xs text-cad-textMuted leading-relaxed max-w-sm mx-auto">
             {message}
           </p>
         </div>
 
         {actionDetails && (
-          <div className="p-2.5 rounded bg-cad-subpanel border border-cad-border font-mono text-[11px] text-cad-text text-left">
+          <div className="p-2 rounded-xs bg-cad-subpanel border border-cad-border font-mono text-[11px] text-cad-text text-left">
             {actionDetails}
           </div>
         )}
 
-        <div className="pt-1 flex items-center justify-center gap-2.5">
+        <div className="pt-0.5 flex items-center justify-center gap-2">
           {onNavigateHome && (
             <button
               onClick={() => {
                 onClose();
                 onNavigateHome();
               }}
-              className="px-3.5 py-1.5 bg-cad-subpanel hover:bg-cad-surfaceHover text-cad-text rounded text-xs font-medium border border-cad-border transition-colors focus-visible:outline-none flex items-center gap-1.5"
+              className="px-3 py-1 bg-cad-subpanel hover:bg-cad-surfaceHover text-cad-text rounded-xs text-xs font-medium border border-cad-border transition-colors duration-fast focus-visible:outline-none flex items-center gap-1.5"
             >
               <Home size={13} />
               <span>Dashboard</span>
@@ -74,7 +74,7 @@ export const ThankYouModal: React.FC<Props> = ({
           )}
           <button
             onClick={onClose}
-            className="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded text-xs font-medium shadow-sm transition-colors focus-visible:outline-none"
+            className="px-3.5 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded-xs text-xs font-medium shadow-xs transition-colors duration-fast focus-visible:outline-none"
           >
             Continue Working
           </button>

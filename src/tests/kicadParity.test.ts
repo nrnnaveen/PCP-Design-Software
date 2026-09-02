@@ -298,7 +298,7 @@ describe('KiCad-Class Feature Parity & Engineering Suite', () => {
       const defaultTokens = getCanvasColors('dark');
       expect(defaultTokens.isLight).toBe(false);
       expect(defaultTokens.canvasBg).toBe('#1e1e1e');
-      expect(defaultTokens.textColor).toBe('#cccccc');
+      expect(defaultTokens.textColor).toBe('#f3f3f3');
     });
   });
 

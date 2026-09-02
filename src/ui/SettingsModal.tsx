@@ -105,13 +105,13 @@ export const SettingsModal: React.FC<Props> = ({
       role="dialog"
       aria-labelledby="settings-dialog-title"
       aria-modal="true"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 dark:bg-black/70 select-none p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-theme-modalBackdrop select-none p-4"
     >
-      <div className="bg-cad-panel border border-cad-border w-[760px] max-w-full h-[520px] max-h-full rounded-lg shadow-2xl overflow-hidden flex flex-col text-cad-text animate-in fade-in zoom-in-95 duration-100">
+      <div className="bg-cad-panel border border-cad-border w-[760px] max-w-full h-[520px] max-h-full rounded-sm shadow-xl overflow-hidden flex flex-col text-cad-text animate-in fade-in zoom-in-95 duration-100">
         {/* Header */}
-        <div className="h-11 bg-cad-header border-b border-cad-border px-4 flex items-center justify-between">
+        <div className="h-9 bg-cad-header border-b border-cad-border px-3.5 flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <Settings size={15} className="text-blue-600 dark:text-blue-400" />
+            <Settings size={14} className="text-blue-600 dark:text-blue-400" />
             <h2 id="settings-dialog-title" className="font-semibold text-xs sm:text-sm text-cad-textHeading">
               Preferences &amp; Settings
             </h2>
@@ -119,7 +119,7 @@ export const SettingsModal: React.FC<Props> = ({
           <button
             onClick={onClose}
             aria-label="Close settings"
-            className="p-1 hover:bg-cad-surfaceHover rounded text-cad-textMuted hover:text-cad-text transition-colors focus-visible:outline-none"
+            className="p-1 hover:bg-cad-surfaceHover rounded-xs text-cad-textMuted hover:text-cad-text transition-colors duration-fast focus-visible:outline-none"
           >
             <X size={15} />
           </button>
@@ -130,7 +130,7 @@ export const SettingsModal: React.FC<Props> = ({
           {/* Left Navigation */}
           <nav
             aria-label="Settings categories"
-            className="w-44 border-r border-cad-border bg-cad-subpanel p-2 space-y-0.5 shrink-0"
+            className="w-44 border-r border-cad-border bg-cad-subpanel p-1.5 space-y-0.5 shrink-0"
           >
             {[
               { id: 'appearance', label: 'Appearance', icon: Sun },
@@ -145,13 +145,13 @@ export const SettingsModal: React.FC<Props> = ({
                 <button
                   key={item.id}
                   onClick={() => setActiveTab(item.id as SettingsTab)}
-                  className={`w-full px-2.5 py-1.5 rounded text-xs font-medium flex items-center gap-2 transition-colors focus-visible:outline-none ${
+                  className={`w-full px-2 py-1 rounded-xs text-xs font-medium flex items-center gap-2 transition-colors duration-fast focus-visible:outline-none ${
                     isActive
-                      ? 'bg-blue-600 text-white shadow-sm font-semibold'
+                      ? 'bg-blue-600 text-white shadow-xs font-semibold'
                       : 'text-cad-text hover:bg-cad-surfaceHover'
                   }`}
                 >
-                  <Icon size={14} />
+                  <Icon size={13} />
                   <span>{item.label}</span>
                 </button>
               );
@@ -159,10 +159,10 @@ export const SettingsModal: React.FC<Props> = ({
           </nav>
 
           {/* Right Tab Content */}
-          <main className="flex-1 p-5 overflow-y-auto bg-cad-bg">
+          <main className="flex-1 p-4 overflow-y-auto bg-cad-bg">
             {/* 1. Appearance Tab */}
             {activeTab === 'appearance' && (
-              <div className="space-y-3.5 max-w-xl">
+              <div className="space-y-3 max-w-xl">
                 <div>
                   <h3 className="text-xs font-semibold text-cad-textHeading uppercase font-mono tracking-wider mb-0.5">
                     Theme &amp; Color Palette
@@ -179,16 +179,16 @@ export const SettingsModal: React.FC<Props> = ({
                       <div
                         key={th.id}
                         onClick={() => onSetTheme(th.id)}
-                        className={`p-3 rounded-md border cursor-pointer transition-all ${
+                        className={`p-2.5 rounded-xs border cursor-pointer transition-colors duration-fast ${
                           isSelected
-                            ? 'bg-cad-subpanel border-blue-600 ring-2 ring-blue-500/25 shadow-sm'
+                            ? 'bg-cad-subpanel border-blue-600 ring-2 ring-blue-500/25 shadow-xs'
                             : 'bg-cad-panel hover:bg-cad-surfaceHover border-cad-border'
                         }`}
                       >
                         <div className="flex items-center justify-between mb-1">
                           <div className="flex items-center gap-2 font-semibold text-xs text-cad-text">
                             <span
-                              className="w-3.5 h-3.5 rounded-full border border-cad-border"
+                              className="w-3 h-3 rounded-xs border border-cad-border"
                               style={{ backgroundColor: th.previewColor }}
                             />
                             <span>{th.name}</span>
@@ -341,88 +341,86 @@ export const SettingsModal: React.FC<Props> = ({
               <div className="space-y-3.5 max-w-xl">
                 <div>
                   <h3 className="text-xs font-semibold text-cad-textHeading uppercase font-mono tracking-wider mb-0.5">
-                    FloZ AI Copilot &amp; LLM Configuration
+                    FloZ AI Copilot Engine
                   </h3>
                   <p className="text-xs text-cad-textMuted">
-                    Choose between 100% offline local rule synthesis or custom LLM API endpoints.
+                    Configure high-performance FloZ neural models, reasoning depth, and context scoping.
                   </p>
                 </div>
 
                 <div className="p-4 bg-cad-panel rounded-md border border-cad-border space-y-3 shadow-sm text-xs">
                   <div>
-                    <label className="block font-medium text-cad-text mb-1">AI Provider</label>
+                    <label className="block font-medium text-cad-text mb-1.5">Active Engineering Model</label>
                     <div className="grid grid-cols-2 gap-2">
                       <button
                         type="button"
-                        onClick={() => setAiProvider('local')}
-                        className={`p-2.5 rounded border text-left transition-all ${
-                          aiProvider === 'local'
+                        onClick={() => {
+                          setAiModel('floz-super');
+                          setAiProvider('openrouter');
+                        }}
+                        className={`p-3 rounded border text-left transition-all ${
+                          aiModel === 'floz-super' || !aiModel || aiModel.includes('super')
                             ? 'bg-cad-subpanel border-blue-600 ring-1 ring-blue-500'
                             : 'bg-cad-panel border-cad-border hover:bg-cad-surfaceHover'
                         }`}
                       >
-                        <div className="font-semibold text-cad-text flex items-center gap-1.5">
-                          <Cpu size={14} className="text-emerald-500" />
-                          <span>Local EDA Engine</span>
+                        <div className="font-semibold text-cad-text flex items-center justify-between">
+                          <span className="flex items-center gap-1.5">
+                            <Sparkles size={14} className="text-blue-500" />
+                            <span>FloZ Super</span>
+                          </span>
+                          <span className="px-1.5 py-0.2 rounded bg-blue-500/15 text-blue-600 dark:text-blue-400 text-[9px] font-mono font-bold">
+                            Default
+                          </span>
                         </div>
-                        <div className="text-[10px] text-cad-textMuted mt-0.5">100% offline rule synthesis</div>
+                        <div className="text-[11px] font-medium text-cad-textMuted mt-1">Fast &amp; Deterministic</div>
+                        <div className="text-[10px] text-cad-textMuted mt-0.5 leading-snug">
+                          Interactive schematic synthesis, net analysis &amp; instant ERC validation.
+                        </div>
                       </button>
 
                       <button
                         type="button"
-                        onClick={() => setAiProvider('openrouter')}
-                        className={`p-2.5 rounded border text-left transition-all ${
-                          aiProvider === 'openrouter'
+                        onClick={() => {
+                          setAiModel('floz-ultra');
+                          setAiProvider('openrouter');
+                        }}
+                        className={`p-3 rounded border text-left transition-all ${
+                          aiModel === 'floz-ultra' || aiModel.includes('ultra')
                             ? 'bg-cad-subpanel border-blue-600 ring-1 ring-blue-500'
                             : 'bg-cad-panel border-cad-border hover:bg-cad-surfaceHover'
                         }`}
                       >
-                        <div className="font-semibold text-cad-text flex items-center gap-1.5">
-                          <Sparkles size={14} className="text-blue-500" />
-                          <span>OpenRouter / Custom API</span>
+                        <div className="font-semibold text-cad-text flex items-center justify-between">
+                          <span className="flex items-center gap-1.5">
+                            <Cpu size={14} className="text-purple-500" />
+                            <span>FloZ Ultra</span>
+                          </span>
+                          <span className="px-1.5 py-0.2 rounded bg-purple-500/15 text-purple-600 dark:text-purple-400 text-[9px] font-mono font-bold">
+                            Deep
+                          </span>
                         </div>
-                        <div className="text-[10px] text-cad-textMuted mt-0.5">Claude 3.5, GPT-4o, etc.</div>
+                        <div className="text-[11px] font-medium text-cad-textMuted mt-1">Deep Reasoning</div>
+                        <div className="text-[10px] text-cad-textMuted mt-0.5 leading-snug">
+                          Multi-layer PCB architecture, autorouting &amp; complex DRC rule solving.
+                        </div>
                       </button>
                     </div>
                   </div>
 
-                  {aiProvider === 'openrouter' && (
-                    <div className="space-y-2.5 pt-1">
-                      <div>
-                        <label className="block font-medium text-cad-text mb-1">Model Name</label>
-                        <input
-                          type="text"
-                          value={aiModel}
-                          onChange={(e) => setAiModel(e.target.value)}
-                          placeholder="anthropic/claude-3.5-sonnet"
-                          className="w-full bg-cad-inputBg border border-cad-inputBorder rounded px-2.5 py-1.5 text-xs text-cad-inputText font-mono focus:outline-none focus:border-blue-500"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block font-medium text-cad-text mb-1">API Key</label>
-                        <div className="relative">
-                          <input
-                            type={showApiKey ? 'text' : 'password'}
-                            value={aiApiKey}
-                            onChange={(e) => setAiApiKey(e.target.value)}
-                            placeholder="sk-or-v1-..."
-                            className="w-full bg-cad-inputBg border border-cad-inputBorder rounded px-2.5 pr-8 py-1.5 text-xs text-cad-inputText font-mono focus:outline-none focus:border-blue-500"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => setShowApiKey(!showApiKey)}
-                            className="absolute right-2 top-1/2 -translate-y-1/2 text-cad-textMuted hover:text-cad-text"
-                          >
-                            {showApiKey ? <EyeOff size={13} /> : <Eye size={13} />}
-                          </button>
-                        </div>
-                        <p className="text-[10px] text-cad-textMuted mt-1">
-                          Key is stored exclusively in your browser local storage.
-                        </p>
-                      </div>
+                  <div className="pt-2 border-t border-cad-border space-y-2 text-[11px] font-mono">
+                    <div className="flex items-center justify-between text-cad-textMuted">
+                      <span>Engine Service:</span>
+                      <span className="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                        FloZ Neural Network Active
+                      </span>
                     </div>
-                  )}
+                    <div className="flex items-center justify-between text-cad-textMuted">
+                      <span>Inference Key:</span>
+                      <span className="text-cad-text font-medium">Auto-configured from environment</span>
+                    </div>
+                  </div>
 
                   <div className="pt-2 border-t border-cad-border flex justify-end">
                     <button

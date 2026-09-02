@@ -46,16 +46,16 @@ export const SymbolChooser: React.FC<Props> = ({ isOpen, onClose, onSelectSymbol
       role="dialog"
       aria-labelledby="symbol-chooser-title"
       aria-modal="true"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 dark:bg-black/70 select-none p-3"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-theme-modalBackdrop select-none p-3"
     >
-      <div className="bg-cad-panel border border-cad-border w-[940px] max-w-full h-[640px] max-h-full rounded-lg shadow-2xl flex flex-col overflow-hidden text-cad-text animate-in fade-in zoom-in-95 duration-100">
+      <div className="bg-cad-panel border border-cad-border w-[940px] max-w-full h-[640px] max-h-full rounded-sm shadow-xl flex flex-col overflow-hidden text-cad-text animate-in fade-in zoom-in-95 duration-100">
         {/* Header */}
-        <div className="h-11 bg-cad-header border-b border-cad-border px-4 flex items-center justify-between">
+        <div className="h-9 bg-cad-header border-b border-cad-border px-3 flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <Cpu size={16} className="text-blue-600 dark:text-blue-400" />
+            <Cpu size={15} className="text-blue-600 dark:text-blue-400" />
             <h2 id="symbol-chooser-title" className="text-xs sm:text-sm font-semibold text-cad-textHeading flex items-center gap-2">
               <span>Choose Component Symbol</span>
-              <span className="text-[10px] font-mono font-medium px-1.5 py-0.2 bg-blue-500/15 text-blue-600 dark:text-blue-400 rounded border border-blue-500/30">
+              <span className="text-[10px] font-mono font-medium px-1.5 py-0.2 bg-blue-500/15 text-blue-600 dark:text-blue-400 rounded-xs border border-blue-500/30">
                 {filteredSymbols.length} Found
               </span>
             </h2>
@@ -63,22 +63,22 @@ export const SymbolChooser: React.FC<Props> = ({ isOpen, onClose, onSelectSymbol
           <button
             onClick={onClose}
             aria-label="Close"
-            className="p-1 hover:bg-cad-surfaceHover rounded text-cad-textMuted hover:text-cad-text transition-colors focus-visible:outline-none"
+            className="p-1 hover:bg-cad-surfaceHover rounded-xs text-cad-textMuted hover:text-cad-text transition-colors duration-fast focus-visible:outline-none"
           >
             <X size={15} />
           </button>
         </div>
 
         {/* Search & Filter Bar */}
-        <div className="p-2.5 bg-cad-subpanel border-b border-cad-border flex items-center gap-2.5">
+        <div className="p-2 bg-cad-subpanel border-b border-cad-border flex items-center gap-2">
           <div className="relative flex-1">
-            <Search size={14} className="absolute left-2.5 top-2 text-cad-textMuted" />
+            <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-cad-textMuted" />
             <input
               type="text"
               placeholder="Search symbols by name (e.g. 4010, NE555, STM32, OpAmp, Resistor)..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-cad-inputBg border border-cad-inputBorder rounded pl-8 pr-3 py-1 text-xs text-cad-inputText font-mono focus:outline-none focus:border-blue-500"
+              className="w-full bg-cad-inputBg border border-cad-inputBorder rounded-xs pl-7 pr-3 py-0.5 text-xs text-cad-inputText font-mono focus:outline-none focus:border-blue-500"
             />
           </div>
           <div className="flex items-center gap-1 overflow-x-auto max-w-[400px]">
@@ -86,10 +86,10 @@ export const SymbolChooser: React.FC<Props> = ({ isOpen, onClose, onSelectSymbol
               <button
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}
-                className={`px-2 py-0.5 rounded text-xs whitespace-nowrap transition-colors font-medium ${
+                className={`px-2 py-0.5 rounded-xs text-xs font-mono whitespace-nowrap transition-colors duration-fast font-medium border ${
                   selectedCategory === cat
-                    ? 'bg-blue-600 text-white font-semibold shadow-sm'
-                    : 'bg-cad-panel hover:bg-cad-surfaceHover text-cad-text border border-cad-border'
+                    ? 'bg-blue-600 text-white border-blue-600 font-semibold shadow-xs'
+                    : 'bg-cad-panel hover:bg-cad-surfaceHover text-cad-text border-cad-border'
                 }`}
               >
                 {cat}
@@ -271,10 +271,10 @@ export const SymbolChooser: React.FC<Props> = ({ isOpen, onClose, onSelectSymbol
         </div>
 
         {/* Footer */}
-        <div className="h-11 bg-cad-header border-t border-cad-border px-4 flex items-center justify-end space-x-2">
+        <div className="h-9 bg-cad-header border-t border-cad-border px-3 flex items-center justify-end space-x-2">
           <button
             onClick={onClose}
-            className="px-3 py-1.5 bg-cad-subpanel hover:bg-cad-surfaceHover text-xs rounded text-cad-text border border-cad-border font-medium transition-colors"
+            className="px-3 py-1 bg-cad-subpanel hover:bg-cad-surfaceHover text-xs rounded-xs text-cad-text border border-cad-border font-medium transition-colors duration-fast"
           >
             Cancel
           </button>
@@ -286,7 +286,7 @@ export const SymbolChooser: React.FC<Props> = ({ isOpen, onClose, onSelectSymbol
                 onClose();
               }
             }}
-            className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-xs font-medium text-white rounded shadow-sm transition-colors focus-visible:outline-none"
+            className="px-3.5 py-1 bg-blue-600 hover:bg-blue-500 text-xs font-medium text-white rounded-xs shadow-xs transition-colors duration-fast focus-visible:outline-none"
           >
             {selectedSymbol?.units && selectedSymbol.units.length > 1 && typeof selectedUnitIndex === 'number'
               ? `Place Unit ${selectedSymbol.units[selectedUnitIndex]?.name || selectedUnitIndex + 1}`

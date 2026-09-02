@@ -7,6 +7,62 @@ import { ApexProject, Point2D } from '../core/types';
 
 export type AIProviderType = 'openrouter' | 'ollama' | 'custom' | 'local';
 
+export type FloZModelId = 'floz-super' | 'floz-ultra';
+
+export interface FloZModelDefinition {
+  id: FloZModelId;
+  name: string;
+  backendModel: string;
+  badge: string;
+  tagline: string;
+  description: string;
+}
+
+export const FLOZ_AI_MODELS: FloZModelDefinition[] = [
+  {
+    id: 'floz-super',
+    name: 'FloZ Super',
+    backendModel: 'nvidia/nemotron-3-super-120b-a12b:free',
+    badge: 'Super',
+    tagline: 'Fast & Deterministic',
+    description: 'Interactive circuit synthesis, net analysis & instant ERC validation',
+  },
+  {
+    id: 'floz-ultra',
+    name: 'FloZ Ultra',
+    backendModel: 'nvidia/nemtron-4-340b-instruct',
+    badge: 'Ultra',
+    tagline: 'Deep Reasoning',
+    description: 'Complex multi-sheet EDA architecture, autorouting & deep DRC solving',
+  },
+];
+
+export function getFloZAIKey(): string {
+  try {
+    if (typeof import.meta !== 'undefined' && import.meta.env) {
+      if (import.meta.env.VITE_OPENROUTER_API_KEY) return import.meta.env.VITE_OPENROUTER_API_KEY;
+      if (import.meta.env.VITE_FLOZ_AI_API_KEY) return import.meta.env.VITE_FLOZ_AI_API_KEY;
+      if (import.meta.env.VITE_AI_API_KEY) return import.meta.env.VITE_AI_API_KEY;
+      if (import.meta.env.OPENROUTER_API_KEY) return import.meta.env.OPENROUTER_API_KEY;
+    }
+  } catch {}
+
+  try {
+    if (typeof process !== 'undefined' && process.env) {
+      if (process.env.OPENROUTER_API_KEY) return process.env.OPENROUTER_API_KEY;
+      if (process.env.VITE_OPENROUTER_API_KEY) return process.env.VITE_OPENROUTER_API_KEY;
+      if (process.env.FLOZ_AI_API_KEY) return process.env.FLOZ_AI_API_KEY;
+    }
+  } catch {}
+
+  try {
+    const saved = localStorage.getItem('floz_ai_api_key');
+    if (saved && saved.trim()) return saved.trim();
+  } catch {}
+
+  return '';
+}
+
 export type ToolPermission = 'READ' | 'ANALYZE' | 'VISUALIZE' | 'MUTATE' | 'DESTRUCTIVE';
 
 export type ContextLevel = 'minimal' | 'schematic' | 'pcb' | 'diagnostic' | 'full';
@@ -28,9 +84,9 @@ export interface AISettings {
 }
 
 export const DEFAULT_AI_SETTINGS: AISettings = {
-  provider: 'local',
+  provider: 'openrouter',
   apiKey: '',
-  model: 'openrouter/free',
+  model: 'floz-super',
   baseUrl: 'https://openrouter.ai/api/v1',
   temperature: 0.15, // Low temperature preferred for deterministic engineering
   contextLevel: 'full',

@@ -175,13 +175,13 @@ export const BoardSetupModal: React.FC<Props> = ({ project, isOpen, onClose, onS
       role="dialog"
       aria-labelledby="board-setup-title"
       aria-modal="true"
-      className="fixed inset-0 z-50 bg-black/50 dark:bg-black/70 flex items-center justify-center p-4 select-none"
+      className="fixed inset-0 z-50 bg-theme-modalBackdrop flex items-center justify-center p-4 select-none"
     >
-      <div className="bg-cad-panel border border-cad-border rounded-lg shadow-2xl w-full max-w-4xl max-h-[85vh] flex flex-col overflow-hidden text-cad-text animate-in fade-in zoom-in-95 duration-100">
+      <div className="bg-cad-panel border border-cad-border rounded-sm shadow-xl w-full max-w-4xl max-h-[85vh] flex flex-col overflow-hidden text-cad-text animate-in fade-in zoom-in-95 duration-100">
         {/* Modal Header */}
-        <div className="h-11 bg-cad-header border-b border-cad-border px-4 flex items-center justify-between shrink-0">
+        <div className="h-9 bg-cad-header border-b border-cad-border px-3.5 flex items-center justify-between shrink-0">
           <div className="flex items-center space-x-2">
-            <Settings size={16} className="text-blue-600 dark:text-blue-400" />
+            <Settings size={15} className="text-blue-600 dark:text-blue-400" />
             <h2 id="board-setup-title" className="font-semibold text-xs sm:text-sm text-cad-textHeading">
               Board Setup &amp; Fabrication Constraints
             </h2>
@@ -189,17 +189,17 @@ export const BoardSetupModal: React.FC<Props> = ({ project, isOpen, onClose, onS
           <button
             onClick={onClose}
             aria-label="Close"
-            className="p-1 hover:bg-cad-surfaceHover rounded text-cad-textMuted hover:text-cad-text transition-colors focus-visible:outline-none"
+            className="p-1 hover:bg-cad-surfaceHover rounded-xs text-cad-textMuted hover:text-cad-text transition-colors duration-fast focus-visible:outline-none"
           >
             <X size={15} />
           </button>
         </div>
 
         {/* Modal Navigation Tabs */}
-        <div className="flex border-b border-cad-border bg-cad-subpanel px-4 text-xs font-medium shrink-0">
+        <div className="flex border-b border-cad-border bg-cad-subpanel px-3 text-xs font-medium shrink-0">
           <button
             onClick={() => setActiveTab('stackup')}
-            className={`py-2 px-3 border-b-2 flex items-center gap-1.5 transition-colors ${
+            className={`py-1.5 px-2.5 border-b-2 flex items-center gap-1.5 transition-colors duration-fast ${
               activeTab === 'stackup'
                 ? 'border-blue-600 text-blue-600 dark:text-blue-400 font-semibold'
                 : 'border-transparent text-cad-textMuted hover:text-cad-text'
@@ -210,7 +210,7 @@ export const BoardSetupModal: React.FC<Props> = ({ project, isOpen, onClose, onS
 
           <button
             onClick={() => setActiveTab('finish')}
-            className={`py-2 px-3 border-b-2 flex items-center gap-1.5 transition-colors ${
+            className={`py-1.5 px-2.5 border-b-2 flex items-center gap-1.5 transition-colors duration-fast ${
               activeTab === 'finish'
                 ? 'border-blue-600 text-blue-600 dark:text-blue-400 font-semibold'
                 : 'border-transparent text-cad-textMuted hover:text-cad-text'
@@ -605,20 +605,20 @@ export const BoardSetupModal: React.FC<Props> = ({ project, isOpen, onClose, onS
         </div>
 
         {/* Modal Footer */}
-        <div className="h-14 bg-cad-header border-t border-cad-border px-5 flex items-center justify-between shrink-0">
-          <span className="text-[11px] text-cad-textMuted font-mono">Changes take effect immediately on PCB & 3D viewers</span>
-          <div className="flex items-center space-x-2">
+        <div className="h-9 bg-cad-header border-t border-cad-border px-3.5 flex items-center justify-between shrink-0">
+          <span className="text-[11px] text-cad-textMuted font-mono">Changes take effect immediately on PCB &amp; 3D viewers</span>
+          <div className="flex items-center space-x-1.5">
             <button
               onClick={onClose}
-              className="px-4 py-1.5 bg-cad-subpanel hover:bg-cad-border rounded-lg text-xs font-semibold text-cad-text border border-cad-border"
+              className="px-2.5 py-1 bg-cad-subpanel hover:bg-cad-surfaceHover rounded-xs text-xs font-medium text-cad-text border border-cad-border transition-colors duration-fast"
             >
               Cancel
             </button>
             <button
               onClick={handleApply}
-              className="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-md"
+              className="px-3 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded-xs text-xs font-medium flex items-center gap-1.5 shadow-xs transition-colors duration-fast"
             >
-              <Check size={14} /> Apply Settings
+              <Check size={13} /> Apply Settings
             </button>
           </div>
         </div>

@@ -49,23 +49,23 @@ export const Calculators: React.FC = () => {
   const timerResult = PCBCalculators.calculate555Astable(r1Val, r2Val, cValUf * 1e-6);
 
   return (
-    <div className="relative w-full h-full flex flex-col bg-cad-bg select-none p-6 overflow-y-auto">
-      <div className="max-w-4xl mx-auto w-full space-y-6">
+    <div className="relative w-full h-full flex flex-col bg-cad-bg select-none p-4 overflow-y-auto">
+      <div className="max-w-4xl mx-auto w-full space-y-4">
         {/* Header */}
-        <div className="flex items-center space-x-3">
-          <div className="p-2 bg-blue-600/20 text-blue-400 rounded-lg border border-blue-500/30">
-            <Calculator size={24} />
+        <div className="flex items-center space-x-2.5">
+          <div className="p-1.5 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-xs border border-blue-500/20">
+            <Calculator size={20} />
           </div>
           <div>
-            <h1 className="text-lg font-bold text-white">PCB Engineering Calculators</h1>
-            <p className="text-xs text-cad-textMuted">
+            <h1 className="text-sm sm:text-base font-semibold text-cad-textHeading">PCB Engineering Calculators</h1>
+            <p className="text-[11px] text-cad-textMuted">
               Validated engineering formulas for IPC track sizing, transmission lines, and RF circuits.
             </p>
           </div>
         </div>
 
         {/* Tab Switcher */}
-        <div className="flex items-center space-x-2 border-b border-cad-border pb-2">
+        <div className="flex items-center space-x-1.5 border-b border-cad-border pb-1.5">
           {[
             { id: 'track', label: 'IPC-2152 Track Width', icon: Zap },
             { id: 'impedance', label: 'Microstrip Impedance', icon: Activity },
@@ -78,13 +78,13 @@ export const Calculators: React.FC = () => {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-2 transition-all ${
+                className={`px-2.5 py-1 rounded-xs text-xs font-medium flex items-center gap-1.5 transition-colors duration-fast ${
                   isActive
-                    ? 'bg-blue-600 text-white shadow-sm'
-                    : 'bg-cad-panel text-cad-textMuted hover:text-white hover:bg-cad-subpanel border border-cad-border'
+                    ? 'bg-blue-600 text-white font-semibold shadow-xs'
+                    : 'bg-cad-panel text-cad-text hover:bg-cad-surfaceHover border border-cad-border'
                 }`}
               >
-                <Icon size={14} />
+                <Icon size={13} />
                 {tab.label}
               </button>
             );
@@ -93,10 +93,10 @@ export const Calculators: React.FC = () => {
 
         {/* Tab 1: IPC-2152 Track Width */}
         {activeTab === 'track' && (
-          <div className="grid grid-cols-2 gap-6 bg-cad-panel border border-cad-border p-5 rounded-lg">
+          <div className="grid grid-cols-2 gap-4 bg-cad-panel border border-cad-border p-4 rounded-xs">
             {/* Inputs */}
-            <div className="space-y-4">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-cad-textMuted font-mono">
+            <div className="space-y-3">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-cad-textMuted font-mono">
                 Parameters
               </h3>
 
@@ -107,7 +107,7 @@ export const Calculators: React.FC = () => {
                   step="0.1"
                   value={currentAmps}
                   onChange={(e) => setCurrentAmps(Math.max(0.01, parseFloat(e.target.value) || 0))}
-                  className="w-full bg-cad-bg border border-cad-border rounded px-3 py-1.5 text-xs text-cad-inputText font-mono"
+                  className="w-full bg-cad-inputBg border border-cad-inputBorder rounded-xs px-2.5 py-1 text-xs text-cad-inputText font-mono focus:border-blue-500"
                 />
               </div>
 
@@ -117,25 +117,25 @@ export const Calculators: React.FC = () => {
                   type="number"
                   value={tempRiseC}
                   onChange={(e) => setTempRiseC(Math.max(1, parseFloat(e.target.value) || 10))}
-                  className="w-full bg-cad-bg border border-cad-border rounded px-3 py-1.5 text-xs text-cad-inputText font-mono"
+                  className="w-full bg-cad-inputBg border border-cad-inputBorder rounded-xs px-2.5 py-1 text-xs text-cad-inputText font-mono focus:border-blue-500"
                 />
               </div>
 
               <div>
                 <label className="text-xs text-cad-text block mb-1">Copper Thickness</label>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-2 gap-1.5">
                   <button
                     onClick={() => setCopperOz(1)}
-                    className={`py-1.5 text-xs rounded font-mono border ${
-                      copperOz === 1 ? 'bg-blue-600/30 border-blue-500 text-cad-textHeading' : 'bg-cad-bg border-cad-border text-cad-text'
+                    className={`py-1 text-xs rounded-xs font-mono border transition-colors duration-fast ${
+                      copperOz === 1 ? 'bg-blue-600 text-white border-blue-600 font-semibold shadow-xs' : 'bg-cad-subpanel border-cad-border text-cad-text hover:bg-cad-surfaceHover'
                     }`}
                   >
                     1 oz (35 µm)
                   </button>
                   <button
                     onClick={() => setCopperOz(2)}
-                    className={`py-1.5 text-xs rounded font-mono border ${
-                      copperOz === 2 ? 'bg-blue-600/30 border-blue-500 text-cad-textHeading' : 'bg-cad-bg border-cad-border text-cad-text'
+                    className={`py-1 text-xs rounded-xs font-mono border transition-colors duration-fast ${
+                      copperOz === 2 ? 'bg-blue-600 text-white border-blue-600 font-semibold shadow-xs' : 'bg-cad-subpanel border-cad-border text-cad-text hover:bg-cad-surfaceHover'
                     }`}
                   >
                     2 oz (70 µm)
@@ -145,19 +145,19 @@ export const Calculators: React.FC = () => {
 
               <div>
                 <label className="text-xs text-cad-text block mb-1">Layer Type</label>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-2 gap-1.5">
                   <button
                     onClick={() => setIsExternal(true)}
-                    className={`py-1.5 text-xs rounded font-mono border ${
-                      isExternal ? 'bg-blue-600/30 border-blue-500 text-cad-textHeading' : 'bg-cad-bg border-cad-border text-cad-text'
+                    className={`py-1 text-xs rounded-xs font-mono border transition-colors duration-fast ${
+                      isExternal ? 'bg-blue-600/20 border-blue-500 text-cad-textHeading font-semibold' : 'bg-cad-bg border-cad-border text-cad-text'
                     }`}
                   >
                     External Layer
                   </button>
                   <button
                     onClick={() => setIsExternal(false)}
-                    className={`py-1.5 text-xs rounded font-mono border ${
-                      !isExternal ? 'bg-blue-600/30 border-blue-500 text-cad-textHeading' : 'bg-cad-bg border-cad-border text-cad-text'
+                    className={`py-1 text-xs rounded-xs font-mono border transition-colors duration-fast ${
+                      !isExternal ? 'bg-blue-600/20 border-blue-500 text-cad-textHeading font-semibold' : 'bg-cad-bg border-cad-border text-cad-text'
                     }`}
                   >
                     Internal Layer
@@ -167,37 +167,37 @@ export const Calculators: React.FC = () => {
             </div>
 
             {/* Results */}
-            <div className="bg-cad-bg/50 border border-cad-border p-4 rounded-lg flex flex-col justify-between">
+            <div className="bg-cad-subpanel border border-cad-border p-3.5 rounded-xs flex flex-col justify-between">
               <div>
-                <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400 font-mono mb-3">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 font-mono mb-2.5">
                   Calculated Results (IPC-2152)
                 </h3>
 
-                <div className="space-y-3 font-mono">
-                  <div className="bg-cad-panel p-3 rounded border border-cad-border flex justify-between items-center">
+                <div className="space-y-2 font-mono">
+                  <div className="bg-cad-panel p-2.5 rounded-xs border border-cad-border flex justify-between items-center">
                     <span className="text-xs text-cad-text">Minimum Track Width:</span>
-                    <span className="text-base font-bold text-cad-textHeading">
+                    <span className="text-sm font-bold text-cad-textHeading">
                       {trackResult.widthMm} mm ({trackResult.widthMils} mil)
                     </span>
                   </div>
 
-                  <div className="bg-cad-panel p-3 rounded border border-cad-border flex justify-between items-center">
+                  <div className="bg-cad-panel p-2.5 rounded-xs border border-cad-border flex justify-between items-center">
                     <span className="text-xs text-cad-text">Resistance per Meter:</span>
-                    <span className="text-xs font-bold text-blue-400">
+                    <span className="text-xs font-bold text-blue-500 dark:text-blue-400">
                       {trackResult.resistanceOhmsPerM} Ω/m
                     </span>
                   </div>
 
-                  <div className="bg-cad-panel p-3 rounded border border-cad-border flex justify-between items-center">
+                  <div className="bg-cad-panel p-2.5 rounded-xs border border-cad-border flex justify-between items-center">
                     <span className="text-xs text-cad-text">Voltage Drop per Meter:</span>
-                    <span className="text-xs font-bold text-amber-400">
+                    <span className="text-xs font-bold text-amber-500 dark:text-amber-400">
                       {trackResult.voltageDropPerM} V/m
                     </span>
                   </div>
 
-                  <div className="bg-cad-panel p-3 rounded border border-cad-border flex justify-between items-center">
+                  <div className="bg-cad-panel p-2.5 rounded-xs border border-cad-border flex justify-between items-center">
                     <span className="text-xs text-cad-text">Power Loss:</span>
-                    <span className="text-xs font-bold text-emerald-400">
+                    <span className="text-xs font-bold text-emerald-500 dark:text-emerald-400">
                       {trackResult.powerLossWattsPerM} W/m
                     </span>
                   </div>
@@ -209,9 +209,9 @@ export const Calculators: React.FC = () => {
 
         {/* Tab 2: Microstrip Impedance */}
         {activeTab === 'impedance' && (
-          <div className="grid grid-cols-2 gap-6 bg-cad-panel border border-cad-border p-5 rounded-lg">
+          <div className="grid grid-cols-2 gap-6 bg-cad-panel border border-cad-border p-5 rounded">
             <div className="space-y-4">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-cad-textMuted font-mono">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-cad-textMuted font-mono">
                 Microstrip Geometry
               </h3>
 
@@ -222,7 +222,7 @@ export const Calculators: React.FC = () => {
                   step="0.05"
                   value={traceWidthMm}
                   onChange={(e) => setTraceWidthMm(parseFloat(e.target.value) || 0.1)}
-                  className="w-full bg-cad-bg border border-cad-border rounded px-3 py-1.5 text-xs text-cad-inputText font-mono"
+                  className="w-full bg-cad-inputBg border border-cad-inputBorder rounded px-3 py-1.5 text-xs text-cad-inputText font-mono focus:border-blue-500"
                 />
               </div>
 
@@ -233,7 +233,7 @@ export const Calculators: React.FC = () => {
                   step="0.05"
                   value={heightMm}
                   onChange={(e) => setHeightMm(parseFloat(e.target.value) || 0.1)}
-                  className="w-full bg-cad-bg border border-cad-border rounded px-3 py-1.5 text-xs text-cad-inputText font-mono"
+                  className="w-full bg-cad-inputBg border border-cad-inputBorder rounded px-3 py-1.5 text-xs text-cad-inputText font-mono focus:border-blue-500"
                 />
               </div>
 
@@ -244,19 +244,19 @@ export const Calculators: React.FC = () => {
                   step="0.1"
                   value={erVal}
                   onChange={(e) => setErVal(parseFloat(e.target.value) || 4.5)}
-                  className="w-full bg-cad-bg border border-cad-border rounded px-3 py-1.5 text-xs text-cad-inputText font-mono"
+                  className="w-full bg-cad-inputBg border border-cad-inputBorder rounded px-3 py-1.5 text-xs text-cad-inputText font-mono focus:border-blue-500"
                 />
               </div>
             </div>
 
-            <div className="bg-cad-bg/50 border border-cad-border p-4 rounded-lg space-y-3 font-mono">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400 mb-3">
+            <div className="bg-cad-subpanel border border-cad-border p-4 rounded space-y-3 font-mono">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 mb-3">
                 Transmission Line Characteristics
               </h3>
 
               <div className="bg-cad-panel p-3 rounded border border-cad-border flex justify-between items-center">
                 <span className="text-xs text-cad-text">Characteristic Impedance Z₀:</span>
-                <span className="text-lg font-bold text-blue-400">{impedanceResult.z0} Ω</span>
+                <span className="text-lg font-bold text-blue-600 dark:text-blue-400">{impedanceResult.z0} Ω</span>
               </div>
 
               <div className="bg-cad-panel p-3 rounded border border-cad-border flex justify-between items-center">
@@ -279,9 +279,9 @@ export const Calculators: React.FC = () => {
 
         {/* Tab 3: Attenuator */}
         {activeTab === 'attenuator' && (
-          <div className="grid grid-cols-2 gap-6 bg-cad-panel border border-cad-border p-5 rounded-lg">
+          <div className="grid grid-cols-2 gap-6 bg-cad-panel border border-cad-border p-5 rounded">
             <div className="space-y-4">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-cad-textMuted font-mono">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-cad-textMuted font-mono">
                 RF Attenuator Specification
               </h3>
 
@@ -292,7 +292,7 @@ export const Calculators: React.FC = () => {
                   step="0.5"
                   value={attenDb}
                   onChange={(e) => setAttenDb(parseFloat(e.target.value) || 1)}
-                  className="w-full bg-cad-bg border border-cad-border rounded px-3 py-1.5 text-xs text-cad-inputText font-mono"
+                  className="w-full bg-cad-inputBg border border-cad-inputBorder rounded px-3 py-1.5 text-xs text-cad-inputText font-mono focus:border-blue-500"
                 />
               </div>
 
@@ -302,13 +302,13 @@ export const Calculators: React.FC = () => {
                   type="number"
                   value={z0Val}
                   onChange={(e) => setZ0Val(parseFloat(e.target.value) || 50)}
-                  className="w-full bg-cad-bg border border-cad-border rounded px-3 py-1.5 text-xs text-cad-inputText font-mono"
+                  className="w-full bg-cad-inputBg border border-cad-inputBorder rounded px-3 py-1.5 text-xs text-cad-inputText font-mono focus:border-blue-500"
                 />
               </div>
             </div>
 
-            <div className="bg-cad-bg/50 border border-cad-border p-4 rounded-lg space-y-4 font-mono">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400">
+            <div className="bg-cad-subpanel border border-cad-border p-4 rounded space-y-4 font-mono">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
                 Calculated Resistor Values
               </h3>
 
@@ -329,9 +329,9 @@ export const Calculators: React.FC = () => {
 
         {/* Tab 4: 555 Timer */}
         {activeTab === '555' && (
-          <div className="grid grid-cols-2 gap-6 bg-cad-panel border border-cad-border p-5 rounded-lg">
+          <div className="grid grid-cols-2 gap-6 bg-cad-panel border border-cad-border p-5 rounded">
             <div className="space-y-4">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-cad-textMuted font-mono">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-cad-textMuted font-mono">
                 Astable Oscillator Components
               </h3>
 
@@ -341,7 +341,7 @@ export const Calculators: React.FC = () => {
                   type="number"
                   value={r1Val}
                   onChange={(e) => setR1Val(parseFloat(e.target.value) || 1000)}
-                  className="w-full bg-cad-bg border border-cad-border rounded px-3 py-1.5 text-xs text-cad-inputText font-mono"
+                  className="w-full bg-cad-inputBg border border-cad-inputBorder rounded px-3 py-1.5 text-xs text-cad-inputText font-mono focus:border-blue-500"
                 />
               </div>
 
@@ -351,7 +351,7 @@ export const Calculators: React.FC = () => {
                   type="number"
                   value={r2Val}
                   onChange={(e) => setR2Val(parseFloat(e.target.value) || 1000)}
-                  className="w-full bg-cad-bg border border-cad-border rounded px-3 py-1.5 text-xs text-cad-inputText font-mono"
+                  className="w-full bg-cad-inputBg border border-cad-inputBorder rounded px-3 py-1.5 text-xs text-cad-inputText font-mono focus:border-blue-500"
                 />
               </div>
 
@@ -362,24 +362,24 @@ export const Calculators: React.FC = () => {
                   step="0.01"
                   value={cValUf}
                   onChange={(e) => setCValUf(parseFloat(e.target.value) || 0.01)}
-                  className="w-full bg-cad-bg border border-cad-border rounded px-3 py-1.5 text-xs text-cad-inputText font-mono"
+                  className="w-full bg-cad-inputBg border border-cad-inputBorder rounded px-3 py-1.5 text-xs text-cad-inputText font-mono focus:border-blue-500"
                 />
               </div>
             </div>
 
-            <div className="bg-cad-bg/50 border border-cad-border p-4 rounded-lg space-y-3 font-mono">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400 mb-3">
+            <div className="bg-cad-subpanel border border-cad-border p-4 rounded space-y-3 font-mono">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 mb-3">
                 Oscillator Output
               </h3>
 
               <div className="bg-cad-panel p-3 rounded border border-cad-border flex justify-between items-center">
                 <span className="text-xs text-cad-text">Frequency:</span>
-                <span className="text-lg font-bold text-blue-400">{timerResult.frequencyHz} Hz</span>
+                <span className="text-lg font-bold text-blue-600 dark:text-blue-400">{timerResult.frequencyHz} Hz</span>
               </div>
 
               <div className="bg-cad-panel p-3 rounded border border-cad-border flex justify-between items-center">
                 <span className="text-xs text-cad-text">Duty Cycle:</span>
-                <span className="text-xs font-bold text-amber-400">{timerResult.dutyCyclePercent} %</span>
+                <span className="text-xs font-bold text-amber-600 dark:text-amber-400">{timerResult.dutyCyclePercent} %</span>
               </div>
 
               <div className="bg-cad-panel p-3 rounded border border-cad-border flex justify-between items-center">

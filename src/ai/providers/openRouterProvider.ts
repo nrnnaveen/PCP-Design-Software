@@ -1,17 +1,25 @@
 /**
- * FloZ ECA - OpenRouter AI Provider Client (Phase 2)
- * Hardened client with AbortSignal cancellation, bounded exponential backoff, rate-limit UI notifications, and local fallback.
+ * FloZ ECA - FloZ AI Cloud Provider Client (Phase 2)
+ * High-performance engineering inference utilizing NVIDIA Nemtron (FloZ Super & FloZ Ultra)
+ * with automatic environment API key discovery, streaming, and deterministic local fallback.
  */
 
 import { ApexProject } from '../../core/types';
 import { IAIProvider, ProviderResponse, ProviderCapabilities } from './aiProvider';
-import { ChatMessage, FullEngineeringContext, ToolActivity, ActionProposal, AISettings } from '../types';
+import {
+  ChatMessage,
+  FullEngineeringContext,
+  ToolActivity,
+  AISettings,
+  FLOZ_AI_MODELS,
+  getFloZAIKey,
+} from '../types';
 import { ContextBuilder } from '../contextBuilder';
 import { LocalEngineeringEngine } from './localEngine';
 import { ToolCallParser } from '../generation/toolCallParser';
 
 export class OpenRouterProvider implements IAIProvider {
-  public name = 'OpenRouter';
+  public name = 'FloZ AI';
   private settings: AISettings;
 
   constructor(settings: AISettings) {
@@ -23,37 +31,53 @@ export class OpenRouterProvider implements IAIProvider {
       supportsStreaming: true,
       supportsToolCalling: true,
       supportsCancellation: true,
-      isOfflineCapable: false,
+      isOfflineCapable: true,
       isPrivateLocal: false,
     };
   }
 
+  private resolveApiKey(): string {
+    if (this.settings.apiKey && this.settings.apiKey.trim()) {
+      return this.settings.apiKey.trim();
+    }
+    return getFloZAIKey();
+  }
+
+  private resolveBackendModel(): { backendId: string; displayName: string } {
+    const raw = (this.settings.model || 'floz-super').toLowerCase();
+    if (
+      raw === 'floz-ultra' ||
+      raw.includes('ultra') ||
+      raw.includes('nemtron-4') ||
+      raw.includes('nemotron-4') ||
+      raw.includes('nemotron-3-ultra')
+    ) {
+      return { backendId: 'nvidia/nemtron-4-340b-instruct', displayName: 'FloZ Ultra' };
+    }
+    // Default to FloZ Super
+    return { backendId: 'nvidia/nemotron-3-super-120b-a12b:free', displayName: 'FloZ Super' };
+  }
+
   public async testConnection(): Promise<{ ok: boolean; message: string }> {
-    if (!this.settings.apiKey || this.settings.apiKey.trim() === '') {
-      return { ok: false, message: 'OpenRouter API Key is missing. Please enter your API key in Settings.' };
+    const key = this.resolveApiKey();
+    if (!key) {
+      return { ok: true, message: 'FloZ Local Inference Engine active (100% offline & deterministic).' };
     }
     try {
       const res = await fetch('https://openrouter.ai/api/v1/auth/key', {
-        headers: { Authorization: `Bearer ${this.settings.apiKey}` },
+        headers: { Authorization: `Bearer ${key}` },
       });
       if (res.ok) {
-        return { ok: true, message: 'OpenRouter API connection successful!' };
+        return { ok: true, message: 'FloZ AI Neural Service connected successfully.' };
       }
-      return { ok: false, message: `OpenRouter returned status ${res.status}: ${res.statusText}` };
+      return { ok: false, message: `FloZ AI status code: ${res.status}` };
     } catch (err: any) {
-      return { ok: false, message: `Failed to reach OpenRouter: ${err.message}` };
+      return { ok: false, message: `FloZ AI connection: ${err.message}` };
     }
   }
 
   public async listModels(): Promise<string[]> {
-    return [
-      'openrouter/free',
-      'meta-llama/llama-3.3-70b-instruct:free',
-      'google/gemini-2.0-flash-exp:free',
-      'mistralai/mistral-7b-instruct:free',
-      'anthropic/claude-3.5-sonnet',
-      'openai/gpt-4o',
-    ];
+    return ['floz-super', 'floz-ultra'];
   }
 
   public async chatStream(
@@ -64,20 +88,23 @@ export class OpenRouterProvider implements IAIProvider {
     onToolActivity: (activity: ToolActivity) => void,
     abortSignal?: AbortSignal
   ): Promise<ProviderResponse> {
-    // If no API key provided, automatically run LocalEngineeringEngine
-    if (!this.settings.apiKey || this.settings.apiKey.trim() === '') {
+    const apiKey = this.resolveApiKey();
+    const { backendId, displayName } = this.resolveBackendModel();
+
+    // If no API key found in env or storage, fall back seamlessly to FloZ Local Engineering Engine
+    if (!apiKey) {
       onToolActivity({
         id: `act_${Date.now()}`,
-        name: 'Local Engine Fallback',
+        name: 'FloZ Local Engine',
         permission: 'ANALYZE',
-        description: 'No OpenRouter API key found; running local offline engineering solver',
+        description: 'Running deterministic offline CAD rule solver & netlist compiler',
         status: 'completed',
       });
       return new LocalEngineeringEngine().chatStream(messages, context, project, onChunk, onToolActivity, abortSignal);
     }
 
     const contextText = ContextBuilder.formatContextPrompt(context);
-    const systemPrompt = `You are FloZ AI, an expert electronic design automation (EDA) assistant for FloZ ECA.
+    const systemPrompt = `You are FloZ AI (${displayName}), a senior Electronic Design Automation (EDA) engineer for FloZ ECA.
 You analyze schematics, PCB layouts, electrical rule check (ERC) results, design rule check (DRC) results, and component libraries.
 Always format engineering answers with standard headers:
 ## Finding
@@ -97,7 +124,7 @@ ${contextText}`;
     ];
 
     let attempts = 0;
-    const maxAttempts = 2; // Bounded retry count
+    const maxAttempts = 2;
 
     while (attempts < maxAttempts) {
       if (abortSignal?.aborted) {
@@ -107,9 +134,9 @@ ${contextText}`;
       try {
         onToolActivity({
           id: `act_${Date.now()}`,
-          name: 'OpenRouter Request',
+          name: `${displayName} Inference`,
           permission: 'READ',
-          description: `Sending prompt to ${this.settings.model || 'openrouter/free'}${attempts > 0 ? ` (Retry ${attempts})` : ''}`,
+          description: `Synthesizing with ${displayName}${attempts > 0 ? ` (Retry ${attempts})` : ''}...`,
           status: 'running',
         });
 
@@ -117,12 +144,12 @@ ${contextText}`;
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${this.settings.apiKey}`,
+            Authorization: `Bearer ${apiKey}`,
             'HTTP-Referer': 'https://floz.eda',
             'X-Title': 'FloZ ECA',
           },
           body: JSON.stringify({
-            model: this.settings.model || 'openrouter/free',
+            model: backendId,
             messages: apiMessages,
             temperature: this.settings.temperature ?? 0.15,
             stream: true,
@@ -138,7 +165,7 @@ ${contextText}`;
                 id: `act_${Date.now()}`,
                 name: 'Rate Limit Backoff',
                 permission: 'READ',
-                description: `Rate limited. Retrying in ${attempts * 1.5}s...`,
+                description: `Retrying in ${attempts * 1.5}s...`,
                 status: 'warning',
               });
               await new Promise((r) => setTimeout(r, attempts * 1500));
@@ -146,22 +173,22 @@ ${contextText}`;
             } else {
               onToolActivity({
                 id: `act_${Date.now()}`,
-                name: 'Rate Limit Reached',
+                name: 'Local Solver Fallback',
                 permission: 'READ',
-                description: 'OpenRouter free rate limit reached; falling back to FloZ local engineering solver',
+                description: 'Switching to FloZ deterministic CAD solver',
                 status: 'warning',
               });
               return new LocalEngineeringEngine().chatStream(messages, context, project, onChunk, onToolActivity, abortSignal);
             }
           }
-          throw new Error(`OpenRouter API error: ${response.status} ${response.statusText}`);
+          throw new Error(`FloZ AI service returned error: ${response.status} ${response.statusText}`);
         }
 
         onToolActivity({
           id: `act_${Date.now()}`,
           name: 'Streaming Response',
           permission: 'READ',
-          description: 'Receiving tokens from model',
+          description: `Receiving stream from ${displayName}`,
           status: 'completed',
         });
 

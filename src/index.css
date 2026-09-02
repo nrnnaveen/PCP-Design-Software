@@ -3,83 +3,253 @@
 @tailwind utilities;
 
 /* ============================================================================
- * FloZ ECA — Microsoft Fluent Design System & Semantic Color Tokens
- * Precision engineered palettes for Fluent Dark & Fluent Light.
+ * FloZ ECA — Centralized Semantic Design Tokens & Theme Specification
+ * Precision-engineered Microsoft Fluent Design System tokens for Dark & Light themes.
  * ============================================================================ */
 
 :root,
 [data-theme="dark"],
 .dark {
-  /* Surfaces & Hierarchy (VS Code / Windows 11 Dark) */
-  --cad-bg: #1e1e1e;
-  --cad-panel: #252526;
-  --cad-subpanel: #2d2d2d;
-  --cad-header: #323233;
-  --cad-border: #3e3e42;
-  --cad-border-light: #4e4e52;
-  --cad-surface-hover: #37373d;
-  --cad-surface-active: #094771;
+  /* Application */
+  --theme-background: #1e1e1e;
+  --theme-foreground: #f3f3f3;
 
-  /* Typography & Contrast */
-  --cad-text: #cccccc;
-  --cad-text-muted: #858585;
-  --cad-text-heading: #ffffff;
+  /* Surfaces */
+  --theme-surface: #252526;
+  --theme-surface-secondary: #2d2d2d;
+  --theme-surface-tertiary: #333333;
+  --theme-surface-elevated: #2d2d30;
+  --theme-surface-hover: #333333;
+  --theme-surface-active: #3e3e42;
+
+  /* Borders */
+  --theme-border: #3f3f46;
+  --theme-border-subtle: #333337;
+  --theme-border-strong: #5a5a60;
+
+  /* Text */
+  --theme-text-primary: #f3f3f3;
+  --theme-text-secondary: #cccccc;
+  --theme-text-tertiary: #a6a6a6;
+  --theme-text-disabled: #6f6f73;
+  --theme-text-inverse: #1e1e1e;
 
   /* Brand / Accent */
-  --cad-accent: #0078d4;
-  --cad-accent-hover: #106ebe;
-  --cad-active: #0078d4;
-  --cad-focus-ring: #0078d4;
+  --theme-accent: #4cc2ff;
+  --theme-accent-hover: #75cfff;
+  --theme-accent-active: #a5e3ff;
+  --theme-accent-subtle: #19384a;
+  --theme-accent-foreground: #0f1a20;
 
-  /* Semantic Feedback */
-  --cad-danger: #f87171;
-  --cad-warning: #fbbf24;
-  --cad-success: #34d399;
+  /* Focus */
+  --theme-focus-ring: #75cfff;
 
-  /* CAD Canvas & Inputs */
-  --cad-grid: #2d2d30;
-  --cad-canvas-bg: #1e1e1e;
+  /* States */
+  --theme-success: #6ccb5f;
+  --theme-success-subtle: #203b20;
+  --theme-success-foreground: #a8e8a0;
+
+  --theme-warning: #f5c242;
+  --theme-warning-subtle: #463a1a;
+  --theme-warning-foreground: #ffe69a;
+
+  --theme-error: #ff6b6b;
+  --theme-error-subtle: #4a2427;
+  --theme-error-foreground: #ffb3b3;
+
+  --theme-info: #4cc2ff;
+  --theme-info-subtle: #19384a;
+  --theme-info-foreground: #a5e3ff;
+
+  /* Component-Specific Semantic Tokens */
+  --theme-header-background: var(--theme-surface);
+  --theme-sidebar-background: var(--theme-surface-secondary);
+  --theme-toolbar-background: var(--theme-surface);
+  --theme-panel-background: var(--theme-surface);
+  --theme-input-background: var(--theme-surface-secondary);
+  --theme-input-border: var(--theme-border);
+  --theme-input-border-focus: var(--theme-focus-ring);
+  --theme-button-background: var(--theme-surface-secondary);
+  --theme-button-hover: var(--theme-surface-hover);
+  --theme-button-active: var(--theme-surface-active);
+  --theme-button-disabled: var(--theme-surface-tertiary);
+  --theme-selection-background: var(--theme-accent-subtle);
+  --theme-selection-foreground: var(--theme-text-primary);
+  --theme-tooltip-background: var(--theme-surface-elevated);
+  --theme-tooltip-foreground: var(--theme-text-primary);
+  --theme-modal-background: var(--theme-surface-elevated);
+  --theme-menu-background: var(--theme-surface-elevated);
+  --theme-menu-hover: var(--theme-surface-hover);
+  --theme-statusbar-background: var(--theme-surface-secondary);
+
+  /* Overlay Token */
+  --theme-modal-backdrop: rgb(0 0 0 / 0.55);
+
+  /* Engineering / Canvas Tokens */
+  --theme-canvas-background: #1e1e1e;
+  --theme-grid: #2d2d30;
+  --theme-grid-major: #3e3e42;
+  --theme-canvas-axis: #5a5a60;
+  --theme-selection: rgba(76, 194, 255, 0.25);
+  --theme-crosshair: #4cc2ff;
+  --theme-wire: #4cc2ff;
+  --theme-highlight: #f5c242;
+  --theme-hover-highlight: #75cfff;
+
+  /* Fabrication / Gerber Tokens */
+  --theme-gerber-background: #121212;
+  --theme-gerber-grid: #252526;
+  --theme-gerber-label: #f3f3f3;
+  --theme-gerber-marker: #cccccc;
+  --theme-gerber-boundary: #3f3f46;
+
+  /* Backward Compatibility Aliases */
+  --cad-bg: var(--theme-background);
+  --cad-panel: var(--theme-surface);
+  --cad-subpanel: var(--theme-surface-secondary);
+  --cad-header: var(--theme-header-background);
+  --cad-border: var(--theme-border);
+  --cad-border-light: var(--theme-border-subtle);
+  --cad-surface-hover: var(--theme-surface-hover);
+  --cad-surface-active: var(--theme-surface-active);
+  --cad-text: var(--theme-text-primary);
+  --cad-text-muted: var(--theme-text-secondary);
+  --cad-text-heading: var(--theme-foreground);
+  --cad-accent: var(--theme-accent);
+  --cad-accent-hover: var(--theme-accent-hover);
+  --cad-active: var(--theme-accent-active);
+  --cad-focus-ring: var(--theme-focus-ring);
+  --cad-danger: var(--theme-error);
+  --cad-warning: var(--theme-warning);
+  --cad-success: var(--theme-success);
+  --cad-grid: var(--theme-grid);
+  --cad-canvas-bg: var(--theme-canvas-background);
   --cad-silk-top: #f4f4f5;
-  --cad-input-bg: #3c3c3c;
-  --cad-input-border: #3e3e42;
-  --cad-input-text: #cccccc;
+  --cad-input-bg: var(--theme-input-background);
+  --cad-input-border: var(--theme-input-border);
+  --cad-input-text: var(--theme-text-primary);
 }
 
 [data-theme="light"],
 .light {
-  /* Surfaces & Hierarchy (Microsoft 365 / Windows 11 Light) */
-  --cad-bg: #f3f3f3;
-  --cad-panel: #ffffff;
-  --cad-subpanel: #f8f8f8;
-  --cad-header: #f3f3f3;
-  --cad-border: #e1e1e1;
-  --cad-border-light: #eaeaea;
-  --cad-surface-hover: #e8e8e8;
-  --cad-surface-active: #e2f0fb;
+  /* Application */
+  --theme-background: #f3f3f3;
+  --theme-foreground: #242424;
 
-  /* Typography & Contrast (WCAG AAA Compliant) */
-  --cad-text: #242424;
-  --cad-text-muted: #616161;
-  --cad-text-heading: #111111;
+  /* Surfaces */
+  --theme-surface: #ffffff;
+  --theme-surface-secondary: #fafafa;
+  --theme-surface-tertiary: #f5f5f5;
+  --theme-surface-elevated: #ffffff;
+  --theme-surface-hover: #f5f5f5;
+  --theme-surface-active: #ebebeb;
+
+  /* Borders */
+  --theme-border: #d6d6d6;
+  --theme-border-subtle: #e5e5e5;
+  --theme-border-strong: #b8b8b8;
+
+  /* Text */
+  --theme-text-primary: #242424;
+  --theme-text-secondary: #616161;
+  --theme-text-tertiary: #707070;
+  --theme-text-disabled: #a6a6a6;
+  --theme-text-inverse: #ffffff;
 
   /* Brand / Accent */
-  --cad-accent: #0078d4;
-  --cad-accent-hover: #005a9e;
-  --cad-active: #0078d4;
-  --cad-focus-ring: #0078d4;
+  --theme-accent: #0f6cbd;
+  --theme-accent-hover: #115ea3;
+  --theme-accent-active: #0c3b5e;
+  --theme-accent-subtle: #e8f3fc;
+  --theme-accent-foreground: #ffffff;
 
-  /* Semantic Feedback */
-  --cad-danger: #d13438;
-  --cad-warning: #797673;
-  --cad-success: #107c41;
+  /* Focus */
+  --theme-focus-ring: #0f6cbd;
 
-  /* CAD Canvas & Inputs */
-  --cad-grid: #e1e1e1;
-  --cad-canvas-bg: #ffffff;
-  --cad-silk-top: #242424;
-  --cad-input-bg: #ffffff;
-  --cad-input-border: #d1d1d1;
-  --cad-input-text: #242424;
+  /* States */
+  --theme-success: #107c10;
+  --theme-success-subtle: #e9f6e9;
+  --theme-success-foreground: #0b5a0b;
+
+  --theme-warning: #c77700;
+  --theme-warning-subtle: #fff4ce;
+  --theme-warning-foreground: #5f3700;
+
+  --theme-error: #c42b1c;
+  --theme-error-subtle: #fde7e9;
+  --theme-error-foreground: #a4262c;
+
+  --theme-info: #0f6cbd;
+  --theme-info-subtle: #e8f3fc;
+  --theme-info-foreground: #0f548c;
+
+  /* Component-Specific Semantic Tokens */
+  --theme-header-background: var(--theme-surface);
+  --theme-sidebar-background: var(--theme-surface-secondary);
+  --theme-toolbar-background: var(--theme-surface);
+  --theme-panel-background: var(--theme-surface);
+  --theme-input-background: var(--theme-surface);
+  --theme-input-border: var(--theme-border);
+  --theme-input-border-focus: var(--theme-focus-ring);
+  --theme-button-background: var(--theme-surface-secondary);
+  --theme-button-hover: var(--theme-surface-hover);
+  --theme-button-active: var(--theme-surface-active);
+  --theme-button-disabled: var(--theme-surface-tertiary);
+  --theme-selection-background: var(--theme-accent-subtle);
+  --theme-selection-foreground: var(--theme-text-primary);
+  --theme-tooltip-background: var(--theme-surface-elevated);
+  --theme-tooltip-foreground: var(--theme-text-primary);
+  --theme-modal-background: var(--theme-surface-elevated);
+  --theme-menu-background: var(--theme-surface-elevated);
+  --theme-menu-hover: var(--theme-surface-hover);
+  --theme-statusbar-background: var(--theme-surface-secondary);
+
+  /* Overlay Token */
+  --theme-modal-backdrop: rgb(0 0 0 / 0.32);
+
+  /* Engineering / Canvas Tokens */
+  --theme-canvas-background: #ffffff;
+  --theme-grid: #e5e5e5;
+  --theme-grid-major: #d6d6d6;
+  --theme-canvas-axis: #b8b8b8;
+  --theme-selection: rgba(15, 108, 189, 0.15);
+  --theme-crosshair: #0f6cbd;
+  --theme-wire: #0f6cbd;
+  --theme-highlight: #c77700;
+  --theme-hover-highlight: #115ea3;
+
+  /* Fabrication / Gerber Tokens */
+  --theme-gerber-background: #ffffff;
+  --theme-gerber-grid: #e5e5e5;
+  --theme-gerber-label: #242424;
+  --theme-gerber-marker: #616161;
+  --theme-gerber-boundary: #d6d6d6;
+
+  /* Backward Compatibility Aliases */
+  --cad-bg: var(--theme-background);
+  --cad-panel: var(--theme-surface);
+  --cad-subpanel: var(--theme-surface-secondary);
+  --cad-header: var(--theme-header-background);
+  --cad-border: var(--theme-border);
+  --cad-border-light: var(--theme-border-subtle);
+  --cad-surface-hover: var(--theme-surface-hover);
+  --cad-surface-active: var(--theme-surface-active);
+  --cad-text: var(--theme-text-primary);
+  --cad-text-muted: var(--theme-text-secondary);
+  --cad-text-heading: var(--theme-foreground);
+  --cad-accent: var(--theme-accent);
+  --cad-accent-hover: var(--theme-accent-hover);
+  --cad-active: var(--theme-accent-active);
+  --cad-focus-ring: var(--theme-focus-ring);
+  --cad-danger: var(--theme-error);
+  --cad-warning: var(--theme-warning);
+  --cad-success: var(--theme-success);
+  --cad-grid: var(--theme-grid);
+  --cad-canvas-bg: var(--theme-canvas-background);
+  --cad-silk-top: var(--theme-text-primary);
+  --cad-input-bg: var(--theme-input-background);
+  --cad-input-border: var(--theme-input-border);
+  --cad-input-text: var(--theme-text-primary);
 }
 
 /* ============================================================================
@@ -159,4 +329,44 @@ canvas {
 
 .cad-dropdown, .fluent-menu {
   animation: fluentFadeIn 0.08s ease-out;
+}
+
+/* ============================================================================
+ * Engineering Utility Components (KiCad / Altium / Linear Aesthetic)
+ * ============================================================================ */
+
+.eng-btn-primary {
+  @apply bg-blue-600 hover:bg-blue-500 text-white font-medium text-xs px-2.5 py-1 rounded-sm transition-colors duration-fast shadow-sm flex items-center gap-1.5 focus:outline-none focus:ring-1 focus:ring-blue-400;
+}
+
+.eng-btn-secondary {
+  @apply bg-cad-subpanel hover:bg-cad-surfaceHover text-cad-text border border-cad-border font-medium text-xs px-2.5 py-1 rounded-sm transition-colors duration-fast flex items-center gap-1.5 focus:outline-none;
+}
+
+.eng-btn-ghost {
+  @apply text-cad-text hover:bg-cad-surfaceHover font-medium text-xs p-1 rounded-sm transition-colors duration-fast flex items-center justify-center focus:outline-none;
+}
+
+.eng-btn-danger {
+  @apply bg-red-500/10 hover:bg-red-500/20 text-red-600 dark:text-red-400 border border-red-500/30 font-medium text-xs px-2.5 py-1 rounded-sm transition-colors duration-fast flex items-center gap-1.5 focus:outline-none;
+}
+
+.eng-input {
+  @apply bg-cad-inputBg border border-cad-inputBorder text-cad-inputText font-mono text-xs px-2 py-1 rounded-sm focus:border-blue-500 focus:outline-none shadow-sm transition-colors duration-fast;
+}
+
+.eng-badge {
+  @apply px-1.5 py-0.5 rounded-xs font-mono text-[10px] font-semibold border inline-flex items-center gap-1;
+}
+
+.eng-panel {
+  @apply bg-cad-panel border border-cad-border text-cad-text;
+}
+
+.eng-table-header {
+  @apply bg-cad-subpanel text-cad-textMuted font-mono text-[10px] uppercase tracking-wider font-semibold border-b border-cad-border;
+}
+
+.eng-table-row {
+  @apply border-b border-cad-border hover:bg-cad-surfaceHover text-xs transition-colors duration-fast;
 }

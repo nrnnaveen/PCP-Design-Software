@@ -264,14 +264,14 @@ export const LiveCircuitLab: React.FC<Props> = ({ project, isOpen, onClose }) =>
       role="dialog"
       aria-labelledby="circuit-lab-title"
       aria-modal="true"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 dark:bg-black/70 select-none p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-theme-modalBackdrop select-none p-4"
     >
-      <div className="bg-cad-panel border border-cad-border w-[940px] max-w-full h-[620px] max-h-full rounded-lg shadow-2xl overflow-hidden flex flex-col text-cad-text font-sans animate-in fade-in zoom-in-95 duration-100">
+      <div className="bg-cad-panel border border-cad-border w-[940px] max-w-full h-[620px] max-h-full rounded-sm shadow-xl overflow-hidden flex flex-col text-cad-text font-sans animate-in fade-in zoom-in-95 duration-100">
         {/* Header */}
-        <div className="h-11 bg-cad-header border-b border-cad-border px-4 flex items-center justify-between">
-          <div className="flex items-center space-x-2.5">
-            <div className="w-6 h-6 rounded bg-blue-600 flex items-center justify-center text-white font-bold text-xs shadow-sm">
-              <Activity size={14} />
+        <div className="h-9 bg-cad-header border-b border-cad-border px-3 flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <div className="w-5 h-5 rounded-xs bg-blue-600 flex items-center justify-center text-white font-bold text-xs shadow-xs">
+              <Activity size={13} />
             </div>
             <div>
               <h2 id="circuit-lab-title" className="font-semibold text-xs sm:text-sm text-cad-textHeading inline">
@@ -283,7 +283,7 @@ export const LiveCircuitLab: React.FC<Props> = ({ project, isOpen, onClose }) =>
             </div>
           </div>
 
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-1.5">
             <input
               type="file"
               ref={fileInputRef}
@@ -293,14 +293,14 @@ export const LiveCircuitLab: React.FC<Props> = ({ project, isOpen, onClose }) =>
             />
             <button
               onClick={() => fileInputRef.current?.click()}
-              className="px-2.5 py-1 bg-cad-subpanel hover:bg-cad-surfaceHover border border-cad-border rounded text-xs font-medium flex items-center gap-1.5 transition-colors focus-visible:outline-none"
+              className="px-2 py-0.5 bg-cad-subpanel hover:bg-cad-surfaceHover border border-cad-border rounded-xs text-xs font-medium flex items-center gap-1.5 transition-colors duration-fast focus-visible:outline-none"
             >
               <Upload size={12} className="text-emerald-600 dark:text-emerald-400" />
               <span>Upload File</span>
             </button>
             <button
               onClick={onClose}
-              className="px-3 py-1 bg-cad-subpanel hover:bg-cad-surfaceHover border border-cad-border rounded text-xs font-medium transition-colors focus-visible:outline-none"
+              className="px-2.5 py-0.5 bg-cad-subpanel hover:bg-cad-surfaceHover border border-cad-border rounded-xs text-xs font-medium transition-colors duration-fast focus-visible:outline-none"
             >
               Close
             </button>
@@ -308,23 +308,23 @@ export const LiveCircuitLab: React.FC<Props> = ({ project, isOpen, onClose }) =>
         </div>
 
         {/* Toolbar & Target Status */}
-        <div className="h-10 bg-cad-subpanel border-b border-cad-border px-5 flex items-center justify-between text-xs font-mono">
+        <div className="h-8 bg-cad-subpanel border-b border-cad-border px-3.5 flex items-center justify-between text-xs font-mono">
           <div className="flex items-center space-x-3">
-            <span className="text-cad-textMuted">Target Platform:</span>
-            <span className="px-2 py-0.5 rounded bg-blue-600/20 text-blue-500 dark:text-blue-400 border border-blue-500/30 font-bold">
+            <span className="text-cad-textMuted">Target:</span>
+            <span className="px-1.5 py-0.2 rounded-xs bg-blue-600/15 text-blue-600 dark:text-blue-400 border border-blue-500/30 font-semibold">
               {analysis.platform}
             </span>
-            <span className="text-cad-textMuted">Estimated Power:</span>
-            <span className="text-emerald-500 dark:text-emerald-400 font-bold">{analysis.powerEstimate_mW} mW</span>
+            <span className="text-cad-textMuted">Est. Power:</span>
+            <span className="text-emerald-600 dark:text-emerald-400 font-semibold">{analysis.powerEstimate_mW} mW</span>
           </div>
 
           <div className="flex items-center space-x-2">
             {analysis.syntaxValid ? (
-              <span className="text-emerald-500 dark:text-emerald-400 flex items-center gap-1 font-semibold text-[11px]">
+              <span className="text-emerald-600 dark:text-emerald-400 flex items-center gap-1 font-medium text-[11px]">
                 <CheckCircle2 size={13} /> Syntax Valid
               </span>
             ) : (
-              <span className="text-red-500 dark:text-red-400 flex items-center gap-1 font-semibold text-[11px]">
+              <span className="text-red-500 dark:text-red-400 flex items-center gap-1 font-medium text-[11px]">
                 <XCircle size={13} /> {analysis.errors.length} Syntax Errors
               </span>
             )}
@@ -390,7 +390,7 @@ export const LiveCircuitLab: React.FC<Props> = ({ project, isOpen, onClose }) =>
                 <div className="space-y-3">
                   {/* Target Capability Banner */}
                   <div
-                    className={`p-3 rounded-lg border text-[11px] leading-relaxed ${
+                    className={`p-3 rounded border text-[11px] leading-relaxed ${
                       analysis.simulationAvailable
                         ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-300'
                         : 'bg-amber-500/10 border-amber-500/30 text-amber-600 dark:text-amber-300'

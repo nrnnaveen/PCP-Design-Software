@@ -79,21 +79,21 @@ export const PropertiesPanel: React.FC<Props> = ({
   return (
     <div className="w-full h-full bg-cad-panel border-l border-cad-border flex flex-col select-none overflow-y-auto text-cad-text text-xs">
       {/* Header */}
-      <div className="h-9 bg-cad-header border-b border-cad-border px-3 flex items-center justify-between shrink-0">
+      <div className="h-8 bg-cad-header border-b border-cad-border px-2.5 flex items-center justify-between shrink-0">
         <span className="text-[11px] font-semibold text-cad-textHeading uppercase font-mono tracking-wider flex items-center gap-1.5">
           <Sliders size={13} className="text-blue-600 dark:text-blue-400" />
           Properties Inspector
         </span>
       </div>
 
-      <div className="p-3 space-y-3.5">
+      <div className="p-2.5 space-y-3">
         {/* ----------------------------------------------------------- */}
         {/* 1. PCB Footprint Inspector */}
         {/* ----------------------------------------------------------- */}
         {selectedFootprint && (
-          <div className="space-y-3">
-            <div className="flex items-center space-x-2.5 p-2 bg-cad-subpanel rounded border border-cad-border">
-              <div className="p-1.5 bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded border border-amber-500/20">
+          <div className="space-y-2.5">
+            <div className="flex items-center space-x-2.5 p-2 bg-cad-subpanel rounded-xs border border-cad-border">
+              <div className="p-1.5 bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded-xs border border-amber-500/20">
                 <Layers size={16} />
               </div>
               <div className="truncate flex-1">
@@ -112,7 +112,7 @@ export const PropertiesPanel: React.FC<Props> = ({
                       }), 'Toggle Lock Footprint');
                     }}
                     title={selectedFootprint.locked ? 'Unlock Footprint' : 'Lock Footprint'}
-                    className={`p-1 rounded transition-colors ${
+                    className={`p-1 rounded-xs transition-colors duration-fast ${
                       selectedFootprint.locked
                         ? 'text-amber-600 dark:text-amber-400 bg-amber-500/15'
                         : 'text-cad-textMuted hover:text-cad-text hover:bg-cad-surfaceHover'
@@ -125,7 +125,7 @@ export const PropertiesPanel: React.FC<Props> = ({
               </div>
             </div>
 
-            <div className="space-y-2.5">
+            <div className="space-y-2">
               {/* Reference */}
               <div>
                 <label className="text-[11px] font-medium text-cad-textMuted block mb-1">Reference Designator</label>
@@ -144,7 +144,7 @@ export const PropertiesPanel: React.FC<Props> = ({
                       },
                     }));
                   }}
-                  className="w-full bg-cad-inputBg border border-cad-inputBorder rounded px-2.5 py-1 text-cad-inputText font-mono text-xs focus:outline-none focus:border-blue-500"
+                  className="w-full bg-cad-inputBg border border-cad-inputBorder rounded-xs px-2 py-0.5 text-cad-inputText font-mono text-xs focus:outline-none focus:border-blue-500"
                 />
               </div>
 
@@ -166,7 +166,7 @@ export const PropertiesPanel: React.FC<Props> = ({
                       },
                     }));
                   }}
-                  className="w-full bg-cad-inputBg border border-cad-inputBorder rounded px-2.5 py-1 text-cad-inputText font-mono text-xs focus:outline-none focus:border-blue-500"
+                  className="w-full bg-cad-inputBg border border-cad-inputBorder rounded-xs px-2 py-0.5 text-cad-inputText font-mono text-xs focus:outline-none focus:border-blue-500"
                 />
               </div>
 

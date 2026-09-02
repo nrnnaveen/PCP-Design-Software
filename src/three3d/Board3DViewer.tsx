@@ -665,14 +665,14 @@ export const Board3DViewer: React.FC<Props> = ({ project, onSelectComponent, the
   return (
     <div className="relative w-full h-full bg-cad-bg flex flex-col select-none overflow-hidden font-sans">
       {/* 3D Top CAD Control Toolbar */}
-      <header className="h-10 bg-cad-panel border-b border-cad-border px-3 flex items-center justify-between z-10 shrink-0 text-xs">
+      <header className="h-8 bg-cad-panel border-b border-cad-border px-2.5 flex items-center justify-between z-10 shrink-0 text-xs">
         <div className="flex items-center space-x-2">
           <span className="font-semibold text-cad-textHeading flex items-center gap-1.5">
             <Box size={14} className="text-blue-500 dark:text-blue-400" />
             3D Board Viewer
           </span>
 
-          <div className="h-4 w-px bg-cad-border mx-1" />
+          <div className="h-3.5 w-px bg-cad-border mx-0.5" />
 
           {/* Soldermask Color Selector */}
           <div className="flex items-center space-x-1.5">
@@ -689,21 +689,21 @@ export const Board3DViewer: React.FC<Props> = ({ project, onSelectComponent, the
                 key={c.name}
                 title={c.name}
                 onClick={() => setSoldermaskColor(c.color)}
-                className={`w-3.5 h-3.5 rounded-full border transition-all ${
-                  soldermaskColor === c.color ? 'border-blue-400 ring-2 ring-blue-400/40 scale-110' : 'border-cad-border opacity-75 hover:opacity-100'
+                className={`w-3.5 h-3.5 rounded-xs border transition-all ${
+                  soldermaskColor === c.color ? 'border-blue-500 ring-2 ring-blue-500/40 scale-105' : 'border-cad-border opacity-75 hover:opacity-100'
                 }`}
                 style={{ backgroundColor: c.color }}
               />
             ))}
           </div>
 
-          <div className="h-4 w-px bg-cad-border mx-1" />
+          <div className="h-3.5 w-px bg-cad-border mx-0.5" />
 
           {/* Layer Visibility Toggles */}
           <button
             onClick={() => setShowComponents(!showComponents)}
-            className={`px-2 py-0.5 rounded text-[11px] font-medium flex items-center gap-1 transition-colors ${
-              showComponents ? 'bg-blue-600/20 text-blue-400 border border-blue-500/30' : 'bg-cad-subpanel text-cad-textMuted'
+            className={`px-2 py-0.5 rounded-xs text-[11px] font-medium flex items-center gap-1 transition-colors duration-fast ${
+              showComponents ? 'bg-blue-600/15 text-blue-600 dark:text-blue-400 border border-blue-500/30 font-semibold' : 'bg-cad-subpanel text-cad-textMuted border border-cad-border hover:text-cad-text'
             }`}
           >
             {showComponents ? <Eye size={12} /> : <EyeOff size={12} />}
@@ -712,8 +712,8 @@ export const Board3DViewer: React.FC<Props> = ({ project, onSelectComponent, the
 
           <button
             onClick={() => setShowSilkscreen(!showSilkscreen)}
-            className={`px-2 py-0.5 rounded text-[11px] font-medium flex items-center gap-1 transition-colors ${
-              showSilkscreen ? 'bg-blue-600/20 text-blue-400 border border-blue-500/30' : 'bg-cad-subpanel text-cad-textMuted'
+            className={`px-2 py-0.5 rounded-xs text-[11px] font-medium flex items-center gap-1 transition-colors duration-fast ${
+              showSilkscreen ? 'bg-blue-600/15 text-blue-600 dark:text-blue-400 border border-blue-500/30 font-semibold' : 'bg-cad-subpanel text-cad-textMuted border border-cad-border hover:text-cad-text'
             }`}
           >
             <Layers size={12} />
@@ -722,8 +722,8 @@ export const Board3DViewer: React.FC<Props> = ({ project, onSelectComponent, the
 
           <button
             onClick={() => setShowCopper(!showCopper)}
-            className={`px-2 py-0.5 rounded text-[11px] font-medium flex items-center gap-1 transition-colors ${
-              showCopper ? 'bg-blue-600/20 text-blue-400 border border-blue-500/30' : 'bg-cad-subpanel text-cad-textMuted'
+            className={`px-2 py-0.5 rounded-xs text-[11px] font-medium flex items-center gap-1 transition-colors duration-fast ${
+              showCopper ? 'bg-blue-600/15 text-blue-600 dark:text-blue-400 border border-blue-500/30 font-semibold' : 'bg-cad-subpanel text-cad-textMuted border border-cad-border hover:text-cad-text'
             }`}
           >
             <Layers size={12} />
@@ -732,8 +732,8 @@ export const Board3DViewer: React.FC<Props> = ({ project, onSelectComponent, the
 
           <button
             onClick={() => setIsTransparent(!isTransparent)}
-            className={`px-2 py-0.5 rounded text-[11px] font-medium flex items-center gap-1 transition-colors ${
-              isTransparent ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' : 'bg-cad-subpanel text-cad-textMuted'
+            className={`px-2 py-0.5 rounded-xs text-[11px] font-medium flex items-center gap-1 transition-colors duration-fast ${
+              isTransparent ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 font-semibold' : 'bg-cad-subpanel text-cad-textMuted border border-cad-border hover:text-cad-text'
             }`}
           >
             <Layers size={12} />
@@ -742,24 +742,24 @@ export const Board3DViewer: React.FC<Props> = ({ project, onSelectComponent, the
         </div>
 
         {/* Camera Preset Quick Actions */}
-        <div className="flex items-center space-x-2 text-[11px] text-cad-textMuted">
+        <div className="flex items-center space-x-1.5 text-[11px] text-cad-textMuted">
           <button
             onClick={setTopView}
-            className="px-2 py-0.5 bg-cad-subpanel hover:bg-cad-border text-cad-text rounded border border-cad-border transition-colors"
+            className="px-2 py-0.5 bg-cad-subpanel hover:bg-cad-surfaceHover text-cad-text rounded-xs border border-cad-border transition-colors duration-fast"
             title="View Top Surface"
           >
             Top
           </button>
           <button
             onClick={setBottomView}
-            className="px-2 py-0.5 bg-cad-subpanel hover:bg-cad-border text-cad-text rounded border border-cad-border transition-colors"
+            className="px-2 py-0.5 bg-cad-subpanel hover:bg-cad-surfaceHover text-cad-text rounded-xs border border-cad-border transition-colors duration-fast"
             title="View Bottom Surface"
           >
             Bottom
           </button>
           <button
             onClick={fitBoardView}
-            className="px-2 py-0.5 bg-blue-600 hover:bg-blue-500 text-white rounded font-medium flex items-center gap-1 shadow-sm transition-colors"
+            className="px-2 py-0.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xs font-medium flex items-center gap-1 shadow-xs transition-colors duration-fast"
             title="Re-fit Isometric Board View"
           >
             <Compass size={12} />

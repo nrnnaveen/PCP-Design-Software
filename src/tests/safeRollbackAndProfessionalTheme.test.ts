@@ -105,12 +105,97 @@ describe('FloZ EDA — Safe Rollback, Multi-Theme & Performance Suite', () => {
       const darkColors = getCanvasColors('dark');
       expect(darkColors.isLight).toBe(false);
       expect(darkColors.canvasBg).toBe('#1e1e1e');
-      expect(darkColors.textColor).toBe('#cccccc');
+      expect(darkColors.textColor).toBe('#f3f3f3');
+      expect(darkColors.wireColor).toBe('#4cc2ff');
+      expect(darkColors.gridColor).toBe('#2d2d30');
 
       const lightColors = getCanvasColors('light');
       expect(lightColors.isLight).toBe(true);
       expect(lightColors.canvasBg).toBe('#ffffff');
-      expect(lightColors.textColor).toBe('#0f172a');
+      expect(lightColors.textColor).toBe('#242424');
+      expect(lightColors.wireColor).toBe('#0f6cbd');
+      expect(lightColors.gridColor).toBe('#e5e5e5');
+    });
+
+    it('contains all explicit core, component, overlay, canvas, and gerber semantic tokens in stylesheet', () => {
+      const fs = require('fs');
+      const path = require('path');
+      const cssContent = fs.readFileSync(path.resolve(__dirname, '../index.css'), 'utf-8');
+
+      const requiredTokens = [
+        '--theme-background',
+        '--theme-foreground',
+        '--theme-surface',
+        '--theme-surface-secondary',
+        '--theme-surface-tertiary',
+        '--theme-surface-elevated',
+        '--theme-surface-hover',
+        '--theme-surface-active',
+        '--theme-border',
+        '--theme-border-subtle',
+        '--theme-border-strong',
+        '--theme-text-primary',
+        '--theme-text-secondary',
+        '--theme-text-tertiary',
+        '--theme-text-disabled',
+        '--theme-text-inverse',
+        '--theme-accent',
+        '--theme-accent-hover',
+        '--theme-accent-active',
+        '--theme-accent-subtle',
+        '--theme-accent-foreground',
+        '--theme-focus-ring',
+        '--theme-success',
+        '--theme-success-subtle',
+        '--theme-success-foreground',
+        '--theme-warning',
+        '--theme-warning-subtle',
+        '--theme-warning-foreground',
+        '--theme-error',
+        '--theme-error-subtle',
+        '--theme-error-foreground',
+        '--theme-info',
+        '--theme-info-subtle',
+        '--theme-info-foreground',
+        '--theme-header-background',
+        '--theme-sidebar-background',
+        '--theme-toolbar-background',
+        '--theme-panel-background',
+        '--theme-input-background',
+        '--theme-input-border',
+        '--theme-input-border-focus',
+        '--theme-button-background',
+        '--theme-button-hover',
+        '--theme-button-active',
+        '--theme-button-disabled',
+        '--theme-selection-background',
+        '--theme-selection-foreground',
+        '--theme-tooltip-background',
+        '--theme-tooltip-foreground',
+        '--theme-modal-background',
+        '--theme-modal-backdrop',
+        '--theme-menu-background',
+        '--theme-menu-hover',
+        '--theme-statusbar-background',
+        '--theme-canvas-background',
+        '--theme-grid',
+        '--theme-grid-major',
+        '--theme-canvas-axis',
+        '--theme-selection',
+        '--theme-crosshair',
+        '--theme-wire',
+        '--theme-highlight',
+        '--theme-hover-highlight',
+        '--theme-gerber-background',
+        '--theme-gerber-grid',
+        '--theme-gerber-label',
+        '--theme-gerber-marker',
+        '--theme-gerber-boundary',
+      ];
+
+      requiredTokens.forEach((token) => {
+        expect(cssContent).toContain(token);
+      });
     });
   });
 

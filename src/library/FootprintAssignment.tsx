@@ -86,18 +86,18 @@ export const FootprintAssignment: React.FC<Props> = ({
   return (
     <div
       role="dialog"
-      aria-labelledby="fp-assign-title"
+      aria-labelledby="footprint-dialog-title"
       aria-modal="true"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 dark:bg-black/70 select-none p-3"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-theme-modalBackdrop select-none p-3"
     >
-      <div className="bg-cad-panel border border-cad-border w-[1050px] max-w-full h-[660px] max-h-full rounded-lg shadow-2xl flex flex-col overflow-hidden text-cad-text animate-in fade-in zoom-in-95 duration-100">
+      <div className="bg-cad-panel border border-cad-border w-[1050px] max-w-full h-[660px] max-h-full rounded-sm shadow-xl flex flex-col overflow-hidden text-cad-text animate-in fade-in zoom-in-95 duration-100">
         {/* Header */}
-        <div className="h-11 bg-cad-header border-b border-cad-border px-4 flex items-center justify-between">
+        <div className="h-9 bg-cad-header border-b border-cad-border px-3 flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <Layers size={16} className="text-amber-600 dark:text-amber-400" />
+            <Layers size={15} className="text-amber-600 dark:text-amber-400" />
             <h2 id="fp-assign-title" className="text-xs sm:text-sm font-semibold text-cad-textHeading flex items-center gap-2">
               <span>Assign PCB Footprints to Schematic Symbols</span>
-              <span className="text-[10px] font-mono font-medium px-1.5 py-0.2 bg-amber-500/15 text-amber-600 dark:text-amber-400 rounded border border-amber-500/30">
+              <span className="text-[10px] font-mono font-medium px-1.5 py-0.2 bg-amber-500/15 text-amber-600 dark:text-amber-400 rounded-xs border border-amber-500/30">
                 {filteredFootprints.length} Available
               </span>
             </h2>
@@ -105,7 +105,7 @@ export const FootprintAssignment: React.FC<Props> = ({
           <button
             onClick={onClose}
             aria-label="Close"
-            className="p-1 hover:bg-cad-surfaceHover rounded text-cad-textMuted hover:text-cad-text transition-colors focus-visible:outline-none"
+            className="p-1 hover:bg-cad-surfaceHover rounded-xs text-cad-textMuted hover:text-cad-text transition-colors duration-fast focus-visible:outline-none"
           >
             <X size={15} />
           </button>
@@ -127,9 +127,9 @@ export const FootprintAssignment: React.FC<Props> = ({
                   <div
                     key={sym.id}
                     onClick={() => setSelectedSymId(sym.id)}
-                    className={`p-2 rounded cursor-pointer transition-colors border ${
+                    className={`p-1.5 rounded-xs cursor-pointer transition-colors duration-fast border ${
                       isSelected
-                        ? 'bg-blue-500/15 border-blue-500/50 shadow-sm'
+                        ? 'bg-blue-500/15 border-blue-500/50 shadow-xs'
                         : 'hover:bg-cad-surfaceHover border-transparent'
                     }`}
                   >

@@ -69,13 +69,13 @@ export const CookieConsentBanner: React.FC<Props> = ({ onOpenPrivacyPolicy }) =>
   return (
     <aside
       aria-label="Cookie and Privacy Preferences"
-      className="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:max-w-md z-50 bg-cad-panel border border-cad-border rounded-lg shadow-2xl p-4 text-cad-text select-none animate-in fade-in slide-in-from-bottom-3 duration-150"
+      className="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:max-w-md z-50 bg-cad-panel border border-cad-border rounded-sm shadow-xl p-3 text-cad-text select-none animate-in fade-in slide-in-from-bottom-3 duration-150"
     >
-      <div className="space-y-3">
+      <div className="space-y-2.5">
         {/* Header */}
-        <div className="flex items-start gap-2.5">
-          <div className="w-7 h-7 rounded bg-blue-500/10 border border-blue-500/25 flex items-center justify-center text-blue-600 dark:text-blue-400 shrink-0 mt-0.5">
-            <Cookie size={14} />
+        <div className="flex items-start gap-2">
+          <div className="w-6 h-6 rounded-xs bg-blue-500/10 border border-blue-500/25 flex items-center justify-center text-blue-600 dark:text-blue-400 shrink-0 mt-0.5">
+            <Cookie size={13} />
           </div>
           <div className="space-y-0.5">
             <h3 className="text-xs font-semibold text-cad-textHeading">Privacy &amp; Telemetry Notice</h3>
@@ -87,7 +87,7 @@ export const CookieConsentBanner: React.FC<Props> = ({ onOpenPrivacyPolicy }) =>
 
         {/* Preferences Expandable */}
         {showPreferences && (
-          <div className="p-2.5 bg-cad-subpanel border border-cad-border rounded space-y-2 text-[11px]">
+          <div className="p-2 bg-cad-subpanel border border-cad-border rounded-xs space-y-2 text-[11px]">
             <div className="flex items-center justify-between">
               <div>
                 <span className="font-semibold block text-cad-text">Essential Storage</span>
@@ -104,18 +104,18 @@ export const CookieConsentBanner: React.FC<Props> = ({ onOpenPrivacyPolicy }) =>
                 type="checkbox"
                 checked={telemetryEnabled}
                 onChange={(e) => setTelemetryEnabled(e.target.checked)}
-                className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer"
+                className="w-3.5 h-3.5 rounded-xs text-blue-600 focus:ring-blue-500 cursor-pointer"
               />
             </div>
           </div>
         )}
 
         {/* Action Buttons */}
-        <div className="flex items-center justify-between pt-1 gap-2">
-          <div className="flex items-center gap-2">
+        <div className="flex items-center justify-between pt-0.5 gap-2">
+          <div className="flex items-center gap-1.5">
             <button
               onClick={() => setShowPreferences(!showPreferences)}
-              className="text-[11px] text-cad-textMuted hover:text-cad-text flex items-center gap-1 font-medium transition-colors"
+              className="text-[11px] text-cad-textMuted hover:text-cad-text flex items-center gap-1 font-medium transition-colors duration-fast"
             >
               <Settings size={12} />
               <span>{showPreferences ? 'Hide' : 'Manage'}</span>
@@ -123,7 +123,7 @@ export const CookieConsentBanner: React.FC<Props> = ({ onOpenPrivacyPolicy }) =>
             <span className="text-cad-border">·</span>
             <button
               onClick={onOpenPrivacyPolicy}
-              className="text-[11px] text-cad-textMuted hover:text-blue-500 transition-colors font-medium"
+              className="text-[11px] text-cad-textMuted hover:text-blue-500 transition-colors duration-fast font-medium"
             >
               Policy
             </button>
@@ -133,7 +133,7 @@ export const CookieConsentBanner: React.FC<Props> = ({ onOpenPrivacyPolicy }) =>
             {showPreferences ? (
               <button
                 onClick={handleSavePreferences}
-                className="px-3 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded text-xs font-medium shadow-sm transition-colors flex items-center gap-1"
+                className="px-2.5 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded-xs text-xs font-medium shadow-xs transition-colors duration-fast flex items-center gap-1"
               >
                 <Check size={12} />
                 <span>Save</span>
@@ -142,13 +142,13 @@ export const CookieConsentBanner: React.FC<Props> = ({ onOpenPrivacyPolicy }) =>
               <>
                 <button
                   onClick={handleDecline}
-                  className="px-2.5 py-1 bg-cad-subpanel hover:bg-cad-surfaceHover text-cad-text border border-cad-border rounded text-xs font-medium transition-colors"
+                  className="px-2.5 py-1 bg-cad-subpanel hover:bg-cad-surfaceHover text-cad-text border border-cad-border rounded-xs text-xs font-medium transition-colors duration-fast"
                 >
                   Decline
                 </button>
                 <button
                   onClick={handleAcceptAll}
-                  className="px-3 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded text-xs font-medium shadow-sm transition-colors"
+                  className="px-2.5 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded-xs text-xs font-medium shadow-xs transition-colors duration-fast"
                 >
                   Accept All
                 </button>

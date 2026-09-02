@@ -112,13 +112,13 @@ export const ManufacturingModal: React.FC<Props> = ({ project, isOpen, onClose }
       role="dialog"
       aria-labelledby="mfg-dialog-title"
       aria-modal="true"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 dark:bg-black/70 select-none p-3"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-theme-modalBackdrop select-none p-3"
     >
-      <div className="bg-cad-panel border border-cad-border w-[580px] max-w-full rounded-lg shadow-2xl flex flex-col overflow-hidden text-cad-text animate-in fade-in zoom-in-95 duration-100">
+      <div className="bg-cad-panel border border-cad-border w-[580px] max-w-full rounded-sm shadow-xl flex flex-col overflow-hidden text-cad-text animate-in fade-in zoom-in-95 duration-100">
         {/* Header */}
-        <div className="h-11 bg-cad-header border-b border-cad-border px-4 flex items-center justify-between">
+        <div className="h-9 bg-cad-header border-b border-cad-border px-3.5 flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <Package size={16} className="text-emerald-600 dark:text-emerald-400" />
+            <Package size={15} className="text-emerald-600 dark:text-emerald-400" />
             <h2 id="mfg-dialog-title" className="text-xs sm:text-sm font-semibold text-cad-textHeading">
               Generate Manufacturing Outputs
             </h2>
@@ -126,21 +126,21 @@ export const ManufacturingModal: React.FC<Props> = ({ project, isOpen, onClose }
           <button
             onClick={onClose}
             aria-label="Close"
-            className="p-1 hover:bg-cad-surfaceHover rounded text-cad-textMuted hover:text-cad-text transition-colors focus-visible:outline-none"
+            className="p-1 hover:bg-cad-surfaceHover rounded-xs text-cad-textMuted hover:text-cad-text transition-colors duration-fast focus-visible:outline-none"
           >
             <X size={15} />
           </button>
         </div>
 
         {/* Content */}
-        <div className="p-5 space-y-3.5">
+        <div className="p-4 space-y-3">
           <p className="text-xs text-cad-text leading-relaxed">
             Generate production fabrication outputs compliant with standard PCB manufacturers (JLCPCB, PCBWay, Eurocircuits, OSH Park).
           </p>
 
           {!metrics.isManufacturable && (
-            <div className="p-2.5 bg-red-500/10 border border-red-500/30 rounded flex items-start gap-2 text-xs text-red-700 dark:text-red-300">
-              <AlertTriangle size={15} className="text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
+            <div className="p-2 bg-red-500/10 border border-red-500/30 rounded-xs flex items-start gap-2 text-xs text-red-700 dark:text-red-300">
+              <AlertTriangle size={14} className="text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
               <div>
                 <div className="font-semibold text-xs">Export Blocked by DFM Validation</div>
                 <div className="text-[11px] text-cad-text mt-0.5">{metrics.blockReason}</div>
@@ -148,7 +148,7 @@ export const ManufacturingModal: React.FC<Props> = ({ project, isOpen, onClose }
             </div>
           )}
 
-          <div className="space-y-1.5 border border-cad-border rounded p-3 bg-cad-subpanel font-mono text-[11px]">
+          <div className="space-y-1 border border-cad-border rounded-xs p-2.5 bg-cad-subpanel font-mono text-[11px]">
             <div className="flex items-center gap-2 text-cad-text">
               <CheckCircle2 size={13} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
               <span>RS-274X Extended Gerber (Copper, Silk, Mask, Paste, Edge.Cuts)</span>
@@ -176,25 +176,25 @@ export const ManufacturingModal: React.FC<Props> = ({ project, isOpen, onClose }
           </div>
 
           {statusMessage && (
-            <div className="p-2 bg-blue-500/10 border border-blue-500/30 rounded text-xs text-blue-600 dark:text-blue-300 font-mono flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+            <div className="p-1.5 bg-blue-500/10 border border-blue-500/30 rounded-xs text-xs text-blue-600 dark:text-blue-300 font-mono flex items-center gap-2">
+              <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
               <span>{statusMessage}</span>
             </div>
           )}
         </div>
 
         {/* Footer */}
-        <div className="h-11 bg-cad-header border-t border-cad-border px-4 flex items-center justify-end space-x-2">
+        <div className="h-9 bg-cad-header border-t border-cad-border px-3.5 flex items-center justify-end space-x-2">
           <button
             onClick={onClose}
-            className="px-3 py-1.5 bg-cad-subpanel hover:bg-cad-surfaceHover text-xs rounded text-cad-text border border-cad-border font-medium transition-colors"
+            className="px-2.5 py-1 bg-cad-subpanel hover:bg-cad-surfaceHover text-xs rounded-xs text-cad-text border border-cad-border font-medium transition-colors duration-fast"
           >
             Close
           </button>
           <button
             onClick={handleExportZip}
             disabled={isGenerating || !metrics.isManufacturable}
-            className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-xs font-medium text-white rounded flex items-center gap-1.5 shadow-sm transition-colors focus-visible:outline-none"
+            className="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-xs font-medium text-white rounded-xs flex items-center gap-1.5 shadow-xs transition-colors duration-fast focus-visible:outline-none"
           >
             <Download size={13} />
             <span>Download Fabrication ZIP</span>

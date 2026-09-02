@@ -1351,7 +1351,7 @@ export const SchematicEditor: React.FC<Props> = ({
       {/* 2. Central Schematic Canvas */}
       <div className="flex-1 h-full flex flex-col relative overflow-hidden">
         {/* Schematic Main Engineering Toolbar */}
-        <div className="h-9 bg-cad-panel border-b border-cad-border px-3 flex items-center justify-between text-xs select-none">
+        <div className="h-8 bg-cad-panel border-b border-cad-border px-2 flex items-center justify-between text-xs select-none">
           <div className="flex items-center space-x-1">
             <button
               onClick={() => {
@@ -1359,8 +1359,8 @@ export const SchematicEditor: React.FC<Props> = ({
                 setActiveViolationPopup(null);
               }}
               title="Select Tool (Esc / V)"
-              className={`px-2.5 py-1 rounded text-xs flex items-center gap-1.5 font-medium transition-colors ${
-                activeTool === 'select' ? 'bg-blue-600 text-white shadow-sm font-semibold' : 'text-cad-text hover:bg-cad-surfaceHover'
+              className={`px-2 py-0.5 rounded-xs text-xs flex items-center gap-1.5 font-medium transition-colors duration-fast ${
+                activeTool === 'select' ? 'bg-blue-600 text-white font-semibold shadow-xs' : 'text-cad-text hover:bg-cad-surfaceHover'
               }`}
             >
               <Move size={13} />
@@ -1373,8 +1373,8 @@ export const SchematicEditor: React.FC<Props> = ({
                 setActiveViolationPopup(null);
               }}
               title="Pan Tool (H / Middle Drag)"
-              className={`px-2.5 py-1 rounded text-xs flex items-center gap-1.5 font-medium transition-colors ${
-                activeTool === 'pan' ? 'bg-blue-600 text-white shadow-sm font-semibold' : 'text-cad-text hover:bg-cad-surfaceHover'
+              className={`px-2 py-0.5 rounded-xs text-xs flex items-center gap-1.5 font-medium transition-colors duration-fast ${
+                activeTool === 'pan' ? 'bg-blue-600 text-white font-semibold shadow-xs' : 'text-cad-text hover:bg-cad-surfaceHover'
               }`}
             >
               <Hand size={13} />
@@ -1388,8 +1388,8 @@ export const SchematicEditor: React.FC<Props> = ({
                 setActiveViolationPopup(null);
               }}
               title="Draw Wire (W)"
-              className={`px-2.5 py-1 rounded text-xs flex items-center gap-1.5 font-medium transition-colors ${
-                activeTool === 'wire' ? 'bg-blue-600 text-white shadow-sm font-semibold' : 'text-cad-text hover:bg-cad-surfaceHover'
+              className={`px-2 py-0.5 rounded-xs text-xs flex items-center gap-1.5 font-medium transition-colors duration-fast ${
+                activeTool === 'wire' ? 'bg-blue-600 text-white font-semibold shadow-xs' : 'text-cad-text hover:bg-cad-surfaceHover'
               }`}
             >
               <Zap size={13} className={activeTool === 'wire' ? 'text-white' : 'text-emerald-600 dark:text-emerald-400'} />
@@ -1403,8 +1403,8 @@ export const SchematicEditor: React.FC<Props> = ({
                 setActiveViolationPopup(null);
               }}
               title="Draw Multi-Signal Bus (B)"
-              className={`px-2.5 py-1 rounded text-xs flex items-center gap-1.5 font-medium transition-colors ${
-                activeTool === 'bus' ? 'bg-blue-600 text-white shadow-sm font-semibold' : 'text-cad-text hover:bg-cad-surfaceHover'
+              className={`px-2 py-0.5 rounded-xs text-xs flex items-center gap-1.5 font-medium transition-colors duration-fast ${
+                activeTool === 'bus' ? 'bg-blue-600 text-white font-semibold shadow-xs' : 'text-cad-text hover:bg-cad-surfaceHover'
               }`}
             >
               <Binary size={13} className={activeTool === 'bus' ? 'text-white' : 'text-indigo-600 dark:text-indigo-400'} />
@@ -1417,8 +1417,8 @@ export const SchematicEditor: React.FC<Props> = ({
                 setActiveViolationPopup(null);
               }}
               title="Place No-Connect Flag (Q)"
-              className={`px-2.5 py-1 rounded text-xs flex items-center gap-1.5 font-medium transition-colors ${
-                activeTool === 'no_connect' ? 'bg-blue-600 text-white shadow-sm font-semibold' : 'text-cad-text hover:bg-cad-surfaceHover'
+              className={`px-2 py-0.5 rounded-xs text-xs flex items-center gap-1.5 font-medium transition-colors duration-fast ${
+                activeTool === 'no_connect' ? 'bg-blue-600 text-white font-semibold shadow-xs' : 'text-cad-text hover:bg-cad-surfaceHover'
               }`}
             >
               <X size={13} className={activeTool === 'no_connect' ? 'text-white' : 'text-red-600 dark:text-red-400'} />
@@ -1428,18 +1428,18 @@ export const SchematicEditor: React.FC<Props> = ({
             <button
               onClick={onOpenSymbolChooser}
               title="Place Component Symbol (A)"
-              className="px-2.5 py-1 hover:bg-cad-surfaceHover rounded text-cad-text flex items-center gap-1.5 font-medium transition-colors"
+              className="px-2 py-0.5 hover:bg-cad-surfaceHover rounded-xs text-cad-text flex items-center gap-1.5 font-medium transition-colors duration-fast"
             >
               <Cpu size={13} className="text-blue-600 dark:text-blue-400" />
               <span>Symbol (A)</span>
             </button>
 
-            <div className="h-4 w-px bg-cad-border mx-1" />
+            <div className="h-3.5 w-px bg-cad-border mx-0.5" />
 
             <button
               onClick={handleAutoAnnotate}
               title="Auto-Annotate Schematic References (R? -> R1, R2...)"
-              className="px-2 py-1 hover:bg-cad-surfaceHover rounded text-cad-text flex items-center gap-1.5 font-medium transition-colors"
+              className="px-2 py-0.5 hover:bg-cad-surfaceHover rounded-xs text-cad-text flex items-center gap-1.5 font-medium transition-colors duration-fast"
             >
               <GitCommit size={13} className="text-purple-600 dark:text-purple-400" />
               <span>Annotate</span>
@@ -1448,7 +1448,7 @@ export const SchematicEditor: React.FC<Props> = ({
             <button
               onClick={handleExportBOM}
               title="Download Bill of Materials (BOM CSV)"
-              className="px-2 py-1 hover:bg-cad-surfaceHover rounded text-cad-text flex items-center gap-1.5 font-medium transition-colors"
+              className="px-2 py-0.5 hover:bg-cad-surfaceHover rounded-xs text-cad-text flex items-center gap-1.5 font-medium transition-colors duration-fast"
             >
               <FileSpreadsheet size={13} className="text-emerald-600 dark:text-emerald-400" />
               <span>BOM CSV</span>
@@ -1457,7 +1457,7 @@ export const SchematicEditor: React.FC<Props> = ({
             <button
               onClick={() => setShowFilterBar(!showFilterBar)}
               title="Toggle Selection Filters"
-              className={`px-2 py-1 rounded text-xs flex items-center gap-1.5 font-medium transition-colors ${
+              className={`px-2 py-0.5 rounded-xs text-xs flex items-center gap-1.5 font-medium transition-colors duration-fast ${
                 showFilterBar ? 'bg-cad-subpanel text-cad-textHeading border border-cad-border font-semibold' : 'text-cad-text hover:bg-cad-surfaceHover'
               }`}
             >
@@ -1470,7 +1470,7 @@ export const SchematicEditor: React.FC<Props> = ({
               <button
                 onClick={handleDeleteSelected}
                 title="Delete Selected (Delete / Backspace)"
-                className="px-2.5 py-1 bg-red-600 text-white rounded flex items-center gap-1.5 font-semibold shadow-sm transition-colors"
+                className="px-2 py-0.5 bg-red-600 hover:bg-red-500 text-white rounded-xs flex items-center gap-1.5 font-semibold transition-colors duration-fast shadow-xs"
               >
                 <Trash2 size={13} />
                 <span>Delete ({selectedIds.length})</span>
@@ -1479,7 +1479,7 @@ export const SchematicEditor: React.FC<Props> = ({
           </div>
 
           {/* Right Controls */}
-          <div className="flex items-center space-x-3 text-[11px] font-mono">
+          <div className="flex items-center space-x-2.5 text-[11px] font-mono">
             {ercViolations.length === 0 ? (
               <span className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-semibold">
                 <CheckCircle2 size={13} />
@@ -1487,7 +1487,7 @@ export const SchematicEditor: React.FC<Props> = ({
               </span>
             ) : (
               <button
-                className="flex items-center gap-1 px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-400 font-semibold cursor-pointer hover:bg-amber-500/20"
+                className="flex items-center gap-1 px-2 py-0.5 rounded-xs bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-400 font-semibold cursor-pointer hover:bg-amber-500/20 transition-colors duration-fast"
                 onClick={() => {
                   if (ercViolations.length > 0) setActiveViolationPopup(ercViolations[0]);
                 }}
@@ -1498,12 +1498,12 @@ export const SchematicEditor: React.FC<Props> = ({
             )}
 
             {/* Grid Spacing */}
-            <div className="flex items-center space-x-1.5 border-l border-cad-border pl-2.5">
+            <div className="flex items-center space-x-1.5 border-l border-cad-border pl-2">
               <Grid size={12} className="text-cad-textMuted" />
               <select
                 value={gridMil}
                 onChange={(e) => setGridMil(Number(e.target.value) as 100 | 50 | 25)}
-                className="bg-cad-inputBg border border-cad-inputBorder rounded px-1.5 py-0.5 text-xs text-cad-inputText outline-none cursor-pointer focus:border-blue-500 font-mono"
+                className="bg-cad-inputBg border border-cad-inputBorder rounded-xs px-1.5 py-0.5 text-xs text-cad-inputText outline-none cursor-pointer focus:border-blue-500 font-mono"
               >
                 <option value={100}>100 mil (2.54 mm)</option>
                 <option value={50}>50 mil (1.27 mm)</option>
@@ -1515,14 +1515,14 @@ export const SchematicEditor: React.FC<Props> = ({
               <button
                 onClick={() => setZoom((z) => Math.min(25, z * 1.2))}
                 title="Zoom In"
-                className="p-1 hover:bg-cad-surfaceHover rounded text-cad-text transition-colors"
+                className="p-1 hover:bg-cad-surfaceHover rounded-xs text-cad-text transition-colors duration-fast"
               >
                 <ZoomIn size={13} />
               </button>
               <button
                 onClick={() => setZoom((z) => Math.max(1, z * 0.8))}
                 title="Zoom Out"
-                className="p-1 hover:bg-cad-surfaceHover rounded text-cad-text transition-colors"
+                className="p-1 hover:bg-cad-surfaceHover rounded-xs text-cad-text transition-colors duration-fast"
               >
                 <ZoomOut size={13} />
               </button>
@@ -1532,7 +1532,7 @@ export const SchematicEditor: React.FC<Props> = ({
                   setZoom(4.0);
                 }}
                 title="Fit to Center"
-                className="p-1 hover:bg-cad-surfaceHover rounded text-cad-text transition-colors"
+                className="p-1 hover:bg-cad-surfaceHover rounded-xs text-cad-text transition-colors duration-fast"
               >
                 <Maximize2 size={13} />
               </button>
@@ -1620,7 +1620,7 @@ export const SchematicEditor: React.FC<Props> = ({
 
         {/* ERC Violation Popover */}
         {activeViolationPopup && (
-          <div className="absolute top-12 right-4 bg-cad-panel border border-amber-500/60 p-3 rounded-lg shadow-xl max-w-sm text-xs space-y-2 z-20 text-cad-text animate-in fade-in zoom-in-95 duration-100">
+          <div className="absolute top-12 right-4 bg-cad-panel border border-amber-500/60 p-3 rounded shadow-xl max-w-sm text-xs space-y-2 z-20 text-cad-text animate-in fade-in zoom-in-95 duration-100">
             <div className="flex items-center justify-between">
               <span className="font-semibold text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
                 <AlertTriangle size={14} /> {activeViolationPopup.code} - {activeViolationPopup.severity.toUpperCase()}
@@ -1633,14 +1633,14 @@ export const SchematicEditor: React.FC<Props> = ({
               </button>
             </div>
             <div className="font-semibold text-cad-textHeading">{activeViolationPopup.title}</div>
-            <p className="text-[11px] text-cad-text bg-cad-subpanel p-2 rounded border border-cad-border">
+            <p className="text-[11px] text-cad-text bg-cad-subpanel p-2 rounded-sm border border-cad-border">
               {activeViolationPopup.description}
             </p>
           </div>
         )}
 
         {/* Live Coordinate & Status HUD */}
-        <div className="absolute bottom-3 left-3 bg-cad-panel border border-cad-border px-3 py-1 rounded-md text-xs font-mono text-cad-text flex items-center gap-3 shadow-md pointer-events-none select-none">
+        <div className="absolute bottom-3 left-3 bg-cad-panel border border-cad-border px-2.5 py-1 rounded text-xs font-mono text-cad-text flex items-center gap-3 shadow-md pointer-events-none select-none">
           <span>X: {hoverWorldPos.x.toFixed(2)} mm</span>
           <span>Y: {hoverWorldPos.y.toFixed(2)} mm</span>
           <span className="text-cad-textMuted">Grid: {gridStep} mm</span>

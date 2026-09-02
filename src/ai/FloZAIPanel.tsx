@@ -12,6 +12,8 @@ import {
   DEFAULT_AI_SETTINGS,
   ActionProposal,
   ToolActivity,
+  FLOZ_AI_MODELS,
+  FloZModelId,
 } from './types';
 import { ContextBuilder } from './contextBuilder';
 import { AIProviderFactory } from './providers/aiProvider';
@@ -34,6 +36,7 @@ import {
   RefreshCw,
   ShieldCheck,
   Info,
+  ChevronDown,
 } from 'lucide-react';
 
 interface Props {
@@ -290,26 +293,17 @@ Ask questions about your design, inspect nets and components, or choose a quick 
   };
 
   return (
-    <div className="w-full h-full bg-cad-panel border-l border-cad-border flex flex-col select-none overflow-hidden text-xs">
+    <div className="w-full h-full bg-cad-panel border-l border-cad-border flex flex-col select-none overflow-hidden text-xs font-sans">
       {/* 1. Header */}
-      <div className="h-10 bg-cad-header border-b border-cad-border px-3 flex items-center justify-between">
+      <div className="h-8 bg-cad-header border-b border-cad-border px-2.5 flex items-center justify-between shrink-0">
         <div className="flex items-center space-x-2">
-          <div className="p-1 rounded bg-blue-600/20 text-blue-500 dark:text-blue-400 border border-blue-500/30">
-            <Cpu size={14} />
-          </div>
-          <div>
-            <div className="flex items-center gap-1.5">
-              <span className="font-bold text-cad-text uppercase font-mono tracking-wider text-[11px]">
-                AI Assistant
-              </span>
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-            </div>
-            <span className="text-[9px] text-cad-textMuted font-mono block -mt-0.5">
-              {settings.provider === 'openrouter'
-                ? 'OpenRouter'
-                : settings.provider === 'ollama'
-                ? 'Ollama (Local)'
-                : 'FloZ Engineering Engine'}
+          <Sparkles size={13} className="text-blue-600 dark:text-blue-400" />
+          <div className="flex items-center gap-1.5">
+            <span className="font-semibold text-cad-textHeading uppercase font-mono tracking-wider text-[11px]">
+              Circuit Copilot
+            </span>
+            <span className="px-1.5 py-0.2 bg-blue-500/15 border border-blue-500/30 text-blue-600 dark:text-blue-400 rounded text-[9px] font-mono font-bold">
+              {settings.model === 'floz-ultra' ? 'FloZ Ultra' : 'FloZ Super'}
             </span>
           </div>
         </div>
@@ -317,11 +311,11 @@ Ask questions about your design, inspect nets and components, or choose a quick 
         <div className="flex items-center space-x-1">
           {/* Quick Width Presets */}
           {onSetPanelWidth && (
-            <div className="flex items-center bg-cad-subpanel border border-cad-border rounded p-0.5 mr-1 text-[10px] font-mono">
+            <div className="flex items-center bg-cad-subpanel border border-cad-border rounded-xs p-0.5 mr-1 text-[10px] font-mono">
               <button
                 onClick={() => onSetPanelWidth(360)}
                 title="Compact Width (360px)"
-                className={`px-1.5 py-0.5 rounded ${
+                className={`px-1.5 py-0.5 rounded-xs transition-colors duration-fast ${
                   (panelWidth || 420) <= 380 ? 'bg-blue-600 text-white font-bold' : 'text-cad-textMuted hover:text-cad-text'
                 }`}
               >
@@ -330,7 +324,7 @@ Ask questions about your design, inspect nets and components, or choose a quick 
               <button
                 onClick={() => onSetPanelWidth(480)}
                 title="Medium Width (480px)"
-                className={`px-1.5 py-0.5 rounded ${
+                className={`px-1.5 py-0.5 rounded-xs transition-colors duration-fast ${
                   (panelWidth || 420) > 380 && (panelWidth || 420) <= 560 ? 'bg-blue-600 text-white font-bold' : 'text-cad-textMuted hover:text-cad-text'
                 }`}
               >
@@ -339,7 +333,7 @@ Ask questions about your design, inspect nets and components, or choose a quick 
               <button
                 onClick={() => onSetPanelWidth(640)}
                 title="Wide Width (640px)"
-                className={`px-1.5 py-0.5 rounded ${
+                className={`px-1.5 py-0.5 rounded-xs transition-colors duration-fast ${
                   (panelWidth || 420) > 560 ? 'bg-blue-600 text-white font-bold' : 'text-cad-textMuted hover:text-cad-text'
                 }`}
               >
@@ -351,14 +345,14 @@ Ask questions about your design, inspect nets and components, or choose a quick 
           <button
             onClick={handleNewChat}
             title="New Chat Session"
-            className="p-1 hover:bg-cad-surfaceHover rounded text-cad-textMuted hover:text-cad-text transition-colors"
+            className="p-1 hover:bg-cad-surfaceHover rounded-xs text-cad-textMuted hover:text-cad-text transition-colors duration-fast"
           >
             <Plus size={14} />
           </button>
           <button
             onClick={() => setShowSettingsModal(true)}
             title="AI Assistant Settings"
-            className="p-1 hover:bg-cad-surfaceHover rounded text-cad-textMuted hover:text-cad-text transition-colors"
+            className="p-1 hover:bg-cad-surfaceHover rounded-xs text-cad-textMuted hover:text-cad-text transition-colors duration-fast"
           >
             <Settings size={14} />
           </button>
@@ -366,22 +360,22 @@ Ask questions about your design, inspect nets and components, or choose a quick 
       </div>
 
       {/* 2. Context Pills */}
-      <div className="px-3 py-1.5 bg-cad-subpanel border-b border-cad-border flex items-center gap-1.5 overflow-x-auto text-[10px] font-mono no-scrollbar">
+      <div className="px-3 py-1 bg-cad-subpanel border-b border-cad-border flex items-center gap-1.5 overflow-x-auto text-[10px] font-mono no-scrollbar">
         <span className="text-cad-textMuted shrink-0 font-medium">Context:</span>
-        <span className="px-1.5 py-0.5 rounded bg-blue-500/10 border border-blue-500/30 text-blue-600 dark:text-blue-400 shrink-0 font-medium">
+        <span className="px-1.5 py-0.2 rounded-xs bg-blue-500/10 border border-blue-500/30 text-blue-600 dark:text-blue-400 shrink-0 font-medium">
           Schematic ({project.schematic.sheets[0].symbols.length} parts)
         </span>
-        <span className="px-1.5 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 shrink-0 font-medium">
+        <span className="px-1.5 py-0.2 rounded-xs bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 shrink-0 font-medium">
           PCB ({project.pcb.footprints.length} footprints)
         </span>
-        <span className="px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400 shrink-0 font-medium">
+        <span className="px-1.5 py-0.2 rounded-xs bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400 shrink-0 font-medium">
           ERC Active
         </span>
       </div>
 
       {/* Post-Apply Notification Banner */}
       {postApplyNotice && (
-        <div className="px-3 py-1.5 bg-amber-500/15 border-b border-amber-500/40 text-amber-700 dark:text-amber-300 text-[10px] font-mono flex items-center justify-between">
+        <div className="px-3 py-1 bg-amber-500/15 border-b border-amber-500/40 text-amber-700 dark:text-amber-300 text-[10px] font-mono flex items-center justify-between">
           <span className="flex items-center gap-1.5 font-medium">
             <AlertTriangle size={12} className="shrink-0 text-amber-500" />
             {postApplyNotice}
@@ -393,14 +387,14 @@ Ask questions about your design, inspect nets and components, or choose a quick 
       )}
 
       {/* 3. Messages Stream Area */}
-      <div className="flex-1 overflow-y-auto p-3 space-y-3 bg-cad-bg">
+      <div className="flex-1 overflow-y-auto p-2.5 space-y-2.5 bg-cad-bg">
         {messages.map((msg) => {
           const isUser = msg.role === 'user';
 
           return (
             <div
               key={msg.id}
-              className={`flex flex-col space-y-1.5 ${isUser ? 'items-end' : 'items-start'}`}
+              className={`flex flex-col space-y-1 ${isUser ? 'items-end' : 'items-start'}`}
             >
               {/* Message Header */}
               <div className="flex items-center space-x-1.5 text-[10px] font-mono text-cad-textMuted px-1">
@@ -411,10 +405,10 @@ Ask questions about your design, inspect nets and components, or choose a quick 
 
               {/* Message Bubble */}
               <div
-                className={`p-3 rounded-lg max-w-[95%] border leading-relaxed text-xs ${
+                className={`p-2.5 rounded-xs max-w-[95%] border leading-relaxed text-xs ${
                   isUser
-                    ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
-                    : 'bg-cad-panel border-cad-border text-cad-text shadow-sm'
+                    ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
+                    : 'bg-cad-panel border-cad-border text-cad-text shadow-xs'
                 }`}
               >
                 {/* Tool Activities Chips */}
@@ -557,7 +551,7 @@ Ask questions about your design, inspect nets and components, or choose a quick 
       </div>
 
       {/* 4. Quick Suggestion Prompt Chips */}
-      <div className="p-2.5 bg-cad-panel border-t border-cad-border space-y-2">
+      <div className="p-2 bg-cad-panel border-t border-cad-border space-y-1.5">
         <div className="flex flex-wrap gap-1 text-[10px] font-mono">
           {[
             'Explain this schematic',
@@ -572,11 +566,44 @@ Ask questions about your design, inspect nets and components, or choose a quick 
               key={prompt}
               onClick={() => handleSendMessage(prompt)}
               disabled={isStreaming}
-              className="px-2 py-0.5 rounded bg-cad-subpanel hover:bg-cad-surfaceHover text-cad-text border border-cad-border transition-colors truncate font-medium"
+              className="px-1.5 py-0.5 rounded-xs bg-cad-subpanel hover:bg-cad-surfaceHover text-cad-text border border-cad-border transition-colors duration-fast truncate font-medium"
             >
               {prompt}
             </button>
           ))}
+        </div>
+
+        {/* Model Selector Bar */}
+        <div className="flex items-center justify-between pt-0.5 text-[10px] font-mono">
+          <div className="flex items-center gap-1">
+            <span className="text-cad-textMuted">Engine:</span>
+            <div className="flex items-center bg-cad-subpanel border border-cad-border rounded-xs p-0.5">
+              {FLOZ_AI_MODELS.map((m) => {
+                const isSelected = (settings.model || 'floz-super') === m.id;
+                return (
+                  <button
+                    key={m.id}
+                    type="button"
+                    onClick={() => {
+                      const next = { ...settings, model: m.id };
+                      handleSaveSettings(next);
+                    }}
+                    className={`px-1.5 py-0.5 rounded-xs font-medium transition-colors duration-fast ${
+                      isSelected
+                        ? 'bg-blue-600 text-white font-bold shadow-xs'
+                        : 'text-cad-textMuted hover:text-cad-text'
+                    }`}
+                    title={`${m.name} (${m.tagline}): ${m.description}`}
+                  >
+                    {m.name}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          <span className="text-[10px] text-cad-textMuted truncate">
+            {settings.model === 'floz-ultra' ? 'Deep Reasoning & DRC' : 'Fast & Deterministic'}
+          </span>
         </div>
 
         {/* Input Bar */}
@@ -593,13 +620,13 @@ Ask questions about your design, inspect nets and components, or choose a quick 
               }
             }}
             disabled={isStreaming}
-            className="w-full bg-cad-inputBg border border-cad-inputBorder rounded-md pl-3 pr-10 py-1.5 text-xs text-cad-inputText font-mono placeholder:text-cad-textMuted focus:outline-none focus:border-blue-500 shadow-xs"
+            className="w-full bg-cad-inputBg border border-cad-inputBorder rounded-xs pl-2.5 pr-10 py-1 text-xs text-cad-inputText font-mono placeholder:text-cad-textMuted focus:outline-none focus:border-blue-500 shadow-none"
           />
           {isStreaming ? (
             <button
               onClick={handleStopGenerating}
               title="Stop Generating"
-              className="absolute right-1.5 p-1 bg-red-600 hover:bg-red-500 text-white rounded transition-colors"
+              className="absolute right-1 p-0.5 bg-red-600 hover:bg-red-500 text-white rounded-xs transition-colors duration-fast"
             >
               <Square size={13} />
             </button>
@@ -607,7 +634,7 @@ Ask questions about your design, inspect nets and components, or choose a quick 
             <button
               onClick={() => handleSendMessage()}
               disabled={!inputPrompt.trim()}
-              className="absolute right-1.5 p-1 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 text-white rounded transition-colors"
+              className="absolute right-1 p-0.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 text-white rounded-xs transition-colors duration-fast"
             >
               <Send size={13} />
             </button>

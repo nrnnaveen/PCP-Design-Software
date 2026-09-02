@@ -184,29 +184,29 @@ export const SimulationPanel: React.FC<Props> = ({ project }) => {
   return (
     <div className="relative w-full h-full flex flex-col bg-cad-bg select-none">
       {/* Simulation Top Control Bar */}
-      <div className="h-11 bg-cad-panel border-b border-cad-border px-4 flex items-center justify-between z-10">
-        <div className="flex items-center space-x-3">
-          <span className="text-xs font-bold text-white flex items-center gap-1.5">
-            <Activity size={16} className="text-emerald-400" />
+      <div className="h-8 bg-cad-panel border-b border-cad-border px-2.5 flex items-center justify-between z-10">
+        <div className="flex items-center space-x-2.5">
+          <span className="text-xs font-semibold text-cad-textHeading flex items-center gap-1.5">
+            <Activity size={15} className="text-emerald-600 dark:text-emerald-400" />
             SPICE Circuit Simulator
           </span>
 
-          <div className="h-4 w-px bg-cad-border" />
+          <div className="h-3.5 w-px bg-cad-border mx-0.5" />
 
           {/* Mode Selector */}
-          <div className="flex items-center space-x-1 bg-cad-subpanel p-0.5 rounded border border-cad-border">
+          <div className="flex items-center space-x-1 bg-cad-subpanel p-0.5 rounded-xs border border-cad-border">
             <button
               onClick={() => setSimType('transient')}
-              className={`px-2.5 py-1 rounded text-xs font-medium transition-colors ${
-                simType === 'transient' ? 'bg-blue-600 text-white' : 'text-cad-textMuted hover:text-white'
+              className={`px-2 py-0.5 rounded-xs text-xs font-medium transition-colors duration-fast ${
+                simType === 'transient' ? 'bg-blue-600 text-white font-semibold shadow-xs' : 'text-cad-text hover:bg-cad-surfaceHover'
               }`}
             >
               Transient Time-Domain
             </button>
             <button
               onClick={() => setSimType('dc_sweep')}
-              className={`px-2.5 py-1 rounded text-xs font-medium transition-colors ${
-                simType === 'dc_sweep' ? 'bg-blue-600 text-white' : 'text-cad-textMuted hover:text-white'
+              className={`px-2 py-0.5 rounded-xs text-xs font-medium transition-colors duration-fast ${
+                simType === 'dc_sweep' ? 'bg-blue-600 text-white font-semibold shadow-xs' : 'text-cad-text hover:bg-cad-surfaceHover'
               }`}
             >
               DC Voltage Sweep
@@ -215,15 +215,15 @@ export const SimulationPanel: React.FC<Props> = ({ project }) => {
 
           <button
             onClick={handleRunSim}
-            className="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded flex items-center gap-1.5 shadow-sm transition-colors"
+            className="px-2.5 py-0.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium rounded-xs flex items-center gap-1.5 shadow-xs transition-colors duration-fast"
           >
-            <Play size={13} fill="currentColor" />
+            <Play size={11} fill="currentColor" />
             Run Simulation
           </button>
         </div>
 
         {/* Trace Toggles */}
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-1.5">
           {simResults &&
             Object.keys(simResults.traces).map((traceName) => (
               <button
@@ -231,9 +231,9 @@ export const SimulationPanel: React.FC<Props> = ({ project }) => {
                 onClick={() =>
                   setActiveTraces((prev) => ({ ...prev, [traceName]: !prev[traceName] }))
                 }
-                className={`px-2 py-0.5 rounded text-[11px] font-mono font-semibold flex items-center gap-1 transition-all ${
+                className={`px-1.5 py-0.5 rounded-xs text-[10px] font-mono font-semibold flex items-center gap-1 transition-colors duration-fast ${
                   activeTraces[traceName]
-                    ? 'border shadow-sm'
+                    ? 'border shadow-xs'
                     : 'opacity-40 line-through bg-cad-subpanel text-cad-textMuted'
                 }`}
                 style={{
@@ -245,7 +245,7 @@ export const SimulationPanel: React.FC<Props> = ({ project }) => {
                 }}
               >
                 <div
-                  className="w-2 h-2 rounded-full"
+                  className="w-1.5 h-1.5 rounded-full"
                   style={{ backgroundColor: TRACE_COLORS[traceName] }}
                 />
                 {traceName}

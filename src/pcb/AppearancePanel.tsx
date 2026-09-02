@@ -108,12 +108,12 @@ export const AppearancePanel: React.FC<Props> = ({
   return (
     <div className="w-full h-full bg-cad-panel border-l border-cad-border flex flex-col select-none text-cad-text text-xs">
       {/* 3-Tab Header Navigation */}
-      <div className="h-10 bg-cad-header border-b border-cad-border flex items-center px-1 shrink-0">
+      <div className="h-8 bg-cad-header border-b border-cad-border flex items-center px-1 shrink-0 gap-1">
         <button
           onClick={() => setActiveTab('layers')}
-          className={`flex-1 py-1.5 font-semibold text-xs rounded flex items-center justify-center gap-1.5 transition-colors ${
+          className={`flex-1 py-1 font-medium text-xs rounded-xs flex items-center justify-center gap-1.5 transition-colors duration-fast ${
             activeTab === 'layers'
-              ? 'bg-cad-subpanel text-blue-500 dark:text-blue-400 font-bold border border-cad-border shadow-sm'
+              ? 'bg-cad-panel text-blue-600 dark:text-blue-400 font-semibold border border-cad-border shadow-xs'
               : 'text-cad-textMuted hover:text-cad-text'
           }`}
         >
@@ -123,9 +123,9 @@ export const AppearancePanel: React.FC<Props> = ({
 
         <button
           onClick={() => setActiveTab('objects')}
-          className={`flex-1 py-1.5 font-semibold text-xs rounded flex items-center justify-center gap-1.5 transition-colors ${
+          className={`flex-1 py-1 font-medium text-xs rounded-xs flex items-center justify-center gap-1.5 transition-colors duration-fast ${
             activeTab === 'objects'
-              ? 'bg-cad-subpanel text-blue-500 dark:text-blue-400 font-bold border border-cad-border shadow-sm'
+              ? 'bg-cad-panel text-blue-600 dark:text-blue-400 font-semibold border border-cad-border shadow-xs'
               : 'text-cad-textMuted hover:text-cad-text'
           }`}
         >
@@ -135,9 +135,9 @@ export const AppearancePanel: React.FC<Props> = ({
 
         <button
           onClick={() => setActiveTab('nets')}
-          className={`flex-1 py-1.5 font-semibold text-xs rounded flex items-center justify-center gap-1.5 transition-colors ${
+          className={`flex-1 py-1 font-medium text-xs rounded-xs flex items-center justify-center gap-1.5 transition-colors duration-fast ${
             activeTab === 'nets'
-              ? 'bg-cad-subpanel text-blue-500 dark:text-blue-400 font-bold border border-cad-border shadow-sm'
+              ? 'bg-cad-panel text-blue-600 dark:text-blue-400 font-semibold border border-cad-border shadow-xs'
               : 'text-cad-textMuted hover:text-cad-text'
           }`}
         >
@@ -152,36 +152,36 @@ export const AppearancePanel: React.FC<Props> = ({
       {activeTab === 'layers' && (
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* Quick Filter & Global Visibility Presets */}
-          <div className="p-2 border-b border-cad-border space-y-2 bg-cad-panel shrink-0">
+          <div className="p-2 border-b border-cad-border space-y-1.5 bg-cad-panel shrink-0">
             <div className="relative">
-              <Search size={12} className="absolute left-2.5 top-2.5 text-cad-textMuted" />
+              <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-cad-textMuted" />
               <input
                 type="text"
                 placeholder="Filter layers..."
                 value={layerSearch}
                 onChange={(e) => setLayerSearch(e.target.value)}
-                className="w-full bg-cad-inputBg border border-cad-inputBorder rounded pl-7 pr-2 py-1 text-xs text-cad-inputText placeholder:text-cad-textMuted font-mono focus:border-blue-500"
+                className="w-full bg-cad-inputBg border border-cad-inputBorder rounded-xs pl-7 pr-2 py-0.5 text-xs text-cad-inputText placeholder:text-cad-textMuted font-mono focus:border-blue-500"
               />
             </div>
 
             <div className="flex items-center justify-between gap-1 text-[11px]">
               <button
                 onClick={() => onSetAllLayersVisibility(true)}
-                className="px-2 py-0.5 bg-cad-panel hover:bg-cad-surfaceHover rounded border border-cad-border text-cad-text font-medium transition-colors"
+                className="px-2 py-0.5 bg-cad-panel hover:bg-cad-surfaceHover rounded-xs border border-cad-border text-cad-text font-medium transition-colors duration-fast"
               >
                 All On
               </button>
               <button
                 onClick={() => onSetAllLayersVisibility(false)}
-                className="px-2 py-0.5 bg-cad-panel hover:bg-cad-surfaceHover rounded border border-cad-border text-cad-text font-medium transition-colors"
+                className="px-2 py-0.5 bg-cad-panel hover:bg-cad-surfaceHover rounded-xs border border-cad-border text-cad-text font-medium transition-colors duration-fast"
               >
                 All Off
               </button>
               <button
                 onClick={onToggleDimInactiveLayers}
-                className={`px-2 py-0.5 rounded border transition-colors ${
+                className={`px-2 py-0.5 rounded-xs border transition-colors duration-fast ${
                   dimInactiveLayers
-                    ? 'bg-blue-600 text-white border-blue-600 font-semibold shadow-sm'
+                    ? 'bg-blue-600 text-white border-blue-600 font-semibold shadow-xs'
                     : 'bg-cad-panel border-cad-border text-cad-text hover:bg-cad-surfaceHover'
                 }`}
                 title="Dim inactive layers to highlight the active working copper layer"
@@ -283,18 +283,18 @@ export const AppearancePanel: React.FC<Props> = ({
               <div
                 key={item.id}
                 onClick={() => onToggleObjectVisibility(item.id)}
-                className="flex items-center justify-between p-2 rounded bg-cad-bg/60 border border-cad-border/60 hover:bg-cad-subpanel cursor-pointer transition-colors"
+                className="flex items-center justify-between p-1.5 rounded-xs bg-cad-panel border border-cad-border hover:bg-cad-surfaceHover cursor-pointer transition-colors duration-fast"
               >
                 <div className="flex items-center space-x-2">
                   <button className="text-blue-500">
-                    {isVisible ? <CheckSquare size={14} /> : <Square size={14} className="text-cad-textMuted" />}
+                    {isVisible ? <CheckSquare size={13} /> : <Square size={13} className="text-cad-textMuted" />}
                   </button>
                   <span className={`text-xs ${isVisible ? 'text-cad-text font-medium' : 'text-cad-textMuted'}`}>
                     {item.label}
                   </span>
                 </div>
 
-                <span className="text-[10px] font-mono text-cad-textMuted bg-cad-subpanel px-1.5 py-0.5 rounded border border-cad-border">
+                <span className="text-[10px] font-mono text-cad-textMuted bg-cad-subpanel px-1.5 py-0.2 rounded-xs border border-cad-border">
                   {item.count}
                 </span>
               </div>
@@ -311,17 +311,17 @@ export const AppearancePanel: React.FC<Props> = ({
           {/* Net Filter */}
           <div className="p-2 border-b border-cad-border bg-cad-panel shrink-0">
             <div className="relative">
-              <Search size={12} className="absolute left-2.5 top-2.5 text-cad-textMuted" />
+              <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-cad-textMuted" />
               <input
                 type="text"
                 placeholder="Search nets (e.g. GND, VCC)..."
                 value={netSearch}
                 onChange={(e) => setNetSearch(e.target.value)}
-                className="w-full bg-cad-inputBg border border-cad-inputBorder rounded pl-7 pr-2 py-1 text-xs text-cad-inputText placeholder:text-cad-textMuted font-mono focus:border-blue-500"
+                className="w-full bg-cad-inputBg border border-cad-inputBorder rounded-xs pl-7 pr-2 py-0.5 text-xs text-cad-inputText placeholder:text-cad-textMuted font-mono focus:border-blue-500"
               />
             </div>
             {highlightedNet && (
-              <div className="mt-1.5 flex items-center justify-between bg-blue-600/15 border border-blue-500/40 rounded px-2 py-0.5 text-[11px]">
+              <div className="mt-1.5 flex items-center justify-between bg-blue-600/15 border border-blue-500/40 rounded-xs px-2 py-0.5 text-[11px]">
                 <span className="text-blue-600 dark:text-blue-400 font-semibold truncate">Highlighted: {highlightedNet}</span>
                 <button
                   onClick={() => onSelectHighlightNet(null)}
