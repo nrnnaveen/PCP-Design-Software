@@ -5,20 +5,32 @@
 
 import React, { useState } from 'react';
 import { AuthService, User } from '../core/auth';
-import { Lock, Mail, ArrowRight, X, User as UserIcon, Loader2, Sparkles } from 'lucide-react';
+import { Lock, Mail, ArrowRight, X, User as UserIcon, Loader2, CheckCircle2 } from 'lucide-react';
+import { GoogleIcon, GithubIcon, SocialLinksRow } from '../components/common/SocialIcons';
+import { siteConfig } from '../config/siteConfig';
 
 interface Props {
   isOpen: boolean;
   onClose: () => void;
   onAuthSuccess?: (user: User) => void;
+  onOpenTerms?: () => void;
+  onOpenPrivacyPolicy?: () => void;
 }
 
-export const AuthModal: React.FC<Props> = ({ isOpen, onClose, onAuthSuccess }) => {
+export const AuthModal: React.FC<Props> = ({
+  isOpen,
+  onClose,
+  onAuthSuccess,
+  onOpenTerms,
+  onOpenPrivacyPolicy,
+}) => {
   const [mode, setMode] = useState<'login' | 'signup'>('login');
   const [name, setName] = useState<string>('');
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
+  const [agreeToTerms, setAgreeToTerms] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
 
   if (!isOpen) return null;
@@ -26,6 +38,7 @@ export const AuthModal: React.FC<Props> = ({ isOpen, onClose, onAuthSuccess }) =
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
+    setSuccessMsg(null);
     const trimmed = email.trim();
     if (!trimmed || !trimmed.includes('@')) {
       setErrorMsg('Please enter a valid email address.');
@@ -37,18 +50,42 @@ export const AuthModal: React.FC<Props> = ({ isOpen, onClose, onAuthSuccess }) =
       return;
     }
 
+    if (mode === 'signup' && !agreeToTerms) {
+      setErrorMsg('Please agree to the Terms of Service and Privacy Policy to continue.');
+      return;
+    }
+
     setLoading(true);
     try {
-      let user: User;
       if (mode === 'signup') {
-        user = await AuthService.signUp(trimmed, password, name.trim());
+        await AuthService.signUp(trimmed, password, name.trim());
+        setMode('login');
+        setPassword('');
+        setSuccessMsg('Account created successfully! Please enter your password to sign in.');
       } else {
-        user = await AuthService.login(trimmed, password);
+        const user = await AuthService.login(trimmed, password);
+        onAuthSuccess?.(user);
+        onClose();
       }
-      onAuthSuccess?.(user);
-      onClose();
     } catch (err: any) {
       setErrorMsg(err.message || 'Authentication failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleOAuth = async (provider: 'google' | 'github') => {
+    setErrorMsg(null);
+    setSuccessMsg(null);
+    setLoading(true);
+    try {
+      const user = await AuthService.loginWithOAuth(provider);
+      if (user) {
+        onAuthSuccess?.(user);
+        onClose();
+      }
+    } catch (err: any) {
+      setErrorMsg(err.message || `Failed to authenticate with ${provider}.`);
     } finally {
       setLoading(false);
     }
@@ -122,6 +159,13 @@ export const AuthModal: React.FC<Props> = ({ isOpen, onClose, onAuthSuccess }) =
             </button>
           </div>
 
+          {successMsg && (
+            <div className="p-2 rounded-xs bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-xs flex items-center gap-2">
+              <CheckCircle2 size={13} className="shrink-0" />
+              <span>{successMsg}</span>
+            </div>
+          )}
+
           {errorMsg && (
             <div className="p-2 rounded-xs bg-red-500/10 border border-red-500/30 text-red-600 dark:text-red-400 text-xs flex items-center gap-2">
               <span>{errorMsg}</span>
@@ -175,10 +219,53 @@ export const AuthModal: React.FC<Props> = ({ isOpen, onClose, onAuthSuccess }) =
               </div>
             </div>
 
+            {/* Terms and Conditions Checkbox (Sign Up only) */}
+            {mode === 'signup' && (
+              <div className="pt-0.5">
+                <label className="flex items-start gap-1.5 cursor-pointer select-none text-[10px] text-cad-textMuted">
+                  <input
+                    type="checkbox"
+                    checked={agreeToTerms}
+                    onChange={(e) => setAgreeToTerms(e.target.checked)}
+                    disabled={loading}
+                    className="mt-0.5 rounded-xs border-cad-border text-blue-600 focus:ring-blue-500 bg-cad-inputBg cursor-pointer"
+                  />
+                  <span className="leading-tight">
+                    I agree to and have read the{' '}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (onOpenTerms) onOpenTerms();
+                        else window.location.hash = '#terms';
+                      }}
+                      className="text-blue-500 hover:underline font-medium inline"
+                    >
+                      Terms of Service
+                    </button>{' '}
+                    and{' '}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (onOpenPrivacyPolicy) onOpenPrivacyPolicy();
+                        else window.location.hash = '#privacy';
+                      }}
+                      className="text-blue-500 hover:underline font-medium inline"
+                    >
+                      Privacy Policy
+                    </button>
+                  </span>
+                </label>
+              </div>
+            )}
+
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-medium rounded-xs text-xs flex items-center justify-center gap-1.5 shadow-xs transition-colors duration-fast focus-visible:outline-none"
+              className="w-full py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-medium rounded-xs text-xs flex items-center justify-center gap-1.5 shadow-xs transition-colors duration-fast focus-visible:outline-none mt-1"
             >
               {loading ? (
                 <>
@@ -194,9 +281,36 @@ export const AuthModal: React.FC<Props> = ({ isOpen, onClose, onAuthSuccess }) =
             </button>
           </form>
 
+          {/* Social / OAuth Divider */}
           <div className="relative flex items-center justify-center py-0.5">
             <div className="border-t border-cad-border w-full" />
-            <span className="bg-cad-panel px-2 text-[10px] text-cad-textMuted font-mono uppercase">or</span>
+            <span className="bg-cad-panel px-2 text-[10px] text-cad-textMuted font-mono uppercase">
+              or continue with
+            </span>
+          </div>
+
+          {/* OAuth Buttons */}
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => handleOAuth('google')}
+              disabled={loading}
+              className="py-1 px-2 bg-cad-subpanel hover:bg-cad-surfaceHover border border-cad-border text-cad-text font-medium rounded-xs text-xs flex items-center justify-center gap-1.5 transition-colors duration-fast shadow-xs focus-visible:outline-none disabled:opacity-50"
+              title="Continue with Google"
+            >
+              <GoogleIcon size={13} />
+              <span>Google</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleOAuth('github')}
+              disabled={loading}
+              className="py-1 px-2 bg-cad-subpanel hover:bg-cad-surfaceHover border border-cad-border text-cad-text font-medium rounded-xs text-xs flex items-center justify-center gap-1.5 transition-colors duration-fast shadow-xs focus-visible:outline-none disabled:opacity-50"
+              title="Continue with GitHub"
+            >
+              <GithubIcon size={13} />
+              <span>GitHub</span>
+            </button>
           </div>
 
           {/* Continue as Guest Button */}
@@ -208,6 +322,17 @@ export const AuthModal: React.FC<Props> = ({ isOpen, onClose, onAuthSuccess }) =
             <UserIcon size={13} className="text-emerald-600 dark:text-emerald-400" />
             <span>Continue as Guest</span>
           </button>
+
+          {/* Footer Official Links */}
+          <div className="pt-1.5 border-t border-cad-border/50 flex flex-col items-center gap-1 text-[10px] text-cad-textMuted">
+            <div className="flex items-center gap-1">
+              <span>Support:</span>
+              <a href={`mailto:${siteConfig.contactEmail}`} className="text-blue-500 hover:underline font-mono">
+                {siteConfig.contactEmail}
+              </a>
+            </div>
+            <SocialLinksRow className="justify-center" iconSize={12} />
+          </div>
         </div>
       </div>
     </div>

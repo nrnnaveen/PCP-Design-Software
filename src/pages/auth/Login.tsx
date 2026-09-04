@@ -19,9 +19,12 @@ import {
   ArrowRight,
   ArrowLeft,
   AlertCircle,
+  CheckCircle2,
   Loader2,
   Check,
 } from 'lucide-react';
+import { GoogleIcon, GithubIcon, SocialLinksRow } from '../../components/common/SocialIcons';
+import { siteConfig } from '../../config/siteConfig';
 
 interface AuthProps {
   initialMode?: 'login' | 'signup';
@@ -29,6 +32,8 @@ interface AuthProps {
   onSwitchToSignup?: () => void;
   onSwitchToLogin?: () => void;
   onNavigateHome?: () => void;
+  onOpenTerms?: () => void;
+  onOpenPrivacyPolicy?: () => void;
 }
 
 export const Login: React.FC<AuthProps> = ({
@@ -37,13 +42,17 @@ export const Login: React.FC<AuthProps> = ({
   onSwitchToSignup,
   onSwitchToLogin,
   onNavigateHome,
+  onOpenTerms,
+  onOpenPrivacyPolicy,
 }) => {
   const [mode, setMode] = useState<'login' | 'signup'>(initialMode);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [agreeToTerms, setAgreeToTerms] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   // Subtle 3D Card Hover Tilt
@@ -70,6 +79,7 @@ export const Login: React.FC<AuthProps> = ({
   const switchMode = (newMode: 'login' | 'signup') => {
     setMode(newMode);
     setErrorMessage(null);
+    setSuccessMessage(null);
     if (newMode === 'signup' && onSwitchToSignup) onSwitchToSignup();
     if (newMode === 'login' && onSwitchToLogin) onSwitchToLogin();
   };
@@ -98,6 +108,7 @@ export const Login: React.FC<AuthProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
+    setSuccessMessage(null);
 
     const trimmedEmail = email.trim();
     if (!trimmedEmail || !trimmedEmail.includes('@')) {
@@ -110,17 +121,41 @@ export const Login: React.FC<AuthProps> = ({
       return;
     }
 
+    if (mode === 'signup' && !agreeToTerms) {
+      setErrorMessage('Please agree to the Terms of Service and Privacy Policy to continue.');
+      return;
+    }
+
     setIsLoading(true);
     try {
-      let user: User;
       if (mode === 'signup') {
-        user = await AuthService.signUp(trimmedEmail, password, name.trim());
+        await AuthService.signUp(trimmedEmail, password, name.trim());
+        // Require user to sign in to continue after first registration
+        setMode('login');
+        setPassword('');
+        setSuccessMessage('Account created successfully! Please enter your password to sign in.');
       } else {
-        user = await AuthService.login(trimmedEmail, password);
+        const user = await AuthService.login(trimmedEmail, password);
+        onAuthSuccess?.(user);
       }
-      onAuthSuccess?.(user);
     } catch (err: any) {
       setErrorMessage(err.message || 'Authentication failed. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleOAuth = async (provider: 'google' | 'github') => {
+    setErrorMessage(null);
+    setSuccessMessage(null);
+    setIsLoading(true);
+    try {
+      const user = await AuthService.loginWithOAuth(provider);
+      if (user) {
+        onAuthSuccess?.(user);
+      }
+    } catch (err: any) {
+      setErrorMessage(err.message || `Failed to authenticate with ${provider}.`);
     } finally {
       setIsLoading(false);
     }
@@ -196,6 +231,14 @@ export const Login: React.FC<AuthProps> = ({
             Sign Up
           </button>
         </div>
+
+        {/* Success Alert */}
+        {successMessage && (
+          <div className="p-2.5 rounded-md bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 text-xs flex items-start gap-2 animate-in fade-in duration-150">
+            <CheckCircle2 size={14} className="shrink-0 mt-0.5" />
+            <span className="leading-snug">{successMessage}</span>
+          </div>
+        )}
 
         {/* Error Alert */}
         {errorMessage && (
@@ -301,6 +344,49 @@ export const Login: React.FC<AuthProps> = ({
             )}
           </div>
 
+          {/* Terms and Conditions Checkbox (Sign Up only) */}
+          {mode === 'signup' && (
+            <div className="pt-0.5 animate-in fade-in duration-150">
+              <label className="flex items-start gap-2 cursor-pointer select-none text-[11px] text-cad-textMuted">
+                <input
+                  type="checkbox"
+                  checked={agreeToTerms}
+                  onChange={(e) => setAgreeToTerms(e.target.checked)}
+                  disabled={isLoading}
+                  className="mt-0.5 rounded border-cad-border text-blue-600 focus:ring-blue-500 focus:ring-offset-0 bg-cad-inputBg cursor-pointer"
+                />
+                <span className="leading-tight">
+                  I agree to and have read the{' '}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      if (onOpenTerms) onOpenTerms();
+                      else window.location.hash = '#terms';
+                    }}
+                    className="text-blue-500 hover:underline font-medium inline focus:outline-none"
+                  >
+                    Terms of Service
+                  </button>{' '}
+                  and{' '}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      if (onOpenPrivacyPolicy) onOpenPrivacyPolicy();
+                      else window.location.hash = '#privacy';
+                    }}
+                    className="text-blue-500 hover:underline font-medium inline focus:outline-none"
+                  >
+                    Privacy Policy
+                  </button>
+                </span>
+              </label>
+            </div>
+          )}
+
           {/* Submit Button */}
           <button
             type="submit"
@@ -317,6 +403,52 @@ export const Login: React.FC<AuthProps> = ({
             )}
           </button>
         </form>
+
+        {/* Social / OAuth Divider */}
+        <div className="relative flex items-center justify-center pt-1">
+          <div className="border-t border-cad-border w-full" />
+          <span className="bg-cad-panel px-2 text-[10px] text-cad-textMuted font-mono uppercase tracking-wider">
+            or continue with
+          </span>
+        </div>
+
+        {/* Google & GitHub OAuth Buttons */}
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={() => handleOAuth('google')}
+            disabled={isLoading}
+            className="py-2 px-3 bg-cad-subpanel hover:bg-cad-surfaceHover border border-cad-border hover:border-cad-borderFocus rounded-md text-xs font-medium text-cad-text flex items-center justify-center gap-2 transition-all duration-fast eng-tactile disabled:opacity-50"
+            title="Continue with Google"
+          >
+            <GoogleIcon size={14} />
+            <span>Google</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => handleOAuth('github')}
+            disabled={isLoading}
+            className="py-2 px-3 bg-cad-subpanel hover:bg-cad-surfaceHover border border-cad-border hover:border-cad-borderFocus rounded-md text-xs font-medium text-cad-text flex items-center justify-center gap-2 transition-all duration-fast eng-tactile disabled:opacity-50"
+            title="Continue with GitHub"
+          >
+            <GithubIcon size={14} />
+            <span>GitHub</span>
+          </button>
+        </div>
+
+        {/* Official FloZ Contact & Social Links */}
+        <div className="pt-2 flex flex-col items-center gap-1.5 text-center text-[11px] text-cad-textMuted border-t border-cad-border/40">
+          <div className="flex items-center gap-1.5">
+            <span>Support:</span>
+            <a
+              href={`mailto:${siteConfig.contactEmail}`}
+              className="text-blue-500 hover:underline font-mono text-[10px]"
+            >
+              {siteConfig.contactEmail}
+            </a>
+          </div>
+          <SocialLinksRow className="justify-center pt-0.5" />
+        </div>
       </div>
     </div>
   );

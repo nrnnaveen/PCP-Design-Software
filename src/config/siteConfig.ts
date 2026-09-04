@@ -18,10 +18,12 @@ export interface SiteConfig {
   contactAddress?: string;
   analyticsId?: string;
   social: {
-    github?: string;
+    github: string;
+    linkedin: string;
+    discord: string;
+    instagram: string;
     twitter?: string;
     documentation?: string;
-    discord?: string;
   };
 }
 
@@ -39,9 +41,9 @@ export const siteConfig: SiteConfig = {
   version: '1.0.0',
   author: 'FloZ AI Hardware Studio',
   companyName: (typeof import.meta !== 'undefined' && import.meta.env?.VITE_COMPANY_NAME) || 'FloZ EDA',
-  contactEmail: typeof import.meta !== 'undefined' && import.meta.env?.VITE_CONTACT_EMAIL
+  contactEmail: (typeof import.meta !== 'undefined' && import.meta.env?.VITE_CONTACT_EMAIL)
     ? String(import.meta.env.VITE_CONTACT_EMAIL)
-    : undefined,
+    : 'floz.tech.official@gmail.com',
   contactPhone: typeof import.meta !== 'undefined' && import.meta.env?.VITE_CONTACT_PHONE
     ? String(import.meta.env.VITE_CONTACT_PHONE)
     : undefined,
@@ -52,17 +54,23 @@ export const siteConfig: SiteConfig = {
     ? String(import.meta.env.VITE_ANALYTICS_ID).trim()
     : undefined,
   social: {
-    github: typeof import.meta !== 'undefined' && import.meta.env?.VITE_GITHUB_URL
+    github: (typeof import.meta !== 'undefined' && import.meta.env?.VITE_GITHUB_URL)
       ? String(import.meta.env.VITE_GITHUB_URL)
-      : undefined,
+      : 'https://github.com/FloZ-Official',
+    linkedin: (typeof import.meta !== 'undefined' && import.meta.env?.VITE_LINKEDIN_URL)
+      ? String(import.meta.env.VITE_LINKEDIN_URL)
+      : 'https://www.linkedin.com/company/flozhub/',
+    discord: (typeof import.meta !== 'undefined' && import.meta.env?.VITE_DISCORD_URL)
+      ? String(import.meta.env.VITE_DISCORD_URL)
+      : 'https://discord.gg/xDNYCTH6x',
+    instagram: (typeof import.meta !== 'undefined' && import.meta.env?.VITE_INSTAGRAM_URL)
+      ? String(import.meta.env.VITE_INSTAGRAM_URL)
+      : 'https://www.instagram.com/floz.official?igsh=MXVsaGdtZHFyem43Nw==',
     twitter: typeof import.meta !== 'undefined' && import.meta.env?.VITE_TWITTER_URL
       ? String(import.meta.env.VITE_TWITTER_URL)
       : undefined,
     documentation: typeof import.meta !== 'undefined' && import.meta.env?.VITE_DOCS_URL
       ? String(import.meta.env.VITE_DOCS_URL)
-      : undefined,
-    discord: typeof import.meta !== 'undefined' && import.meta.env?.VITE_DISCORD_URL
-      ? String(import.meta.env.VITE_DISCORD_URL)
       : undefined,
   },
 };

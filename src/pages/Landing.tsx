@@ -15,6 +15,7 @@ import {
   Cpu,
 } from 'lucide-react';
 import { siteConfig } from '../config/siteConfig';
+import { SocialLinksRow } from '../components/common/SocialIcons';
 
 interface LandingProps {
   onOpenWorkspace: () => void;
@@ -168,10 +169,13 @@ export const Landing: React.FC<LandingProps> = ({
       </div>
 
       {/* 5. Minimal Legal Footer */}
-      <footer className="relative z-20 h-12 px-6 sm:px-10 flex items-center justify-between text-[11px] text-white/50 border-t border-white/5 backdrop-blur-xs">
+      <footer className="relative z-20 min-h-12 py-3 px-6 sm:px-10 flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] text-white/50 border-t border-white/5 backdrop-blur-xs">
         <div>
           &copy; {new Date().getFullYear()} {siteConfig.companyName}. All rights reserved.
         </div>
+
+        {/* Official FloZ Social & Contact Links */}
+        <SocialLinksRow className="text-white/60" iconSize={14} />
 
         <div className="flex items-center gap-3 sm:gap-4 flex-wrap">
           <button onClick={onOpenTerms} className="hover:text-white transition-colors">

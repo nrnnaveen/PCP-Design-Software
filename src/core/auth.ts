@@ -217,6 +217,42 @@ export class AuthService {
   }
 
   /**
+   * Signs in user using OAuth (Google or GitHub) via Supabase, with local fallback.
+   */
+  public static async loginWithOAuth(provider: 'google' | 'github'): Promise<User | null> {
+    if (isSupabaseConfigured() && supabase) {
+      const redirectUrl = typeof window !== 'undefined' ? window.location.origin : undefined;
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: {
+          redirectTo: redirectUrl,
+        },
+      });
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      return this.currentUser;
+    }
+
+    // Local development fallback mode
+    const formattedProvider = provider === 'google' ? 'Google' : 'GitHub';
+    const fallbackUser: User = {
+      id: `usr_${provider}_${Math.random().toString(36).substring(2, 9)}`,
+      email: `${provider}.user@floz.dev`,
+      name: `${formattedProvider} Engineer`,
+      isGuest: false,
+      createdAt: Date.now(),
+    };
+
+    this.currentUser = fallbackUser;
+    this.persist(fallbackUser);
+    this.notify(fallbackUser);
+    return fallbackUser;
+  }
+
+  /**
    * Signs out the user from Supabase and returns to Guest mode.
    */
   public static async logout(): Promise<void> {

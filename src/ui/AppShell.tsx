@@ -805,7 +805,15 @@ export const AppShell: React.FC = () => {
             setShowLogin(false);
             setShowLanding(true);
           }}
+          onOpenTerms={() => setShowTermsModal(true)}
+          onOpenPrivacyPolicy={() => setShowPrivacyModal(true)}
         />
+        {showTermsModal && (
+          <TermsModal isOpen={showTermsModal} onClose={() => setShowTermsModal(false)} />
+        )}
+        {showPrivacyModal && (
+          <PrivacyPolicyModal isOpen={showPrivacyModal} onClose={() => setShowPrivacyModal(false)} />
+        )}
         <CookieConsentBanner onOpenPrivacyPolicy={() => setShowPrivacyModal(true)} />
       </div>
     );
@@ -828,7 +836,15 @@ export const AppShell: React.FC = () => {
             setShowSignup(false);
             setShowLanding(true);
           }}
+          onOpenTerms={() => setShowTermsModal(true)}
+          onOpenPrivacyPolicy={() => setShowPrivacyModal(true)}
         />
+        {showTermsModal && (
+          <TermsModal isOpen={showTermsModal} onClose={() => setShowTermsModal(false)} />
+        )}
+        {showPrivacyModal && (
+          <PrivacyPolicyModal isOpen={showPrivacyModal} onClose={() => setShowPrivacyModal(false)} />
+        )}
         <CookieConsentBanner onOpenPrivacyPolicy={() => setShowPrivacyModal(true)} />
       </div>
     );
@@ -852,7 +868,15 @@ export const AppShell: React.FC = () => {
             setShowLogin(false);
             setShowLanding(true);
           }}
+          onOpenTerms={() => setShowTermsModal(true)}
+          onOpenPrivacyPolicy={() => setShowPrivacyModal(true)}
         />
+        {showTermsModal && (
+          <TermsModal isOpen={showTermsModal} onClose={() => setShowTermsModal(false)} />
+        )}
+        {showPrivacyModal && (
+          <PrivacyPolicyModal isOpen={showPrivacyModal} onClose={() => setShowPrivacyModal(false)} />
+        )}
         <CookieConsentBanner onOpenPrivacyPolicy={() => setShowPrivacyModal(true)} />
       </div>
     );

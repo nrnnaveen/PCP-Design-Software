@@ -126,10 +126,14 @@ describe('FloZ ECA — SEO, Accessibility & Production Readiness', () => {
       expect(parsed['@context']).toBe('https://schema.org');
       expect(parsed['@graph'].length).toBeGreaterThanOrEqual(3);
 
-      // Verify no fake phone or fake address in Organization
+      // Verify official email or no fake phone/address in Organization
       const org = parsed['@graph'].find((g: any) => g['@type'] === 'Organization');
       expect(org).toBeDefined();
-      expect(org.contactPoint).toBeUndefined(); // Since no phone/email env vars set
+      if (org.contactPoint) {
+        expect(org.contactPoint.email).toBe(siteConfig.contactEmail);
+        expect(org.contactPoint.telephone).toBeUndefined();
+      }
+      expect(org.address).toBeUndefined();
     });
   });
 

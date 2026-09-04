@@ -41,6 +41,7 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import { AppThemeId } from '../theme/themeManager';
+import { SocialLinksRow } from '../components/common/SocialIcons';
 
 interface DashboardProps {
   currentProject: ApexProject;
@@ -458,8 +459,13 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </div>
           </div>
 
+          {/* Official FloZ Social & Contact Links */}
+          <div className="pt-2 border-t border-cad-border/50">
+            <SocialLinksRow iconSize={13} />
+          </div>
+
           {(onOpenTerms || onOpenPrivacyPolicy || onOpenContact) && (
-            <div className="flex items-center gap-2 text-[10px] text-cad-textMuted pt-2 border-t border-cad-border/50 flex-wrap">
+            <div className="flex items-center gap-2 text-[10px] text-cad-textMuted pt-1 flex-wrap">
               {onOpenTerms && (
                 <button onClick={onOpenTerms} className="hover:text-cad-text transition-colors">
                   Terms

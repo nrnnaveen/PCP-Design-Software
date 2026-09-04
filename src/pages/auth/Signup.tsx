@@ -11,6 +11,8 @@ interface SignupProps {
   onAuthSuccess?: (user: User) => void;
   onSwitchToLogin?: () => void;
   onNavigateHome?: () => void;
+  onOpenTerms?: () => void;
+  onOpenPrivacyPolicy?: () => void;
 }
 
 export const Signup: React.FC<SignupProps> = (props) => {

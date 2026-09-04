@@ -29,6 +29,12 @@ import {
 } from 'lucide-react';
 import { siteConfig } from '../config/siteConfig';
 import { LogoMark } from '../components/branding/LogoMark';
+import {
+  GithubIcon,
+  LinkedinIcon,
+  DiscordIcon,
+  InstagramIcon,
+} from '../components/common/SocialIcons';
 
 export type AboutTabId =
   | 'about-eca'
@@ -698,30 +704,99 @@ export const AboutModal: React.FC<Props> = ({
                   </form>
                 )}
 
-                <div className="pt-2 border-t border-cad-border grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                  {siteConfig.social.github && (
-                    <a
-                      href={siteConfig.social.github}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="p-2.5 bg-cad-subpanel hover:bg-cad-surfaceHover border border-cad-border rounded flex items-center justify-between text-cad-text transition-colors"
-                    >
-                      <span className="font-medium">GitHub Repository &amp; Issues</span>
-                      <ExternalLink size={13} className="text-cad-textMuted" />
-                    </a>
-                  )}
+                <div className="pt-3 border-t border-cad-border space-y-2">
+                  <h4 className="text-xs font-semibold text-cad-textHeading">
+                    Official Communication &amp; Social Channels
+                  </h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                    {siteConfig.contactEmail && (
+                      <a
+                        href={`mailto:${siteConfig.contactEmail}`}
+                        className="p-2.5 bg-cad-subpanel hover:bg-cad-surfaceHover border border-cad-border rounded flex items-center justify-between text-cad-text transition-colors"
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <Mail size={15} className="text-emerald-500 shrink-0" />
+                          <div className="truncate">
+                            <div className="font-medium text-cad-textHeading">Official Email</div>
+                            <div className="text-[11px] text-cad-textMuted font-mono truncate">{siteConfig.contactEmail}</div>
+                          </div>
+                        </div>
+                        <ExternalLink size={13} className="text-cad-textMuted shrink-0 ml-1.5" />
+                      </a>
+                    )}
 
-                  {siteConfig.social.discord && (
-                    <a
-                      href={siteConfig.social.discord}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="p-2.5 bg-cad-subpanel hover:bg-cad-surfaceHover border border-cad-border rounded flex items-center justify-between text-cad-text transition-colors"
-                    >
-                      <span className="font-medium">FloZ Discord Community</span>
-                      <MessageSquare size={13} className="text-cad-textMuted" />
-                    </a>
-                  )}
+                    {siteConfig.social.github && (
+                      <a
+                        href={siteConfig.social.github}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-2.5 bg-cad-subpanel hover:bg-cad-surfaceHover border border-cad-border rounded flex items-center justify-between text-cad-text transition-colors"
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <GithubIcon size={15} className="text-cad-text shrink-0" />
+                          <div className="truncate">
+                            <div className="font-medium text-cad-textHeading">GitHub</div>
+                            <div className="text-[11px] text-cad-textMuted truncate">FloZ-Official</div>
+                          </div>
+                        </div>
+                        <ExternalLink size={13} className="text-cad-textMuted shrink-0 ml-1.5" />
+                      </a>
+                    )}
+
+                    {siteConfig.social.linkedin && (
+                      <a
+                        href={siteConfig.social.linkedin}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-2.5 bg-cad-subpanel hover:bg-cad-surfaceHover border border-cad-border rounded flex items-center justify-between text-cad-text transition-colors"
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <LinkedinIcon size={15} className="text-blue-500 shrink-0" />
+                          <div className="truncate">
+                            <div className="font-medium text-cad-textHeading">LinkedIn</div>
+                            <div className="text-[11px] text-cad-textMuted truncate">FloZ Hub</div>
+                          </div>
+                        </div>
+                        <ExternalLink size={13} className="text-cad-textMuted shrink-0 ml-1.5" />
+                      </a>
+                    )}
+
+                    {siteConfig.social.discord && (
+                      <a
+                        href={siteConfig.social.discord}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-2.5 bg-cad-subpanel hover:bg-cad-surfaceHover border border-cad-border rounded flex items-center justify-between text-cad-text transition-colors"
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <DiscordIcon size={15} className="text-indigo-400 shrink-0" />
+                          <div className="truncate">
+                            <div className="font-medium text-cad-textHeading">Discord Community</div>
+                            <div className="text-[11px] text-cad-textMuted truncate">Join FloZ Server</div>
+                          </div>
+                        </div>
+                        <ExternalLink size={13} className="text-cad-textMuted shrink-0 ml-1.5" />
+                      </a>
+                    )}
+
+                    {siteConfig.social.instagram && (
+                      <a
+                        href={siteConfig.social.instagram}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-2.5 bg-cad-subpanel hover:bg-cad-surfaceHover border border-cad-border rounded flex items-center justify-between text-cad-text transition-colors sm:col-span-2"
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <InstagramIcon size={15} className="text-pink-500 shrink-0" />
+                          <div className="truncate">
+                            <div className="font-medium text-cad-textHeading">Instagram</div>
+                            <div className="text-[11px] text-cad-textMuted truncate">@floz.official</div>
+                          </div>
+                        </div>
+                        <ExternalLink size={13} className="text-cad-textMuted shrink-0 ml-1.5" />
+                      </a>
+                    )}
+                  </div>
                 </div>
               </div>
             )}
