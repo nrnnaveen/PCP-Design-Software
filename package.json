@@ -20,6 +20,7 @@
     "dist:all": "npm run desktop:build && electron-builder --win --linux"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.115.0",
     "jszip": "^3.10.1",
     "lucide-react": "^1.16.0",
     "react": "^19.0.0",

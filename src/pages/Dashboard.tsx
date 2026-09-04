@@ -2,14 +2,15 @@
  * FloZ — AI Prompt-to-PCB Dashboard
  * Turn user prompts into real, manufactured PCB designs.
  * Minimalist full-screen layout with instant AI circuit synthesis,
- * active design quick-resume, and starter hardware templates.
+ * active design quick-resume, Supabase cloud project storage & synchronization.
  */
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { ApexProject } from '../core/types';
 import { createBlankProject } from '../examples/demoProject';
 import { ProjectSerializer } from '../core/serialization';
 import { AuthService, User } from '../core/auth';
+import { CloudProjectService, CloudProjectRecord } from '../core/cloudProjects';
 import { Logo } from '../components/branding/Logo';
 import {
   FolderOpen,
@@ -33,6 +34,12 @@ import {
   Loader2,
   Info,
   HelpCircle,
+  Cloud,
+  CloudCheck,
+  Trash2,
+  RefreshCw,
+  Database,
+  ExternalLink,
 } from 'lucide-react';
 import { AppThemeId } from '../theme/themeManager';
 
@@ -64,6 +71,7 @@ interface ProjectItem {
   partsCount: number;
   lastModified: string;
   isActive?: boolean;
+  isCloud?: boolean;
   generator?: () => ApexProject;
 }
 
@@ -97,6 +105,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const [showNewModal, setShowNewModal] = useState(false);
   const [user, setUser] = useState<User>(() => AuthService.getUser());
 
+  // Cloud Project State
+  const [cloudProjects, setCloudProjects] = useState<CloudProjectRecord[]>([]);
+  const [loadingProjects, setLoadingProjects] = useState(false);
+  const [isSavingCloud, setIsSavingCloud] = useState(false);
+  const [cloudToast, setCloudToast] = useState<string | null>(null);
+
   // AI Prompt Bar State
   const [aiPrompt, setAiPrompt] = useState('');
   const [isSynthesizing, setIsSynthesizing] = useState(false);
@@ -109,6 +123,23 @@ export const Dashboard: React.FC<DashboardProps> = ({
     const unsub = AuthService.subscribe((u) => setUser(u));
     return unsub;
   }, []);
+
+  // Fetch Cloud Projects from Supabase
+  const loadCloudProjects = useCallback(async () => {
+    setLoadingProjects(true);
+    try {
+      const records = await CloudProjectService.listProjects();
+      setCloudProjects(records);
+    } catch (err) {
+      console.warn('Could not load cloud projects:', err);
+    } finally {
+      setLoadingProjects(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadCloudProjects();
+  }, [loadCloudProjects, user.id]);
 
   // Keyboard shortcut listener for Esc key to close modal
   useEffect(() => {
@@ -143,12 +174,16 @@ export const Dashboard: React.FC<DashboardProps> = ({
     }, 300);
   };
 
-  // Active Projects
+  // Active & Cloud Projects list
   const myProjects: ProjectItem[] = useMemo(() => {
     const list: ProjectItem[] = [];
+    const seenIds = new Set<string>();
+
     if (currentProject?.metadata) {
+      const currentId = currentProject.metadata.id || 'active';
+      seenIds.add(currentId);
       list.push({
-        id: currentProject.metadata.id || 'active',
+        id: currentId,
         name: currentProject.metadata.name || 'My Circuit Board',
         category: 'active',
         description: currentProject.metadata.description || 'Current active schematic and PCB layout.',
@@ -156,17 +191,88 @@ export const Dashboard: React.FC<DashboardProps> = ({
         partsCount: currentProject.pcb.footprints.length,
         lastModified: 'Active Now',
         isActive: true,
+        isCloud: false,
         generator: () => currentProject,
       });
     }
+
+    // Add Supabase Cloud Projects
+    cloudProjects.forEach((cp) => {
+      if (!seenIds.has(cp.id)) {
+        seenIds.add(cp.id);
+        list.push({
+          id: cp.id,
+          name: cp.name,
+          category: 'custom',
+          description: cp.description || 'Stored in Supabase Cloud database.',
+          layers: cp.layers,
+          partsCount: cp.partsCount,
+          lastModified: new Date(cp.updatedAt).toLocaleDateString(),
+          isActive: false,
+          isCloud: true,
+        });
+      }
+    });
+
     return list;
-  }, [currentProject]);
+  }, [currentProject, cloudProjects]);
 
   const items = useMemo(() => {
     if (!searchQuery.trim()) return myProjects;
     const q = searchQuery.toLowerCase();
     return myProjects.filter((p) => p.name.toLowerCase().includes(q) || p.description.toLowerCase().includes(q));
   }, [myProjects, searchQuery]);
+
+  const handleOpenItem = async (item: ProjectItem) => {
+    if (item.generator) {
+      onOpenProject(item.generator());
+      onOpenWorkspaceTab('schematic');
+      return;
+    }
+
+    // Load from Supabase Cloud
+    try {
+      setLoadingProjects(true);
+      const loaded = await CloudProjectService.loadProject(item.id);
+      onOpenProject(loaded);
+      onOpenWorkspaceTab('schematic');
+    } catch (err: any) {
+      alert(`Could not open project: ${err.message}`);
+    } finally {
+      setLoadingProjects(false);
+    }
+  };
+
+  const handleSaveActiveToCloud = async () => {
+    if (!currentProject) return;
+    setIsSavingCloud(true);
+    try {
+      const res = await CloudProjectService.saveProject(currentProject);
+      if (res.isCloud) {
+        setCloudToast('Saved to Supabase Cloud Database!');
+        await loadCloudProjects();
+      } else {
+        setCloudToast('Saved locally (Sign in to sync with Supabase).');
+      }
+    } catch (err: any) {
+      setCloudToast(`Save error: ${err.message}`);
+    } finally {
+      setIsSavingCloud(false);
+      setTimeout(() => setCloudToast(null), 4000);
+    }
+  };
+
+  const handleDeleteItem = async (e: React.MouseEvent, item: ProjectItem) => {
+    e.stopPropagation();
+    if (!window.confirm(`Delete "${item.name}" from Supabase?`)) return;
+
+    try {
+      await CloudProjectService.deleteProject(item.id);
+      setCloudProjects((prev) => prev.filter((p) => p.id !== item.id));
+    } catch (err: any) {
+      alert(`Delete error: ${err.message}`);
+    }
+  };
 
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
@@ -186,31 +292,25 @@ export const Dashboard: React.FC<DashboardProps> = ({
     const reader = new FileReader();
     reader.onload = (event) => {
       try {
-        const content = event.target?.result as string;
-        const imported = ProjectSerializer.deserialize(content);
+        const text = event.target?.result as string;
+        const imported = ProjectSerializer.deserialize(text);
         onOpenProject(imported);
         onOpenWorkspaceTab('schematic');
       } catch (err: any) {
-        alert(`Failed to import file: ${err.message}`);
+        alert(err.message || 'Failed to parse FloZ project file.');
       }
     };
     reader.readAsText(file);
   };
 
   return (
-    <div className="h-screen w-screen bg-cad-bg text-cad-text flex flex-col select-none overflow-hidden font-sans">
-      {/* 1. Clean Top Bar */}
-      <header className="h-14 bg-cad-panel border-b border-cad-border px-4 sm:px-6 flex items-center justify-between shrink-0 z-30">
+    <div className="h-screen w-screen flex flex-col bg-cad-bg text-cad-text overflow-hidden font-sans select-none">
+      {/* 1. Header Bar */}
+      <header className="h-14 border-b border-cad-border bg-cad-panel px-4 sm:px-6 flex items-center justify-between shrink-0 gap-4">
         <div className="flex items-center gap-6">
-          <div className="flex items-center gap-3">
-            <Logo size="sm" onClick={onOpenLanding} />
-            <span className="text-cad-border text-sm hidden sm:inline">/</span>
-            <span className="text-xs font-semibold text-cad-textHeading hidden sm:inline">
-              Prompt-to-PCB Studio
-            </span>
-          </div>
+          <Logo size="sm" subtitle={false} onClick={onOpenLanding} />
 
-          {/* Search Input */}
+          {/* Quick Search */}
           <div className="relative w-56 sm:w-72">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-cad-textMuted pointer-events-none" />
             <input
@@ -262,13 +362,24 @@ export const Dashboard: React.FC<DashboardProps> = ({
             <span className="font-medium text-cad-text max-w-[120px] truncate">
               {user.name || 'FloZ Designer'}
             </span>
-            <button
-              onClick={() => AuthService.logout()}
-              className="text-cad-textMuted hover:text-red-400 ml-1 transition-colors"
-              title="Sign Out"
-            >
-              <LogOut size={13} />
-            </button>
+            {user.isGuest ? (
+              onOpenAuthModal && (
+                <button
+                  onClick={onOpenAuthModal}
+                  className="text-blue-500 hover:text-blue-400 font-medium ml-1 transition-colors text-[11px]"
+                >
+                  Sign In
+                </button>
+              )
+            ) : (
+              <button
+                onClick={() => AuthService.logout()}
+                className="text-cad-textMuted hover:text-red-400 ml-1 transition-colors"
+                title="Sign Out"
+              >
+                <LogOut size={13} />
+              </button>
+            )}
           </div>
 
           {/* Open CAD Button */}
@@ -285,7 +396,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
       {/* 2. Main Content Area */}
       <div className="flex-1 flex overflow-hidden">
         {/* Clean Minimal Sidebar */}
-        <aside className="w-52 border-r border-cad-border bg-cad-subpanel p-4 flex flex-col justify-between shrink-0">
+        <aside className="w-56 border-r border-cad-border bg-cad-subpanel p-4 flex flex-col justify-between shrink-0">
           <div className="space-y-6">
             <div className="space-y-1">
               <div
@@ -330,13 +441,23 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </div>
           </div>
 
+          {/* Database & Cloud Sync Status Badge */}
           <div className="pt-4 border-t border-cad-border flex flex-col gap-2">
-            <div className="text-[11px] text-cad-textMuted flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span>AI Hardware Engine Ready</span>
+            <div className="flex items-center gap-2 text-[11px]">
+              <span className={`w-2 h-2 rounded-full ${AuthService.isCloudEnabled() ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`} />
+              <span className="font-semibold text-cad-textHeading flex items-center gap-1.5">
+                <Database size={13} className="text-blue-500" />
+                <span>{AuthService.isCloudEnabled() ? 'Supabase Database' : 'Local Mode'}</span>
+              </span>
             </div>
+            <div className="text-[10px] text-cad-textMuted leading-tight">
+              {AuthService.isCloudEnabled()
+                ? (user.isGuest ? 'Sign in to sync your boards with Supabase' : 'Row Level Security cloud sync active')
+                : 'Configure VITE_SUPABASE_URL in .env to enable cloud sync'}
+            </div>
+
             {(onOpenTerms || onOpenPrivacyPolicy || onOpenContact) && (
-              <div className="flex items-center gap-2 text-[10px] text-cad-textMuted pt-1 flex-wrap">
+              <div className="flex items-center gap-2 text-[10px] text-cad-textMuted pt-2 border-t border-cad-border/50 flex-wrap">
                 {onOpenTerms && (
                   <button onClick={onOpenTerms} className="hover:text-cad-text transition-colors">
                     Terms
@@ -363,6 +484,19 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
         {/* Content Canvas */}
         <main className="flex-1 flex flex-col overflow-y-auto bg-cad-bg p-6 space-y-6">
+          {/* Toast Notification */}
+          {cloudToast && (
+            <div className="p-3 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-xs flex items-center justify-between animate-in fade-in duration-150">
+              <span className="flex items-center gap-2">
+                <CloudCheck size={16} />
+                <span>{cloudToast}</span>
+              </span>
+              <button onClick={() => setCloudToast(null)} className="text-emerald-400/70 hover:text-emerald-300">
+                &times;
+              </button>
+            </div>
+          )}
+
           {/* A. Prominent AI Prompt-to-PCB Generator Hero Card */}
           <div className="bg-gradient-to-r from-blue-900/20 via-cad-panel to-cad-panel border border-blue-500/30 rounded-xl p-5 shadow-md space-y-3.5">
             <div className="flex items-center justify-between">
@@ -375,40 +509,31 @@ export const Dashboard: React.FC<DashboardProps> = ({
               </span>
             </div>
 
-            <div>
-              <h2 className="text-base sm:text-lg font-bold text-cad-textHeading">
-                Synthesize a Complete Circuit Board with AI
-              </h2>
-              <p className="text-xs text-cad-textMuted">
-                Describe the microcontrollers, sensors, or power requirements you need. FloZ generates the full schematic and routed PCB layout.
-              </p>
-            </div>
-
-            {/* Prompt Form */}
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                handleSynthesizePrompt();
-              }}
-              className="flex items-center gap-2 bg-cad-inputBg border border-cad-inputBorder focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500 rounded-lg p-1.5 transition-all shadow-xs"
-            >
-              <input
-                type="text"
+            <div className="relative">
+              <textarea
                 value={aiPrompt}
                 onChange={(e) => setAiPrompt(e.target.value)}
-                placeholder="e.g. ESP32-S3 IoT node with USB-C, LiPo charger, and I2C temperature sensor..."
-                className="w-full bg-transparent text-xs text-cad-inputText placeholder:text-cad-textMuted focus:outline-none px-2 py-1.5"
-                disabled={isSynthesizing}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSynthesizePrompt();
+                  }
+                }}
+                rows={2}
+                placeholder="Describe your electronics project in plain language (e.g. 'USB-C LiPo power board with 3.3V LDO, charge LED, and battery monitor')..."
+                className="w-full bg-cad-inputBg border border-cad-inputBorder rounded-lg p-3 text-xs text-cad-inputText placeholder:text-cad-textMuted focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 resize-none transition-colors"
               />
+
               <button
-                type="submit"
-                disabled={isSynthesizing || !aiPrompt.trim()}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-60 text-white rounded-md text-xs font-semibold flex items-center gap-1.5 shrink-0 transition-colors shadow-xs eng-tactile"
+                type="button"
+                onClick={() => handleSynthesizePrompt()}
+                disabled={!aiPrompt.trim() || isSynthesizing}
+                className="absolute right-2.5 bottom-3.5 px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:pointer-events-none text-white font-semibold rounded-md text-xs flex items-center gap-1.5 shadow-sm transition-all duration-fast eng-tactile"
               >
                 {isSynthesizing ? (
                   <>
                     <Loader2 size={13} className="animate-spin" />
-                    <span>Synthesizing...</span>
+                    <span>Compiling...</span>
                   </>
                 ) : (
                   <>
@@ -417,15 +542,14 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   </>
                 )}
               </button>
-            </form>
+            </div>
 
-            {/* Prompt Chips */}
-            <div className="flex flex-wrap items-center gap-2 pt-0.5 text-xs">
-              <span className="text-[11px] text-cad-textMuted">Quick prompts:</span>
-              {SAMPLE_PROMPTS.map((p, i) => (
+            {/* Quick Inspiration Chips */}
+            <div className="flex items-center gap-2 flex-wrap pt-1">
+              <span className="text-[11px] text-cad-textMuted font-medium">Try:</span>
+              {SAMPLE_PROMPTS.map((p, idx) => (
                 <button
-                  key={i}
-                  type="button"
+                  key={idx}
                   onClick={() => handleSynthesizePrompt(p.prompt)}
                   className="px-2.5 py-1 rounded-md text-[11px] bg-cad-subpanel hover:bg-cad-surfaceHover border border-cad-border text-cad-textMuted hover:text-cad-text transition-colors"
                 >
@@ -465,6 +589,20 @@ export const Dashboard: React.FC<DashboardProps> = ({
               {/* Action Buttons */}
               <div className="flex flex-wrap items-center gap-2">
                 <button
+                  onClick={handleSaveActiveToCloud}
+                  disabled={isSavingCloud}
+                  className="px-3.5 py-2 bg-cad-subpanel hover:bg-cad-surfaceHover border border-cad-border text-cad-text rounded-md text-xs font-medium flex items-center gap-1.5 transition-colors duration-fast eng-tactile"
+                  title="Save current circuit to Supabase Cloud"
+                >
+                  {isSavingCloud ? (
+                    <Loader2 size={14} className="animate-spin text-blue-500" />
+                  ) : (
+                    <Cloud size={14} className="text-blue-500" />
+                  )}
+                  <span>{isSavingCloud ? 'Saving...' : 'Save to Cloud'}</span>
+                </button>
+
+                <button
                   onClick={() => onOpenWorkspaceTab('schematic')}
                   className="px-3.5 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-md text-xs font-medium flex items-center gap-1.5 shadow-xs transition-colors duration-fast eng-tactile"
                 >
@@ -493,13 +631,24 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
           {/* Section Header */}
           <div className="flex items-center justify-between pt-1">
-            <div>
-              <h3 className="text-sm font-semibold text-cad-textHeading">
-                Saved &amp; Active Projects
-              </h3>
-              <p className="text-xs text-cad-textMuted">
-                Your synthesized and custom circuit designs.
-              </p>
+            <div className="flex items-center gap-3">
+              <div>
+                <h3 className="text-sm font-semibold text-cad-textHeading">
+                  Saved &amp; Cloud Projects
+                </h3>
+                <p className="text-xs text-cad-textMuted">
+                  Your local and Supabase cloud database circuit designs.
+                </p>
+              </div>
+
+              <button
+                onClick={loadCloudProjects}
+                disabled={loadingProjects}
+                className="p-1.5 rounded-md hover:bg-cad-surfaceHover text-cad-textMuted hover:text-cad-text transition-colors"
+                title="Refresh Cloud Projects"
+              >
+                <RefreshCw size={13} className={loadingProjects ? 'animate-spin text-blue-500' : ''} />
+              </button>
             </div>
 
             {/* View Toggle */}
@@ -509,7 +658,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 className={`p-1.5 rounded transition-colors ${
                   viewMode === 'grid' ? 'bg-cad-panel text-blue-500 shadow-xs' : 'text-cad-textMuted hover:text-cad-text'
                 }`}
-                title="Grid"
+                title="Grid View"
               >
                 <LayoutGrid size={14} />
               </button>
@@ -518,7 +667,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 className={`p-1.5 rounded transition-colors ${
                   viewMode === 'list' ? 'bg-cad-panel text-blue-500 shadow-xs' : 'text-cad-textMuted hover:text-cad-text'
                 }`}
-                title="List"
+                title="List View"
               >
                 <List size={14} />
               </button>
@@ -529,30 +678,46 @@ export const Dashboard: React.FC<DashboardProps> = ({
           {items.length === 0 ? (
             <div className="flex flex-col items-center justify-center p-12 border border-cad-border rounded-lg bg-cad-panel text-center space-y-3">
               <FolderOpen size={28} className="text-cad-textMuted opacity-40" />
-              <div className="text-xs text-cad-textMuted">No projects found.</div>
+              <div className="text-xs text-cad-textMuted">No projects found. Create a new design or prompt FloZ AI above.</div>
             </div>
           ) : viewMode === 'grid' ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {items.map((item) => (
                 <div
                   key={item.id}
-                  onClick={() => {
-                    if (item.generator) onOpenProject(item.generator());
-                    onOpenWorkspaceTab('schematic');
-                  }}
+                  onClick={() => handleOpenItem(item)}
                   className="bg-cad-panel border border-cad-border hover:border-blue-500/60 rounded-lg p-5 cursor-pointer transition-all duration-150 flex flex-col justify-between group shadow-xs hover:shadow-md hover:-translate-y-0.5 eng-tactile"
                 >
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <span className="text-[11px] px-2 py-0.5 rounded-full bg-cad-subpanel border border-cad-border text-cad-textMuted">
-                        {item.layers} Layers
-                      </span>
-                      {item.isActive && (
-                        <span className="text-[11px] text-emerald-500 font-medium flex items-center gap-1">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                          Active
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[11px] px-2 py-0.5 rounded-full bg-cad-subpanel border border-cad-border text-cad-textMuted">
+                          {item.layers} Layers
                         </span>
-                      )}
+                        {item.isCloud && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20 font-medium flex items-center gap-1">
+                            <Cloud size={10} /> Cloud
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        {item.isActive && (
+                          <span className="text-[11px] text-emerald-500 font-medium flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                            Active
+                          </span>
+                        )}
+                        {item.isCloud && (
+                          <button
+                            onClick={(e) => handleDeleteItem(e, item)}
+                            className="p-1 text-cad-textMuted hover:text-red-400 transition-colors"
+                            title="Delete from Supabase"
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        )}
+                      </div>
                     </div>
 
                     <h4 className="text-sm font-semibold text-cad-textHeading group-hover:text-blue-500 transition-colors flex items-center gap-2">
@@ -569,41 +734,52 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     <span>{item.partsCount} components</span>
                     <span className="group-hover:translate-x-0.5 transition-transform text-cad-text font-medium flex items-center gap-1">
                       <span>Open</span>
-                      <ArrowRight size={12} />
+                      <ArrowRight size={13} />
                     </span>
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="border border-cad-border rounded-lg bg-cad-panel overflow-hidden">
-              <div className="divide-y divide-cad-border">
-                {items.map((item) => (
-                  <div
-                    key={item.id}
-                    onClick={() => {
-                      if (item.generator) onOpenProject(item.generator());
-                      onOpenWorkspaceTab('schematic');
-                    }}
-                    className="p-3.5 hover:bg-cad-surfaceHover cursor-pointer flex items-center justify-between transition-colors"
-                  >
-                    <div className="flex items-center gap-3">
-                      <Cpu size={16} className="text-blue-500" />
-                      <div>
-                        <div className="text-xs font-semibold text-cad-textHeading">{item.name}</div>
-                        <div className="text-[11px] text-cad-textMuted">{item.description}</div>
+            <div className="bg-cad-panel border border-cad-border rounded-lg overflow-hidden divide-y divide-cad-border shadow-xs">
+              {items.map((item) => (
+                <div
+                  key={item.id}
+                  onClick={() => handleOpenItem(item)}
+                  className="p-3.5 hover:bg-cad-surfaceHover cursor-pointer flex items-center justify-between transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <Cpu size={16} className="text-blue-500" />
+                    <div>
+                      <div className="text-xs font-semibold text-cad-textHeading flex items-center gap-2">
+                        <span>{item.name}</span>
+                        {item.isCloud && (
+                          <span className="text-[10px] px-1.5 py-0.2 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20 font-medium flex items-center gap-1">
+                            <Cloud size={10} /> Supabase
+                          </span>
+                        )}
                       </div>
-                    </div>
-
-                    <div className="flex items-center gap-4 text-xs">
-                      <span className="text-cad-textMuted">{item.layers} Layers</span>
-                      <button className="px-2.5 py-1 bg-cad-subpanel hover:bg-blue-600 hover:text-white border border-cad-border rounded text-xs transition-colors">
-                        Open
-                      </button>
+                      <div className="text-[11px] text-cad-textMuted">{item.description}</div>
                     </div>
                   </div>
-                ))}
-              </div>
+
+                  <div className="flex items-center gap-4 text-xs">
+                    <span className="text-cad-textMuted">{item.layers} Layers</span>
+                    {item.isCloud && (
+                      <button
+                        onClick={(e) => handleDeleteItem(e, item)}
+                        className="p-1 text-cad-textMuted hover:text-red-400 transition-colors"
+                        title="Delete from Supabase"
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    )}
+                    <button className="px-2.5 py-1 bg-cad-subpanel hover:bg-blue-600 hover:text-white border border-cad-border rounded text-xs transition-colors">
+                      Open
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </main>

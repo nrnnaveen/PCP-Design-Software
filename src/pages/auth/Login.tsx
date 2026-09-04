@@ -112,9 +112,11 @@ export const Login: React.FC<AuthProps> = ({
 
     setIsLoading(true);
     try {
-      const user = await AuthService.login(trimmedEmail, password);
-      if (mode === 'signup' && name.trim()) {
-        user.name = name.trim();
+      let user: User;
+      if (mode === 'signup') {
+        user = await AuthService.signUp(trimmedEmail, password, name.trim());
+      } else {
+        user = await AuthService.login(trimmedEmail, password);
       }
       onAuthSuccess?.(user);
     } catch (err: any) {
@@ -315,6 +317,13 @@ export const Login: React.FC<AuthProps> = ({
             )}
           </button>
         </form>
+
+        <div className="pt-2 border-t border-cad-border/50 text-center">
+          <span className="text-[10px] text-cad-textMuted flex items-center justify-center gap-1.5">
+            <span className={`w-1.5 h-1.5 rounded-full ${AuthService.isCloudEnabled() ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`} />
+            <span>{AuthService.isCloudEnabled() ? 'Supabase Cloud Auth Active' : 'Local Storage Mode (Supabase not configured)'}</span>
+          </span>
+        </div>
       </div>
     </div>
   );

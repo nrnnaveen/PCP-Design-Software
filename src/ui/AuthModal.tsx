@@ -1,11 +1,11 @@
 /**
  * FloZ ECA — Authentication Dialog
- * Clean Login & Continue as Guest interface.
+ * Clean Login, Sign Up & Continue as Guest interface powered by Supabase.
  */
 
 import React, { useState } from 'react';
 import { AuthService, User } from '../core/auth';
-import { Lock, Mail, ArrowRight, X, User as UserIcon } from 'lucide-react';
+import { Lock, Mail, ArrowRight, X, User as UserIcon, Loader2, Sparkles } from 'lucide-react';
 
 interface Props {
   isOpen: boolean;
@@ -14,6 +14,8 @@ interface Props {
 }
 
 export const AuthModal: React.FC<Props> = ({ isOpen, onClose, onAuthSuccess }) => {
+  const [mode, setMode] = useState<'login' | 'signup'>('login');
+  const [name, setName] = useState<string>('');
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -21,21 +23,32 @@ export const AuthModal: React.FC<Props> = ({ isOpen, onClose, onAuthSuccess }) =
 
   if (!isOpen) return null;
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
-    if (!email || !email.includes('@')) {
+    const trimmed = email.trim();
+    if (!trimmed || !trimmed.includes('@')) {
       setErrorMsg('Please enter a valid email address.');
+      return;
+    }
+
+    if (password.length < 6) {
+      setErrorMsg('Password must be at least 6 characters.');
       return;
     }
 
     setLoading(true);
     try {
-      const user = await AuthService.login(email, password);
+      let user: User;
+      if (mode === 'signup') {
+        user = await AuthService.signUp(trimmed, password, name.trim());
+      } else {
+        user = await AuthService.login(trimmed, password);
+      }
       onAuthSuccess?.(user);
       onClose();
     } catch (err: any) {
-      setErrorMsg(err.message || 'Login failed. Please try again.');
+      setErrorMsg(err.message || 'Authentication failed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -62,7 +75,7 @@ export const AuthModal: React.FC<Props> = ({ isOpen, onClose, onAuthSuccess }) =
               F
             </div>
             <h2 id="auth-dialog-title" className="font-semibold text-xs sm:text-sm text-cad-textHeading">
-              Account Access
+              {mode === 'login' ? 'Account Sign In' : 'Create Account'}
             </h2>
           </div>
           <button
@@ -77,10 +90,36 @@ export const AuthModal: React.FC<Props> = ({ isOpen, onClose, onAuthSuccess }) =
         {/* Content */}
         <div className="p-4 space-y-3.5">
           <div className="text-center space-y-0.5">
-            <h3 className="text-xs font-semibold text-cad-textHeading">Sign in to FloZ ECA</h3>
+            <h3 className="text-xs font-semibold text-cad-textHeading">
+              {mode === 'login' ? 'Sign in to FloZ ECA' : 'Register your FloZ Account'}
+            </h3>
             <p className="text-[11px] text-cad-textMuted">
-              Save your projects locally or sync across your devices.
+              {mode === 'login'
+                ? 'Save your projects locally or sync with Supabase cloud.'
+                : 'Turn prompts into multi-layer PCB designs with cloud backup.'}
             </p>
+          </div>
+
+          {/* Mode Tabs */}
+          <div className="flex rounded-xs bg-cad-subpanel border border-cad-border p-0.5 text-[11px]">
+            <button
+              type="button"
+              onClick={() => { setMode('login'); setErrorMsg(null); }}
+              className={`flex-1 py-1 text-center font-medium rounded-xs transition-colors ${
+                mode === 'login' ? 'bg-cad-panel text-cad-textHeading shadow-xs' : 'text-cad-textMuted hover:text-cad-text'
+              }`}
+            >
+              Sign In
+            </button>
+            <button
+              type="button"
+              onClick={() => { setMode('signup'); setErrorMsg(null); }}
+              className={`flex-1 py-1 text-center font-medium rounded-xs transition-colors ${
+                mode === 'signup' ? 'bg-cad-panel text-cad-textHeading shadow-xs' : 'text-cad-textMuted hover:text-cad-text'
+              }`}
+            >
+              Create Account
+            </button>
           </div>
 
           {errorMsg && (
@@ -89,7 +128,23 @@ export const AuthModal: React.FC<Props> = ({ isOpen, onClose, onAuthSuccess }) =
             </div>
           )}
 
-          <form onSubmit={handleLogin} className="space-y-2.5 text-xs">
+          <form onSubmit={handleSubmit} className="space-y-2.5 text-xs">
+            {mode === 'signup' && (
+              <div>
+                <label className="block text-cad-text font-medium mb-1 text-[11px]">Your Name</label>
+                <div className="relative flex items-center">
+                  <UserIcon size={13} className="absolute left-2.5 text-cad-textMuted" />
+                  <input
+                    type="text"
+                    placeholder="Alex Doe"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="w-full bg-cad-inputBg border border-cad-inputBorder rounded-xs pl-7 pr-2.5 py-1 text-xs text-cad-inputText placeholder:text-cad-textMuted focus:outline-none focus:border-blue-500"
+                  />
+                </div>
+              </div>
+            )}
+
             <div>
               <label className="block text-cad-text font-medium mb-1 text-[11px]">Email Address</label>
               <div className="relative flex items-center">
@@ -115,6 +170,7 @@ export const AuthModal: React.FC<Props> = ({ isOpen, onClose, onAuthSuccess }) =
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full bg-cad-inputBg border border-cad-inputBorder rounded-xs pl-7 pr-2.5 py-1 text-xs text-cad-inputText font-mono placeholder:text-cad-textMuted focus:outline-none focus:border-blue-500"
+                  required
                 />
               </div>
             </div>
@@ -122,10 +178,19 @@ export const AuthModal: React.FC<Props> = ({ isOpen, onClose, onAuthSuccess }) =
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-1 bg-blue-600 hover:bg-blue-500 text-white font-medium rounded-xs text-xs flex items-center justify-center gap-1.5 shadow-xs transition-colors duration-fast focus-visible:outline-none"
+              className="w-full py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-medium rounded-xs text-xs flex items-center justify-center gap-1.5 shadow-xs transition-colors duration-fast focus-visible:outline-none"
             >
-              {loading ? 'Authenticating...' : 'Sign In'}
-              <ArrowRight size={13} />
+              {loading ? (
+                <>
+                  <Loader2 size={13} className="animate-spin" />
+                  <span>Processing...</span>
+                </>
+              ) : (
+                <>
+                  <span>{mode === 'login' ? 'Sign In' : 'Register Account'}</span>
+                  <ArrowRight size={13} />
+                </>
+              )}
             </button>
           </form>
 
@@ -143,9 +208,14 @@ export const AuthModal: React.FC<Props> = ({ isOpen, onClose, onAuthSuccess }) =
             <UserIcon size={13} className="text-emerald-600 dark:text-emerald-400" />
             <span>Continue as Guest</span>
           </button>
-          <p className="text-[10px] text-center text-cad-textMuted leading-relaxed">
-            Guest mode provides full access to schematic, PCB layout, 3D viewing, DRC, and manufacturing exports with local storage.
-          </p>
+
+          {/* Cloud Sync Status */}
+          <div className="pt-2 border-t border-cad-border/60 text-center">
+            <span className="text-[10px] text-cad-textMuted flex items-center justify-center gap-1.5">
+              <span className={`w-1.5 h-1.5 rounded-full ${AuthService.isCloudEnabled() ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`} />
+              <span>{AuthService.isCloudEnabled() ? 'Connected to Supabase' : 'Local Mode (Supabase not configured)'}</span>
+            </span>
+          </div>
         </div>
       </div>
     </div>

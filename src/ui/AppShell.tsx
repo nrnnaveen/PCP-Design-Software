@@ -36,6 +36,7 @@ import { SettingsModal } from './SettingsModal';
 import { LiveCircuitLab } from '../simulation/LiveCircuitLab';
 import { AuthModal } from './AuthModal';
 import { AuthService, User } from '../core/auth';
+import { CloudProjectService } from '../core/cloudProjects';
 import { AssetResolver } from '../library/assetResolver';
 import { platform } from '../platform';
 import { DesignIntent } from '../ai/generation/designIntent';
@@ -97,6 +98,7 @@ import {
   Plus,
   GitMerge,
   Mail,
+  Cloud,
 } from 'lucide-react';
 
 export type WorkspaceTab =
@@ -535,6 +537,15 @@ export const AppShell: React.FC = () => {
         case 'save':
         case 'save-project':
           await platform.saveProject(project);
+          if (AuthService.isCloudEnabled() && !user.isGuest) {
+            try {
+              const res = await CloudProjectService.saveProject(project);
+              if (res.isCloud) {
+                showToast('Project Saved & Synced to Cloud');
+                break;
+              }
+            } catch {}
+          }
           showToast('Project Saved (.floz)');
           break;
         case 'save-as':
@@ -591,7 +602,18 @@ export const AppShell: React.FC = () => {
         handleRedo();
       } else if ((e.ctrlKey || e.metaKey) && e.key === 's') {
         e.preventDefault();
-        platform.saveProject(project).then(() => showToast('Project Saved (.floz)'));
+        platform.saveProject(project).then(async () => {
+          if (AuthService.isCloudEnabled() && !user.isGuest) {
+            try {
+              const res = await CloudProjectService.saveProject(project);
+              if (res.isCloud) {
+                showToast('Project Saved & Synced to Cloud');
+                return;
+              }
+            } catch {}
+          }
+          showToast('Project Saved (.floz)');
+        });
       } else if (e.key === 'F8') {
         e.preventDefault();
         handleSyncPCB();
@@ -674,6 +696,7 @@ export const AppShell: React.FC = () => {
       { id: 'ws_calculator', title: 'Impedance & Trace Calculators', category: 'Workspace', shortcut: 'F6', icon: Calculator, action: () => navigateToTab('calculator') },
       { id: 'act_dashboard', title: 'Start Window / Solution Hub', category: 'Project', shortcut: 'Ctrl+O', icon: LayoutDashboard, action: openDashboard },
       { id: 'act_new', title: 'New Blank Solution...', category: 'Project', icon: Plus, action: () => { openDashboard(); } },
+      { id: 'act_cloud_save', title: 'Save Circuit to Supabase Cloud', category: 'Project', icon: Cloud, action: () => { CloudProjectService.saveProject(project).then((r) => showToast(r.isCloud ? 'Synced with Supabase Cloud' : 'Saved locally')); } },
       { id: 'act_drc', title: 'Run Design Rule Check (DRC)', category: 'Tool', icon: ShieldCheck, action: () => { setRightPanel('drc'); setRightPanelCollapsed(false); } },
       { id: 'act_erc', title: 'Run Electrical Rule Check (ERC)', category: 'Tool', icon: ShieldAlert, action: () => { setRightPanel('erc'); setRightPanelCollapsed(false); } },
       { id: 'act_mfg', title: 'Export Gerber Package ZIP', category: 'Tool', shortcut: 'Ctrl+E', icon: Download, action: () => setShowMfgModal(true) },
