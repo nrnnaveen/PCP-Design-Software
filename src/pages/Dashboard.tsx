@@ -38,7 +38,6 @@ import {
   CloudCheck,
   Trash2,
   RefreshCw,
-  Database,
   ExternalLink,
 } from 'lucide-react';
 import { AppThemeId } from '../theme/themeManager';
@@ -204,7 +203,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           id: cp.id,
           name: cp.name,
           category: 'custom',
-          description: cp.description || 'Stored in Supabase Cloud database.',
+          description: cp.description || 'Cloud-synced circuit design.',
           layers: cp.layers,
           partsCount: cp.partsCount,
           lastModified: new Date(cp.updatedAt).toLocaleDateString(),
@@ -230,7 +229,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
       return;
     }
 
-    // Load from Supabase Cloud
+    // Load from Cloud
     try {
       setLoadingProjects(true);
       const loaded = await CloudProjectService.loadProject(item.id);
@@ -249,10 +248,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
     try {
       const res = await CloudProjectService.saveProject(currentProject);
       if (res.isCloud) {
-        setCloudToast('Saved to Supabase Cloud Database!');
+        setCloudToast('Project saved to FloZ Cloud.');
         await loadCloudProjects();
       } else {
-        setCloudToast('Saved locally (Sign in to sync with Supabase).');
+        setCloudToast('Saved locally. Sign in to sync across devices.');
       }
     } catch (err: any) {
       setCloudToast(`Save error: ${err.message}`);
@@ -264,7 +263,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
   const handleDeleteItem = async (e: React.MouseEvent, item: ProjectItem) => {
     e.stopPropagation();
-    if (!window.confirm(`Delete "${item.name}" from Supabase?`)) return;
+    if (!window.confirm(`Are you sure you want to delete "${item.name}"?`)) return;
 
     try {
       await CloudProjectService.deleteProject(item.id);
@@ -441,28 +440,31 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </div>
           </div>
 
-          {/* Database & Cloud Sync Status Badge */}
-          <div className="pt-4 border-t border-cad-border flex flex-col gap-2">
-            <div className="flex items-center gap-2 text-[11px]">
-              <span className={`w-2 h-2 rounded-full ${AuthService.isCloudEnabled() ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`} />
-              <span className="font-semibold text-cad-textHeading flex items-center gap-1.5">
-                <Database size={13} className="text-blue-500" />
-                <span>{AuthService.isCloudEnabled() ? 'Supabase Database' : 'Local Mode'}</span>
+          {/* FloZ Workspace & Cloud Status */}
+          <div className="pt-4 border-t border-cad-border flex flex-col gap-1.5">
+            <div className="flex items-center justify-between text-[11px]">
+              <span className="font-medium text-cad-text flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                <span>FloZ Workspace</span>
+              </span>
+              <span className="text-[10px] font-mono text-cad-textMuted">
+                {user.isGuest ? 'Guest' : 'Cloud Synced'}
               </span>
             </div>
             <div className="text-[10px] text-cad-textMuted leading-tight">
-              {AuthService.isCloudEnabled()
-                ? (user.isGuest ? 'Sign in to sync your boards with Supabase' : 'Row Level Security cloud sync active')
-                : 'Configure VITE_SUPABASE_URL in .env to enable cloud sync'}
+              {user.isGuest
+                ? 'Sign in to sync your circuits across devices.'
+                : 'Projects synchronized with your FloZ account.'}
             </div>
+          </div>
 
-            {(onOpenTerms || onOpenPrivacyPolicy || onOpenContact) && (
-              <div className="flex items-center gap-2 text-[10px] text-cad-textMuted pt-2 border-t border-cad-border/50 flex-wrap">
-                {onOpenTerms && (
-                  <button onClick={onOpenTerms} className="hover:text-cad-text transition-colors">
-                    Terms
-                  </button>
-                )}
+          {(onOpenTerms || onOpenPrivacyPolicy || onOpenContact) && (
+            <div className="flex items-center gap-2 text-[10px] text-cad-textMuted pt-2 border-t border-cad-border/50 flex-wrap">
+              {onOpenTerms && (
+                <button onClick={onOpenTerms} className="hover:text-cad-text transition-colors">
+                  Terms
+                </button>
+              )}
                 {onOpenTerms && onOpenPrivacyPolicy && <span>·</span>}
                 {onOpenPrivacyPolicy && (
                   <button onClick={onOpenPrivacyPolicy} className="hover:text-cad-text transition-colors">
@@ -479,7 +481,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 )}
               </div>
             )}
-          </div>
         </aside>
 
         {/* Content Canvas */}
@@ -592,7 +593,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   onClick={handleSaveActiveToCloud}
                   disabled={isSavingCloud}
                   className="px-3.5 py-2 bg-cad-subpanel hover:bg-cad-surfaceHover border border-cad-border text-cad-text rounded-md text-xs font-medium flex items-center gap-1.5 transition-colors duration-fast eng-tactile"
-                  title="Save current circuit to Supabase Cloud"
+                  title="Save current circuit to cloud"
                 >
                   {isSavingCloud ? (
                     <Loader2 size={14} className="animate-spin text-blue-500" />
@@ -637,7 +638,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   Saved &amp; Cloud Projects
                 </h3>
                 <p className="text-xs text-cad-textMuted">
-                  Your local and Supabase cloud database circuit designs.
+                  Your saved and synchronized circuit designs.
                 </p>
               </div>
 
@@ -712,7 +713,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                           <button
                             onClick={(e) => handleDeleteItem(e, item)}
                             className="p-1 text-cad-textMuted hover:text-red-400 transition-colors"
-                            title="Delete from Supabase"
+                            title="Delete project"
                           >
                             <Trash2 size={13} />
                           </button>
@@ -755,7 +756,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                         <span>{item.name}</span>
                         {item.isCloud && (
                           <span className="text-[10px] px-1.5 py-0.2 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20 font-medium flex items-center gap-1">
-                            <Cloud size={10} /> Supabase
+                            <Cloud size={10} /> Cloud
                           </span>
                         )}
                       </div>
@@ -769,7 +770,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                       <button
                         onClick={(e) => handleDeleteItem(e, item)}
                         className="p-1 text-cad-textMuted hover:text-red-400 transition-colors"
-                        title="Delete from Supabase"
+                        title="Delete project"
                       >
                         <Trash2 size={13} />
                       </button>

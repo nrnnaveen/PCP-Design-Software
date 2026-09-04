@@ -95,8 +95,8 @@ export const AuthModal: React.FC<Props> = ({ isOpen, onClose, onAuthSuccess }) =
             </h3>
             <p className="text-[11px] text-cad-textMuted">
               {mode === 'login'
-                ? 'Save your projects locally or sync with Supabase cloud.'
-                : 'Turn prompts into multi-layer PCB designs with cloud backup.'}
+                ? 'Sign in to access your FloZ workspace and saved projects.'
+                : 'Create an account to start designing electronic circuits.'}
             </p>
           </div>
 
@@ -208,14 +208,6 @@ export const AuthModal: React.FC<Props> = ({ isOpen, onClose, onAuthSuccess }) =
             <UserIcon size={13} className="text-emerald-600 dark:text-emerald-400" />
             <span>Continue as Guest</span>
           </button>
-
-          {/* Cloud Sync Status */}
-          <div className="pt-2 border-t border-cad-border/60 text-center">
-            <span className="text-[10px] text-cad-textMuted flex items-center justify-center gap-1.5">
-              <span className={`w-1.5 h-1.5 rounded-full ${AuthService.isCloudEnabled() ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`} />
-              <span>{AuthService.isCloudEnabled() ? 'Connected to Supabase' : 'Local Mode (Supabase not configured)'}</span>
-            </span>
-          </div>
         </div>
       </div>
     </div>

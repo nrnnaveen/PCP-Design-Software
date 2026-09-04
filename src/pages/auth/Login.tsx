@@ -163,8 +163,8 @@ export const Login: React.FC<AuthProps> = ({
           </h2>
           <p className="text-xs text-cad-textMuted">
             {mode === 'login'
-              ? 'Access your synthesized AI circuit boards and projects'
-              : 'Turn natural language prompts into physical circuit boards'}
+              ? 'Sign in to access your FloZ workspace and saved projects'
+              : 'Create an account to start designing electronic circuits'}
           </p>
         </div>
 
@@ -317,13 +317,6 @@ export const Login: React.FC<AuthProps> = ({
             )}
           </button>
         </form>
-
-        <div className="pt-2 border-t border-cad-border/50 text-center">
-          <span className="text-[10px] text-cad-textMuted flex items-center justify-center gap-1.5">
-            <span className={`w-1.5 h-1.5 rounded-full ${AuthService.isCloudEnabled() ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`} />
-            <span>{AuthService.isCloudEnabled() ? 'Supabase Cloud Auth Active' : 'Local Storage Mode (Supabase not configured)'}</span>
-          </span>
-        </div>
       </div>
     </div>
   );

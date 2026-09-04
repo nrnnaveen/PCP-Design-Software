@@ -696,7 +696,7 @@ export const AppShell: React.FC = () => {
       { id: 'ws_calculator', title: 'Impedance & Trace Calculators', category: 'Workspace', shortcut: 'F6', icon: Calculator, action: () => navigateToTab('calculator') },
       { id: 'act_dashboard', title: 'Start Window / Solution Hub', category: 'Project', shortcut: 'Ctrl+O', icon: LayoutDashboard, action: openDashboard },
       { id: 'act_new', title: 'New Blank Solution...', category: 'Project', icon: Plus, action: () => { openDashboard(); } },
-      { id: 'act_cloud_save', title: 'Save Circuit to Supabase Cloud', category: 'Project', icon: Cloud, action: () => { CloudProjectService.saveProject(project).then((r) => showToast(r.isCloud ? 'Synced with Supabase Cloud' : 'Saved locally')); } },
+      { id: 'act_cloud_save', title: 'Save Circuit to Cloud', category: 'Project', icon: Cloud, action: () => { CloudProjectService.saveProject(project).then((r) => showToast(r.isCloud ? 'Synced with FloZ Cloud' : 'Saved locally')); } },
       { id: 'act_drc', title: 'Run Design Rule Check (DRC)', category: 'Tool', icon: ShieldCheck, action: () => { setRightPanel('drc'); setRightPanelCollapsed(false); } },
       { id: 'act_erc', title: 'Run Electrical Rule Check (ERC)', category: 'Tool', icon: ShieldAlert, action: () => { setRightPanel('erc'); setRightPanelCollapsed(false); } },
       { id: 'act_mfg', title: 'Export Gerber Package ZIP', category: 'Tool', shortcut: 'Ctrl+E', icon: Download, action: () => setShowMfgModal(true) },

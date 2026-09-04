@@ -86,6 +86,11 @@ export const SUPABASE_ANON_KEY: string = String(envKey).trim();
  * Checks whether Supabase has been configured with valid credentials.
  */
 export function isSupabaseConfigured(): boolean {
+  // During unit test execution in Vitest, use deterministic local hybrid mode
+  if (typeof process !== 'undefined' && (process.env?.VITEST || process.env?.NODE_ENV === 'test') && !process.env?.VITE_TEST_LIVE_SUPABASE) {
+    return false;
+  }
+
   if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return false;
   if (SUPABASE_URL.includes('your-project-id') || SUPABASE_ANON_KEY.includes('your-supabase-anon-key')) {
     return false;
