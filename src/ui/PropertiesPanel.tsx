@@ -1,5 +1,5 @@
 /**
- * FloZ ECA — Microsoft Fluent Properties Inspector Panel
+ * FloZ ECA — Properties Inspector Panel
  * Context-aware properties inspector for schematic symbols, pins, wires, nets, PCB footprints, tracks, vias, zones.
  */
 

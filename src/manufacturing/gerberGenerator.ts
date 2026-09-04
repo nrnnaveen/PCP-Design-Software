@@ -1,5 +1,5 @@
 /**
- * Apex EDA - Standard RS-274X Extended Gerber Generator
+ * FloZ ECA - Standard RS-274X Extended Gerber Generator
  * Formats standard Gerber files for PCB fabrication (JLCPCB / PCBWay / Eurocircuits compliant).
  */
 
@@ -15,7 +15,7 @@ export class GerberGenerator {
 
     let gbr = '';
     // Standard RS-274X Header
-    gbr += `G04 Apex EDA RS-274X Gerber Generator*\n`;
+    gbr += `G04 FloZ ECA RS-274X Gerber Generator*\n`;
     gbr += `G04 Project: ${project.metadata.name} Rev ${project.metadata.version}*\n`;
     gbr += `G04 Layer: ${layer} Date: ${now}*\n`;
     gbr += `%FSLAX46Y46*%\n`; // Format specification 4.6 metric (nanometers/microns)

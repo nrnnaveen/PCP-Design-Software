@@ -138,6 +138,19 @@ export const Board3DViewer: React.FC<Props> = ({ project, onSelectComponent, the
     container.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
+    // Real-time ResizeObserver: keeps Three.js viewport, aspect ratio, and board centering 100% stable
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const { width: newWidth, height: newHeight } = entry.contentRect;
+        if (newWidth > 0 && newHeight > 0 && rendererRef.current && cameraRef.current) {
+          cameraRef.current.aspect = newWidth / newHeight;
+          cameraRef.current.updateProjectionMatrix();
+          rendererRef.current.setSize(newWidth, newHeight);
+        }
+      }
+    });
+    resizeObserver.observe(container);
+
     // -------------------------------------------------------------
     // 2. Realistic Studio CAD Lighting
     // -------------------------------------------------------------
@@ -647,6 +660,7 @@ export const Board3DViewer: React.FC<Props> = ({ project, onSelectComponent, the
       canvasDom.removeEventListener('wheel', onWheel);
 
       // Recursive disposal of geometries and materials to avoid memory leaks
+      resizeObserver.disconnect();
       masterBoardGroup.traverse((obj) => {
         if ((obj as THREE.Mesh).geometry) {
           (obj as THREE.Mesh).geometry.dispose();
@@ -663,10 +677,10 @@ export const Board3DViewer: React.FC<Props> = ({ project, onSelectComponent, the
   }, [project, soldermaskColor, showComponents, showSilkscreen, showCopper, isTransparent, theme, fitBoardView]);
 
   return (
-    <div className="relative w-full h-full bg-cad-bg flex flex-col select-none overflow-hidden font-sans">
+    <div className="relative w-full h-full bg-cad-bg flex flex-col select-none overflow-hidden font-sans min-w-0 min-h-0">
       {/* 3D Top CAD Control Toolbar */}
-      <header className="h-8 bg-cad-panel border-b border-cad-border px-2.5 flex items-center justify-between z-10 shrink-0 text-xs">
-        <div className="flex items-center space-x-2">
+      <header className="h-8 bg-cad-panel border-b border-cad-border px-2.5 flex items-center justify-between z-10 shrink-0 text-xs min-w-0 overflow-x-auto no-scrollbar">
+        <div className="flex items-center space-x-2 shrink-0">
           <span className="font-semibold text-cad-textHeading flex items-center gap-1.5">
             <Box size={14} className="text-blue-500 dark:text-blue-400" />
             3D Board Viewer
@@ -742,7 +756,7 @@ export const Board3DViewer: React.FC<Props> = ({ project, onSelectComponent, the
         </div>
 
         {/* Camera Preset Quick Actions */}
-        <div className="flex items-center space-x-1.5 text-[11px] text-cad-textMuted">
+        <div className="flex items-center space-x-1.5 text-[11px] text-cad-textMuted shrink-0 ml-2">
           <button
             onClick={setTopView}
             className="px-2 py-0.5 bg-cad-subpanel hover:bg-cad-surfaceHover text-cad-text rounded-xs border border-cad-border transition-colors duration-fast"
@@ -769,18 +783,18 @@ export const Board3DViewer: React.FC<Props> = ({ project, onSelectComponent, the
       </header>
 
       {/* 3D Canvas Container */}
-      <main className="flex-1 w-full h-full relative cursor-grab active:cursor-grabbing">
-        <div ref={containerRef} className="w-full h-full" />
+      <main className="flex-1 w-full h-full relative cursor-grab active:cursor-grabbing min-w-0 min-h-0 overflow-hidden">
+        <div ref={containerRef} className="w-full h-full min-w-0 min-h-0 block" />
       </main>
 
       {/* Bottom Controls Info Banner */}
-      <footer className="h-6 bg-cad-header border-t border-cad-border px-3 flex items-center justify-between text-[10px] text-cad-textMuted font-mono select-none">
-        <div className="flex items-center space-x-3">
+      <footer className="h-6 bg-cad-header border-t border-cad-border px-3 flex items-center justify-between text-[10px] text-cad-textMuted font-mono select-none shrink-0 min-w-0 overflow-x-auto no-scrollbar">
+        <div className="flex items-center space-x-3 shrink-0">
           <span>Dimensions: {project.pcb.boardOutline.length >= 3 ? `${Math.round(Math.max(10, Math.max(...project.pcb.boardOutline.map(p=>p.x)) - Math.min(...project.pcb.boardOutline.map(p=>p.x))))}×${Math.round(Math.max(10, Math.max(...project.pcb.boardOutline.map(p=>p.y)) - Math.min(...project.pcb.boardOutline.map(p=>p.y))))}mm` : 'Auto'}</span>
           <span>Thickness: {project.pcb.boardThickness || 1.6}mm</span>
           <span>Components: {project.pcb.footprints.length}</span>
         </div>
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center space-x-3 shrink-0 ml-4">
           <span>Left-Drag: Rotate</span>
           <span>Right-Drag: Pan</span>
           <span>Wheel: Zoom</span>

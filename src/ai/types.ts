@@ -1,5 +1,5 @@
 /**
- * FloZ ECA - AI Assistant & Copilot Type Definitions (Phase 2)
+ * FloZ ECA - AI Assistant Type Definitions (Phase 2)
  * Robust data structures for tool permissions, context scoping, action validation, and circuit generation.
  */
 

@@ -1,5 +1,5 @@
 /**
- * FloZ ECA — Microsoft Fluent Project Health & Diagnostics Dialog
+ * FloZ ECA — Project Health & Diagnostics Dialog
  * Displays real-time health checks across 8 design pillars.
  */
 

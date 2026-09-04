@@ -389,7 +389,7 @@ export const BoardSetupModal: React.FC<Props> = ({ project, isOpen, onClose, onS
                     className="w-full bg-cad-bg border border-cad-border rounded p-2 text-cad-text font-medium"
                   >
                     <option value="#15803d">Green (Standard Gloss)</option>
-                    <option value="#1e293b">Matte Black (Pro Engineering)</option>
+                    <option value="#1e293b">Matte Black</option>
                     <option value="#1d4ed8">Blue (High Contrast)</option>
                     <option value="#b91c1c">Red (Signal Pro)</option>
                     <option value="#f8fafc">White (LED Lighting)</option>

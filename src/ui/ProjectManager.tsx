@@ -10,6 +10,7 @@ import { createDemoProject } from '../examples/demoProject';
 import { ProjectSerializer } from '../core/serialization';
 import { AuthService, User } from '../core/auth';
 import { siteConfig } from '../config/siteConfig';
+import { LogoMark } from '../components/branding/LogoMark';
 import {
   FolderOpen,
   Plus,
@@ -85,79 +86,29 @@ export const ProjectManager: React.FC<Props> = ({
     return unsub;
   }, []);
 
-  // Built-in verified templates & examples
+  // Real active project records (zero hardcoded fake/demo projects)
   const projectsList: ProjectRecord[] = useMemo(() => {
-    const records: ProjectRecord[] = [
-      {
+    const records: ProjectRecord[] = [];
+    if (currentProject?.metadata) {
+      records.push({
         id: currentProject.metadata.id || 'active_project',
-        name: currentProject.metadata.name || 'Active_Project',
-        type: 'Custom EDA Design',
+        name: currentProject.metadata.name || 'Active Project',
+        type: 'FloZ ECA Design',
         category: 'active',
-        description: currentProject.metadata.description || 'Active schematic & routed PCB workspace in memory.',
+        description: currentProject.metadata.description || 'Current active schematic & PCB design.',
         componentsCount: currentProject.pcb.footprints.length,
         netsCount: Object.keys(currentProject.netGraph.nets).length,
         tracesCount: currentProject.pcb.tracks.length,
         layers: 2,
         lastModified: 'Just now',
         isActive: true,
-      },
-      {
-        id: 'template_iot_sensor',
-        name: 'FloZ IoT Sensor Node v1.0',
-        type: 'STM32F401 Hardware Template',
-        category: 'template',
-        description: 'STM32F401 MCU + USB-C 5V Input + AP2112K 3.3V LDO + SHT31 I2C Sensor + Differential Traces.',
-        componentsCount: 7,
-        netsCount: 8,
-        tracesCount: 11,
-        layers: 2,
-        lastModified: 'Verified v1.0',
-        generator: () => createDemoProject(),
-      },
-      {
-        id: 'template_esp32_controller',
-        name: 'ESP32-S3 Dual-Core Controller',
-        type: 'IoT / Wireless Hardware Template',
-        category: 'template',
-        description: 'ESP32-S3 SoC + USB-C Native D+/D- + QSPI Flash + WS2812B Status RGB + 3.3V High-Efficiency Buck.',
-        componentsCount: 12,
-        netsCount: 15,
-        tracesCount: 18,
-        layers: 4,
-        lastModified: 'Verified v1.2',
-        generator: () => {
-          const p = createDemoProject();
-          p.metadata.name = 'ESP32_S3_Controller';
-          p.metadata.description = 'ESP32-S3 Dual-Core Wi-Fi/BLE Controller Board';
-          return p;
-        },
-      },
-      {
-        id: 'template_power_inverter',
-        name: 'USB-C PD 65W Power Module',
-        type: 'Power Electronics Template',
-        category: 'example',
-        description: 'Synchronous Buck-Boost Controller + Low-ESR Polymer Filtering + Polyfuse + Thermal Vias.',
-        componentsCount: 9,
-        netsCount: 11,
-        tracesCount: 14,
-        layers: 4,
-        lastModified: 'Verified v1.1',
-        generator: () => {
-          const p = createDemoProject();
-          p.metadata.name = 'USBC_PD_65W_Power';
-          p.metadata.description = 'USB-C Power Delivery 65W Synchronous Module';
-          return p;
-        },
-      },
-    ];
+      });
+    }
     return records;
   }, [currentProject]);
 
   const filteredProjects = useMemo(() => {
     return projectsList.filter((p) => {
-      if (selectedSection === 'recent' && p.category !== 'active') return false;
-      if (selectedSection === 'templates' && p.category !== 'template') return false;
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
         return (
@@ -168,7 +119,7 @@ export const ProjectManager: React.FC<Props> = ({
       }
       return true;
     });
-  }, [projectsList, selectedSection, searchQuery]);
+  }, [projectsList, searchQuery]);
 
   const handleCreateNew = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -224,10 +175,8 @@ export const ProjectManager: React.FC<Props> = ({
       <div className="bg-cad-panel border border-cad-border w-full max-w-5xl h-full max-h-[720px] rounded-sm shadow-xl flex flex-col overflow-hidden text-cad-text animate-in fade-in zoom-in-95 duration-75">
         {/* 1. Header Command Strip */}
         <header className="h-9 bg-cad-header border-b border-cad-border px-3 sm:px-4 flex items-center justify-between shrink-0">
-          <div className="flex items-center space-x-2.5">
-            <div className="w-4 h-4 rounded-xs bg-blue-600 flex items-center justify-center text-white font-bold text-[10px] shadow-xs">
-              F
-            </div>
+          <div className="flex items-center space-x-2">
+            <LogoMark size={16} />
             <div className="flex items-baseline space-x-2">
               <span id="prj-manager-title" className="text-xs sm:text-sm font-semibold text-cad-textHeading tracking-tight">
                 FloZ ECA Start Window
@@ -320,7 +269,7 @@ export const ProjectManager: React.FC<Props> = ({
               >
                 <span className="flex items-center gap-2">
                   <FolderOpen size={13} />
-                  <span>All Solutions</span>
+                  <span>All Projects</span>
                 </span>
                 <span className="text-[10px] font-mono opacity-70">{projectsList.length}</span>
               </button>
@@ -337,22 +286,7 @@ export const ProjectManager: React.FC<Props> = ({
                   <Clock size={13} />
                   <span>Recent / Active</span>
                 </span>
-                <span className="text-[10px] font-mono opacity-70">1</span>
-              </button>
-
-              <button
-                onClick={() => setSelectedSection('templates')}
-                className={`w-full px-2.5 py-1 rounded-xs text-xs font-medium flex items-center justify-between transition-colors duration-fast ${
-                  selectedSection === 'templates'
-                    ? 'bg-blue-600 text-white font-semibold shadow-xs'
-                    : 'text-cad-text hover:bg-cad-surfaceHover'
-                }`}
-              >
-                <span className="flex items-center gap-2">
-                  <Sparkles size={13} />
-                  <span>Hardware Templates</span>
-                </span>
-                <span className="text-[10px] font-mono opacity-70">2</span>
+                <span className="text-[10px] font-mono opacity-70">{projectsList.length}</span>
               </button>
 
               <div className="my-1.5 border-t border-cad-border" />
@@ -495,7 +429,7 @@ export const ProjectManager: React.FC<Props> = ({
                       type="submit"
                       className="px-3.5 py-1 bg-blue-600 hover:bg-blue-500 text-white font-medium rounded-xs text-xs shadow-xs transition-colors duration-fast"
                     >
-                      Create Solution
+                      Create Project
                     </button>
                   </div>
                 </form>
@@ -509,7 +443,7 @@ export const ProjectManager: React.FC<Props> = ({
                     <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-cad-textMuted" />
                     <input
                       type="text"
-                      placeholder="Search solutions, architectures, or templates..."
+                      placeholder="Search projects..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       className="w-full pl-8 pr-3 py-1 bg-cad-inputBg border border-cad-inputBorder rounded-xs text-xs text-cad-inputText font-mono focus:outline-none focus:border-blue-500"
@@ -517,92 +451,122 @@ export const ProjectManager: React.FC<Props> = ({
                   </div>
 
                   <div className="text-xs text-cad-textMuted font-mono">
-                    <span>{filteredProjects.length} designs found</span>
+                    <span>{filteredProjects.length} projects found</span>
                   </div>
                 </div>
 
                 {/* Table Container */}
                 <div className="flex-1 overflow-y-auto border border-cad-border rounded-xs bg-cad-panel">
-                  <table className="w-full text-left text-xs border-collapse">
-                    <thead>
-                      <tr className="bg-cad-header border-b border-cad-border text-[10px] font-mono text-cad-textMuted">
-                        <th className="py-1 px-3 font-semibold w-24">STATUS</th>
-                        <th className="py-1 px-3 font-semibold">PROJECT NAME</th>
-                        <th className="py-1 px-3 font-semibold">ARCHITECTURE / SPECS</th>
-                        <th className="py-1 px-3 font-semibold text-center w-24">COMPONENTS</th>
-                        <th className="py-1 px-3 font-semibold text-center w-20">NETS</th>
-                        <th className="py-1 px-3 font-semibold text-center w-20">TRACES</th>
-                        <th className="py-1 px-3 font-semibold w-28">MODIFIED</th>
-                        <th className="py-1 px-3 font-semibold text-right w-24">ACTION</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-cad-border/60">
-                      {filteredProjects.map((p) => (
-                        <tr
-                          key={p.id}
-                          onDoubleClick={() => {
-                            if (p.generator) {
-                              onOpenProject(p.generator());
-                            }
-                            onClose();
-                          }}
-                          className="hover:bg-cad-surfaceHover cursor-pointer transition-colors duration-fast group"
+                  {filteredProjects.length === 0 ? (
+                    <div className="h-full flex flex-col items-center justify-center p-8 text-center space-y-3">
+                      <div className="space-y-1">
+                        <div className="text-sm font-semibold text-cad-textHeading">
+                          {searchQuery.trim() ? 'No matching projects found' : 'No projects yet'}
+                        </div>
+                        <p className="text-xs text-cad-textMuted font-mono max-w-xs">
+                          {searchQuery.trim()
+                            ? `No projects matched "${searchQuery}".`
+                            : 'Create a project to get started.'}
+                        </p>
+                      </div>
+                      {searchQuery.trim() ? (
+                        <button
+                          onClick={() => setSearchQuery('')}
+                          className="px-2.5 py-1 text-xs text-blue-500 hover:underline font-mono"
                         >
-                          <td className="py-1.5 px-3">
-                            {p.isActive ? (
-                              <span className="text-[11px] font-mono text-emerald-600 dark:text-emerald-400 font-semibold inline-flex items-center gap-1.5">
-                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                                Active
-                              </span>
-                            ) : (
-                              <span className="text-[11px] font-mono text-cad-textMuted">
-                                Template
-                              </span>
-                            )}
-                          </td>
-                          <td className="py-1.5 px-3">
-                            <div className="font-semibold text-cad-textHeading flex items-center gap-1.5">
-                              {p.isActive ? <Cpu size={13} className="text-blue-600 dark:text-blue-400 shrink-0" /> : <FileCode size={13} className="text-emerald-600 dark:text-emerald-400 shrink-0" />}
-                              <span>{p.name}</span>
-                            </div>
-                            <div className="text-[11px] text-cad-textMuted truncate max-w-sm mt-0.5">
-                              {p.description}
-                            </div>
-                          </td>
-                          <td className="py-1.5 px-3 font-mono text-[11px] text-cad-text">
-                            <div>{p.type}</div>
-                            <div className="text-[10px] text-cad-textMuted">{p.layers} Layer Stackup</div>
-                          </td>
-                          <td className="py-1.5 px-3 text-center font-mono text-[11px]">
-                            {p.componentsCount}
-                          </td>
-                          <td className="py-1.5 px-3 text-center font-mono text-[11px]">
-                            {p.netsCount}
-                          </td>
-                          <td className="py-1.5 px-3 text-center font-mono text-[11px]">
-                            {p.tracesCount}
-                          </td>
-                          <td className="py-1.5 px-3 font-mono text-[11px] text-cad-textMuted">
-                            {p.lastModified}
-                          </td>
-                          <td className="py-1.5 px-3 text-right">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                if (p.generator) {
-                                  onOpenProject(p.generator());
-                                }
-                                onClose();
-                              }}
-                              className="px-2.5 py-0.5 bg-cad-subpanel hover:bg-blue-600 hover:text-white border border-cad-border rounded-xs text-[11px] font-medium transition-colors duration-fast"
-                            >
-                              {p.isActive ? 'Resume' : 'Open'}
-                            </button>
-                          </td>
+                          Clear search filter
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => setSelectedSection('new')}
+                          className="px-3 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded-xs text-xs font-medium transition-colors"
+                        >
+                          Create New Project
+                        </button>
+                      )}
+                    </div>
+                  ) : (
+                    <table className="w-full text-left text-xs border-collapse">
+                      <thead>
+                        <tr className="bg-cad-header border-b border-cad-border text-[10px] font-mono text-cad-textMuted">
+                          <th className="py-1 px-3 font-semibold w-24">STATUS</th>
+                          <th className="py-1 px-3 font-semibold">PROJECT NAME</th>
+                          <th className="py-1 px-3 font-semibold">ARCHITECTURE / SPECS</th>
+                          <th className="py-1 px-3 font-semibold text-center w-24">COMPONENTS</th>
+                          <th className="py-1 px-3 font-semibold text-center w-20">NETS</th>
+                          <th className="py-1 px-3 font-semibold text-center w-20">TRACES</th>
+                          <th className="py-1 px-3 font-semibold w-28">MODIFIED</th>
+                          <th className="py-1 px-3 font-semibold text-right w-24">ACTION</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody className="divide-y divide-cad-border/60">
+                        {filteredProjects.map((p) => (
+                          <tr
+                            key={p.id}
+                            onDoubleClick={() => {
+                              if (p.generator) {
+                                onOpenProject(p.generator());
+                              }
+                              onClose();
+                            }}
+                            className="hover:bg-cad-surfaceHover cursor-pointer transition-colors duration-fast group"
+                          >
+                            <td className="py-1.5 px-3">
+                              {p.isActive ? (
+                                <span className="text-[11px] font-mono text-emerald-600 dark:text-emerald-400 font-semibold inline-flex items-center gap-1.5">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                                  Active
+                                </span>
+                              ) : (
+                                <span className="text-[11px] font-mono text-cad-textMuted">
+                                  Saved
+                                </span>
+                              )}
+                            </td>
+                            <td className="py-1.5 px-3">
+                              <div className="font-semibold text-cad-textHeading flex items-center gap-1.5">
+                                {p.isActive ? <Cpu size={13} className="text-blue-600 dark:text-blue-400 shrink-0" /> : <FileCode size={13} className="text-emerald-600 dark:text-emerald-400 shrink-0" />}
+                                <span>{p.name}</span>
+                              </div>
+                              <div className="text-[11px] text-cad-textMuted truncate max-w-sm mt-0.5">
+                                {p.description}
+                              </div>
+                            </td>
+                            <td className="py-1.5 px-3 font-mono text-[11px] text-cad-text">
+                              <div>{p.type}</div>
+                              <div className="text-[10px] text-cad-textMuted">{p.layers} Layer Stackup</div>
+                            </td>
+                            <td className="py-1.5 px-3 text-center font-mono text-[11px]">
+                              {p.componentsCount}
+                            </td>
+                            <td className="py-1.5 px-3 text-center font-mono text-[11px]">
+                              {p.netsCount}
+                            </td>
+                            <td className="py-1.5 px-3 text-center font-mono text-[11px]">
+                              {p.tracesCount}
+                            </td>
+                            <td className="py-1.5 px-3 font-mono text-[11px] text-cad-textMuted">
+                              {p.lastModified}
+                            </td>
+                            <td className="py-1.5 px-3 text-right">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (p.generator) {
+                                    onOpenProject(p.generator());
+                                  }
+                                  onClose();
+                                }}
+                                className="px-2.5 py-0.5 bg-cad-subpanel hover:bg-blue-600 hover:text-white border border-cad-border rounded-xs text-[11px] font-medium transition-colors duration-fast"
+                              >
+                                {p.isActive ? 'Resume' : 'Open'}
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
                 </div>
               </div>
             )}
@@ -612,10 +576,10 @@ export const ProjectManager: React.FC<Props> = ({
         {/* 3. Footer Strip */}
         <footer className="h-6 bg-cad-header border-t border-cad-border px-3 sm:px-4 flex items-center justify-between text-[10px] text-cad-textMuted font-mono shrink-0">
           <div>
-            <span>FloZ ECA Workstation Solution Hub</span>
+            <span>FloZ ECA Project Manager</span>
           </div>
           <div>
-            <span>Double-click any solution row to load into workspace</span>
+            <span>Double-click any project row to load into workspace</span>
           </div>
         </footer>
       </div>

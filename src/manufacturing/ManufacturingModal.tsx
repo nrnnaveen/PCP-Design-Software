@@ -1,5 +1,5 @@
 /**
- * FloZ ECA — Microsoft Fluent Manufacturing & Fabrication Outputs Packager
+ * FloZ ECA — Manufacturing & Fabrication Outputs Packager
  * Generates and bundles Gerber files, Excellon Drill, BOM, Pick & Place, KiCad files, and DFM report into a ZIP package.
  */
 

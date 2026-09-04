@@ -1,5 +1,5 @@
 /**
- * Apex EDA - Electrical Rules Checker (ERC) Panel
+ * FloZ ECA - Electrical Rules Checker (ERC) Panel
  * Interactive violation inspector with click-to-zoom cross-probing to schematic symbols/pins.
  */
 
@@ -7,15 +7,15 @@ import React, { useState } from 'react';
 import { ApexProject, DiagnosticViolation } from '../core/types';
 import { ERCEngine } from './ercEngine';
 import { eventBus } from '../core/eventBus';
-import { AlertTriangle, XCircle, CheckCircle2, Play, Sparkles } from 'lucide-react';
+import { AlertTriangle, XCircle, CheckCircle2, Play, Wrench } from 'lucide-react';
 
 interface Props {
   project: ApexProject;
   onNavigateToCoords?: (x: number, y: number) => void;
-  onAskCopilot?: (query: string) => void;
+  onAskFloZAI?: (query: string) => void;
 }
 
-export const ERCPanel: React.FC<Props> = ({ project, onNavigateToCoords, onAskCopilot }) => {
+export const ERCPanel: React.FC<Props> = ({ project, onNavigateToCoords, onAskFloZAI }) => {
   const [violations, setViolations] = useState<DiagnosticViolation[]>(() => ERCEngine.run(project));
   const [selectedViolationId, setSelectedViolationId] = useState<string | null>(null);
 
@@ -107,16 +107,16 @@ export const ERCPanel: React.FC<Props> = ({ project, onNavigateToCoords, onAskCo
               <p className="text-[11px] text-cad-textMuted mt-1 leading-snug">{v.description}</p>
               <div className="text-[10px] text-blue-400 mt-1 font-mono flex items-center justify-between">
                 <span>Coord: ({v.x.toFixed(1)}, {v.y.toFixed(1)}) mm</span>
-                {onAskCopilot && (
+                {onAskFloZAI && (
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      onAskCopilot(`Fix ERC violation: ${v.title} - ${v.description}`);
+                      onAskFloZAI(`Fix ERC violation: ${v.title} - ${v.description}`);
                     }}
                     className="px-1.5 py-0.5 bg-cad-subpanel hover:bg-blue-600 text-blue-600 dark:text-blue-400 hover:text-white rounded-xs text-[10px] font-medium flex items-center gap-1 border border-cad-border transition-colors duration-fast"
                   >
-                    <Sparkles size={10} />
-                    <span>Fix with Copilot</span>
+                    <Wrench size={10} />
+                    <span>Auto-Fix</span>
                   </button>
                 )}
               </div>

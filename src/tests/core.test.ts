@@ -8,10 +8,10 @@ describe('Apex EDA Core Subsystem Tests', () => {
   it('should serialize and deserialize a project deterministically', () => {
     const demo = createDemoProject();
     const serialized = ProjectSerializer.serialize(demo);
-    expect(serialized).toContain('FloZ IoT Sensor Node');
+    expect(serialized).toContain('FloZ MCU Reference Board');
 
     const deserialized = ProjectSerializer.deserialize(serialized);
-    expect(deserialized.metadata.name).toBe('FloZ IoT Sensor Node');
+    expect(deserialized.metadata.name).toBe('FloZ MCU Reference Board');
     expect(deserialized.pcb.footprints.length).toBe(demo.pcb.footprints.length);
     expect(deserialized.schematic.sheets[0].symbols.length).toBe(
       demo.schematic.sheets[0].symbols.length

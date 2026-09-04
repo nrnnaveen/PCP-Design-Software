@@ -1,5 +1,5 @@
 /**
- * FloZ ECA — Microsoft Fluent Symbol Library Sidebar
+ * FloZ ECA — Symbol Library Sidebar
  * Fast component browsing, category filtering, vector thumbnail previews, and Drag & Drop placement.
  */
 

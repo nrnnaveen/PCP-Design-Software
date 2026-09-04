@@ -57,9 +57,9 @@ export const Calculators: React.FC = () => {
             <Calculator size={20} />
           </div>
           <div>
-            <h1 className="text-sm sm:text-base font-semibold text-cad-textHeading">PCB Engineering Calculators</h1>
+            <h1 className="text-sm sm:text-base font-semibold text-cad-textHeading">PCB Design Calculators</h1>
             <p className="text-[11px] text-cad-textMuted">
-              Validated engineering formulas for IPC track sizing, transmission lines, and RF circuits.
+              Formulas for trace width sizing, impedance matching, and circuit parameters.
             </p>
           </div>
         </div>

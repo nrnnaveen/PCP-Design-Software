@@ -1,10 +1,11 @@
 /**
- * FloZ ECA — Microsoft Fluent About & System Information Dialog
+ * FloZ ECA — About & System Information Dialog
  */
 
 import React from 'react';
 import { CheckCircle2, X } from 'lucide-react';
 import { siteConfig } from '../config/siteConfig';
+import { LogoMark } from '../components/branding/LogoMark';
 
 interface Props {
   isOpen: boolean;
@@ -25,9 +26,7 @@ export const AboutModal: React.FC<Props> = ({ isOpen, onClose }) => {
         {/* Header */}
         <div className="h-9 bg-cad-header border-b border-cad-border px-3.5 flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <div className="w-5 h-5 rounded-xs bg-blue-600 flex items-center justify-center text-white font-bold text-xs shadow-xs">
-              F
-            </div>
+            <LogoMark size={20} />
             <div>
               <h2 id="about-dialog-title" className="text-xs sm:text-sm font-semibold text-cad-textHeading">
                 {siteConfig.siteName} — Electronic Circuit Architect

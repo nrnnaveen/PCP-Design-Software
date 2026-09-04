@@ -1,5 +1,5 @@
 /**
- * FloZ ECA — Microsoft Fluent Component & Library Management Dialog
+ * FloZ ECA — Component & Library Management Dialog
  * Supports browsing, searching, previewing, and importing KiCad symbol & footprint libraries.
  */
 

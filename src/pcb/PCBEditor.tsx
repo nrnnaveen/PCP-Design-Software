@@ -65,6 +65,25 @@ type PCBTool = 'select' | 'pan' | 'route' | 'via' | 'zone' | 'measure';
 
 export const PCBEditor: React.FC<Props> = ({ project, onUpdateProject, onRunDRC, theme = 'high-contrast' }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const [canvasDimensions, setCanvasDimensions] = useState<{ width: number; height: number }>({ width: 0, height: 0 });
+
+  // Responsive Canvas Resize Observer (detects sidebar toggle, right dock resize, window changes)
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas || !canvas.parentElement) return;
+    const parent = canvas.parentElement;
+
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const { width, height } = entry.contentRect;
+        if (width > 0 && height > 0) {
+          setCanvasDimensions({ width: Math.round(width), height: Math.round(height) });
+        }
+      }
+    });
+    observer.observe(parent);
+    return () => observer.disconnect();
+  }, []);
 
   // Viewport Transform
   const [zoom, setZoom] = useState<number>(6.0); // 6 px per mm
@@ -158,7 +177,7 @@ export const PCBEditor: React.FC<Props> = ({ project, onUpdateProject, onRunDRC,
 
   // Modal Dialogs & Side Panels
   const [showBoardSetup, setShowBoardSetup] = useState<boolean>(false);
-  const [showLeftInspector, setShowLeftInspector] = useState<boolean>(true);
+  const [showLeftInspector, setShowLeftInspector] = useState<boolean>(false);
   const [showRightAppearance, setShowRightAppearance] = useState<boolean>(true);
 
   // Context Menu
@@ -623,6 +642,7 @@ export const PCBEditor: React.FC<Props> = ({ project, onUpdateProject, onRunDRC,
     ratsnestLines,
     theme,
     getActiveTrackWidth,
+    canvasDimensions,
   ]);
 
   // -----------------------------------------------------------------
@@ -1039,11 +1059,11 @@ export const PCBEditor: React.FC<Props> = ({ project, onUpdateProject, onRunDRC,
   return (
     <div
       onContextMenu={(e) => e.preventDefault()}
-      className="relative w-full h-full flex flex-col bg-cad-bg overflow-hidden select-none font-sans"
+      className="relative w-full h-full flex flex-col bg-cad-bg overflow-hidden select-none font-sans min-w-0 min-h-0"
     >
       {/* 1. TOP PROFESSIONAL PCB TOOLBAR */}
-      <div className="h-9 bg-cad-panel border-b border-cad-border px-3 flex items-center justify-between z-10 shrink-0 select-none text-xs">
-        <div className="flex items-center space-x-1">
+      <div className="h-9 bg-cad-panel border-b border-cad-border px-3 flex items-center justify-between z-10 shrink-0 select-none text-xs min-w-0 overflow-x-auto no-scrollbar">
+        <div className="flex items-center space-x-1 shrink-0">
           {/* Tool Selectors */}
           <button
             onClick={() => {
@@ -1357,10 +1377,10 @@ export const PCBEditor: React.FC<Props> = ({ project, onUpdateProject, onRunDRC,
       )}
 
       {/* 2. CENTRAL LAYOUT & CANVAS AREA */}
-      <div className="flex-1 flex overflow-hidden relative">
+      <div className="flex-1 flex overflow-hidden relative min-w-0 min-h-0">
         {/* Left Properties Inspector Dock */}
         {showLeftInspector && (
-          <aside className="w-64 h-full border-r border-cad-border bg-cad-panel shrink-0 z-10 flex flex-col">
+          <aside className="w-64 h-full border-r border-cad-border bg-cad-panel shrink-0 z-10 flex flex-col min-w-0 overflow-hidden">
             <PropertiesPanel
               project={project}
               selectedFootprintId={selectedFootprintId || undefined}
@@ -1373,7 +1393,7 @@ export const PCBEditor: React.FC<Props> = ({ project, onUpdateProject, onRunDRC,
         )}
 
         {/* Central 2D Canvas Container */}
-        <div className="flex-1 h-full relative overflow-hidden">
+        <div className="flex-1 h-full relative overflow-hidden min-w-0 min-h-0">
           {/* Interactive Routing Status / Short Circuit Error Banners */}
           {routeError && (
             <div className="absolute top-3 left-4 right-4 z-20 bg-red-600 text-white px-3 py-1.5 rounded text-xs font-mono flex items-center justify-between shadow-lg border border-red-500 animate-in fade-in duration-100">
@@ -1435,13 +1455,13 @@ export const PCBEditor: React.FC<Props> = ({ project, onUpdateProject, onRunDRC,
                   ? 'crosshair'
                   : 'default',
             }}
-            className="w-full h-full"
+            className="w-full h-full min-w-0 min-h-0 block"
           />
         </div>
 
         {/* Right Appearance Panel Dock */}
         {showRightAppearance && (
-          <aside className="w-72 h-full border-l border-cad-border bg-cad-panel shrink-0 z-10 flex flex-col">
+          <aside className="w-72 h-full border-l border-cad-border bg-cad-panel shrink-0 z-10 flex flex-col min-w-0 overflow-hidden">
             <AppearancePanel
               project={project}
               activeLayer={activeLayer}
@@ -1469,7 +1489,7 @@ export const PCBEditor: React.FC<Props> = ({ project, onUpdateProject, onRunDRC,
       </div>
 
       {/* 3. BOTTOM REAL-TIME STATUS BAR */}
-      <footer className="h-7 bg-cad-subpanel border-t border-cad-border px-3 flex items-center justify-between text-[11px] font-mono text-cad-textMuted shrink-0">
+      <footer className="h-7 bg-cad-subpanel border-t border-cad-border px-3 flex items-center justify-between text-[11px] font-mono text-cad-textMuted shrink-0 min-w-0 overflow-x-auto no-scrollbar">
         <div className="flex items-center space-x-4">
           <span className="flex items-center gap-1.5 text-cad-text font-semibold">
             <div className="w-2 h-2 rounded-full bg-emerald-500" />

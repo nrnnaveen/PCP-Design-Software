@@ -1,5 +1,5 @@
 /**
- * FloZ ECA — Microsoft Fluent Terms & Conditions Dialog
+ * FloZ ECA — Terms & Conditions Dialog
  * Software licensing, engineering warranty disclaimer, and intellectual property terms.
  */
 
@@ -75,7 +75,7 @@ export const TermsModal: React.FC<Props> = ({ isOpen, onClose }) => {
             <div className="p-2.5 bg-amber-500/10 border border-amber-500/30 rounded-xs text-amber-800 dark:text-amber-200 flex items-start gap-2">
               <AlertTriangle size={15} className="shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
               <div className="space-y-0.5">
-                <span className="font-semibold block text-xs">3. Engineering &amp; Manufacturing Disclaimer</span>
+                <span className="font-semibold block text-xs">3. Design &amp; Manufacturing Notice</span>
                 <p className="text-[11px] leading-relaxed text-cad-textMuted">
                   While {siteConfig.siteName} includes mathematical DRC (Design Rule Check), ERC (Electrical Rule Check), and SPICE simulation engines, you are solely responsible for verifying that manufactured circuit boards meet your specific hardware fabricator specifications (e.g. JLCPCB, PCBWay, OSH Park). {siteConfig.siteName} is provided &quot;AS IS&quot; without warranty of physical hardware fabrication yield.
                 </p>

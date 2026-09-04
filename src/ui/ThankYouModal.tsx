@@ -1,5 +1,5 @@
 /**
- * FloZ ECA — Microsoft Fluent Thank You & Action Confirmation Dialog
+ * FloZ ECA — Thank You & Action Confirmation Dialog
  * Professional confirmation dialog after project exports, fabrication outputs, and feedback.
  */
 

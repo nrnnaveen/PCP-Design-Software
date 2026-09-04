@@ -1,10 +1,11 @@
+@import './styles/tokens.css';
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 /* ============================================================================
  * FloZ ECA — Centralized Semantic Design Tokens & Theme Specification
- * Precision-engineered Microsoft Fluent Design System tokens for Dark & Light themes.
+ * Precision-engineered FloZ Design System tokens for Dark & Light themes.
  * ============================================================================ */
 
 :root,
@@ -370,3 +371,17 @@ canvas {
 .eng-table-row {
   @apply border-b border-cad-border hover:bg-cad-surfaceHover text-xs transition-colors duration-fast;
 }
+
+.eng-tactile {
+  @apply active:scale-[0.985] active:translate-y-[0.5px] transition-transform duration-75;
+}
+
+.eng-card {
+  @apply bg-cad-panel border border-cad-border rounded-sm shadow-xs transition-all duration-150;
+}
+
+.dot-matrix-bg {
+  background-image: radial-gradient(var(--cad-border) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+

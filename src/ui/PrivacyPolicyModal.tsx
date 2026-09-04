@@ -1,5 +1,5 @@
 /**
- * FloZ ECA — Microsoft Fluent Privacy Policy Dialog
+ * FloZ ECA — Privacy Policy Dialog
  * Clear, truthful privacy policy detailing local-first data processing, offline security, and telemetry preferences.
  */
 
@@ -60,7 +60,7 @@ export const PrivacyPolicyModal: React.FC<Props> = ({ isOpen, onClose }) => {
           <section className="space-y-1">
             <h3 className="font-semibold text-cad-textHeading flex items-center gap-1.5 text-xs">
               <HardDrive size={13} className="text-emerald-600 dark:text-emerald-400" />
-              1. Local-First Engineering Data Architecture
+              1. Local-First Data Architecture
             </h3>
             <p className="text-cad-textMuted">
               {siteConfig.siteName} is built from the ground up as a <strong>local-first Electronic Design Automation (EDA) system</strong>. All schematic sheets, netlists, PCB layer geometry, SPICE models, trace routing, and design rules remain stored directly inside your browser’s indexed storage or local filesystem.
@@ -70,10 +70,10 @@ export const PrivacyPolicyModal: React.FC<Props> = ({ isOpen, onClose }) => {
           <section className="space-y-1">
             <h3 className="font-semibold text-cad-textHeading flex items-center gap-1.5 text-xs">
               <Cpu size={13} className="text-blue-600 dark:text-blue-400" />
-              2. AI Copilot &amp; Circuit Inference Privacy
+              2. FloZ AI &amp; Circuit Inference Privacy
             </h3>
             <p className="text-cad-textMuted">
-              When utilizing the optional FloZ AI Circuit Copilot with a custom OpenRouter or LLM API key, your circuit prompts and netlist excerpts are transmitted exclusively to your configured AI inference provider via HTTPS. When operating in <em>Local EDA Rule Synthesis</em> mode, all analysis is computed 100% offline on your device with zero outbound network calls.
+              When utilizing the optional FloZ AI with a custom OpenRouter or LLM API key, your circuit prompts and netlist excerpts are transmitted exclusively to your configured AI inference provider via HTTPS. When operating in <em>Local EDA Rule Synthesis</em> mode, all analysis is computed 100% offline on your device with zero outbound network calls.
             </p>
           </section>
 

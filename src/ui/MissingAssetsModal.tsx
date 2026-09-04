@@ -1,5 +1,5 @@
 /**
- * FloZ ECA — Microsoft Fluent Missing Assets Management Dialog
+ * FloZ ECA — Missing Assets Management Dialog
  * Displays and auto-resolves missing symbols, footprints, and 3D packages.
  */
 

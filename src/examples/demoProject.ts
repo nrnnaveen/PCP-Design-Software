@@ -1,6 +1,6 @@
 /**
- * Apex EDA - Built-in Reference Demonstration Project
- * "Apex IoT Sensor Node v1.0"
+ * FloZ ECA - Built-in Reference Design Project
+ * "FloZ MCU Reference Board v1.0"
  * Complete verified circuit with MCU, USB-C, 3.3V LDO, Crystal, Sensors, LEDs, Traces, and Ground Plane.
  */
 
@@ -11,11 +11,11 @@ export function createDemoProject(): ApexProject {
 
   return {
     metadata: {
-      id: 'proj_floz_iot_node_demo',
-      name: 'FloZ IoT Sensor Node',
+      id: 'proj_floz_ref_design_demo',
+      name: 'FloZ MCU Reference Board',
       version: '1.0.0',
-      author: 'FloZ ECA Engineering Team',
-      description: 'Production-ready IoT sensor board with MCU, USB-C power, LDO regulation, I2C telemetry, and status indicators.',
+      author: 'FloZ Design Studio',
+      description: 'Reference PCB design with MCU, USB-C power, LDO regulation, I2C communication, and status indicators.',
       createdAt: now,
       updatedAt: now,
       units: 'mm',
@@ -790,8 +790,8 @@ export function createDemoProject(): ApexProject {
       generatePickAndPlace: true,
       generateBOM: true,
       generateDrillMap: true,
-      companyName: 'FloZ Engineering Lab',
-      designer: 'Lead Hardware Engineer',
+      companyName: 'FloZ Studio',
+      designer: 'FloZ Designer',
       revision: '1.0',
     },
     settings: {

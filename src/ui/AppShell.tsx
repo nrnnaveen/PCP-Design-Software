@@ -3,7 +3,7 @@
  * Tabbed CAD workspace, menu bar, dockable tool panels, undo/redo manager, library manager, and cross-probing.
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { ApexProject } from '../core/types';
 import { createDemoProject } from '../examples/demoProject';
 import { TransactionManager } from '../core/transaction';
@@ -29,7 +29,6 @@ import { ERCPanel } from '../erc/ERCPanel';
 import { DRCPanel } from '../drc/DRCPanel';
 import { FloZAIPanel } from '../ai/FloZAIPanel';
 import { ManufacturingModal } from '../manufacturing/ManufacturingModal';
-import { ProjectManager } from './ProjectManager';
 import { AboutModal } from './AboutModal';
 import { ProjectHealthModal } from './ProjectHealthModal';
 import { MissingAssetsModal } from './MissingAssetsModal';
@@ -46,6 +45,13 @@ import { PrivacyPolicyModal } from './PrivacyPolicyModal';
 import { TermsModal } from './TermsModal';
 import { CookieConsentBanner } from './CookieConsentBanner';
 import { ThankYouModal } from './ThankYouModal';
+import { Logo } from '../components/branding/Logo';
+import { SplashIntro } from '../components/branding/SplashIntro';
+import { Landing } from '../pages/Landing';
+import { Login } from '../pages/auth/Login';
+import { Signup } from '../pages/auth/Signup';
+import { Dashboard } from '../pages/Dashboard';
+import { CommandPalette, CommandItem } from '../components/common/CommandPalette';
 
 // Icons
 import {
@@ -58,6 +64,8 @@ import {
   Undo2,
   Redo2,
   Save,
+  Search,
+  ExternalLink,
   Download,
   AlertTriangle,
   ShieldAlert,
@@ -101,6 +109,9 @@ interface ParsedRoute {
   showNotFound: boolean;
   showPrivacy: boolean;
   showTerms: boolean;
+  showLanding: boolean;
+  showLogin: boolean;
+  showSignup: boolean;
 }
 
 function parseInitialRoute(): ParsedRoute {
@@ -109,37 +120,46 @@ function parseInitialRoute(): ParsedRoute {
     const hash = window.location.hash.toLowerCase().replace(/^#\/?/, '');
     const path = pathname !== '/' ? pathname : hash ? `/${hash}` : '/';
 
-    if (path === '/' || path === '/dashboard' || path === '/projects') {
-      return { tab: 'schematic', showDashboard: true, showNotFound: false, showPrivacy: false, showTerms: false };
+    if (path === '/' || path === '/landing') {
+      return { tab: 'schematic', showDashboard: false, showNotFound: false, showPrivacy: false, showTerms: false, showLanding: true, showLogin: false, showSignup: false };
+    }
+    if (path === '/login') {
+      return { tab: 'schematic', showDashboard: false, showNotFound: false, showPrivacy: false, showTerms: false, showLanding: false, showLogin: true, showSignup: false };
+    }
+    if (path === '/signup') {
+      return { tab: 'schematic', showDashboard: false, showNotFound: false, showPrivacy: false, showTerms: false, showLanding: false, showLogin: false, showSignup: true };
+    }
+    if (path === '/dashboard' || path === '/projects') {
+      return { tab: 'schematic', showDashboard: true, showNotFound: false, showPrivacy: false, showTerms: false, showLanding: false, showLogin: false, showSignup: false };
     }
     if (path === '/privacy') {
-      return { tab: 'schematic', showDashboard: true, showNotFound: false, showPrivacy: true, showTerms: false };
+      return { tab: 'schematic', showDashboard: true, showNotFound: false, showPrivacy: true, showTerms: false, showLanding: false, showLogin: false, showSignup: false };
     }
     if (path === '/terms') {
-      return { tab: 'schematic', showDashboard: true, showNotFound: false, showPrivacy: false, showTerms: true };
+      return { tab: 'schematic', showDashboard: true, showNotFound: false, showPrivacy: false, showTerms: true, showLanding: false, showLogin: false, showSignup: false };
     }
     if (path.startsWith('/workspace/pcb') || path === '/pcb') {
-      return { tab: 'pcb', showDashboard: false, showNotFound: false, showPrivacy: false, showTerms: false };
+      return { tab: 'pcb', showDashboard: false, showNotFound: false, showPrivacy: false, showTerms: false, showLanding: false, showLogin: false, showSignup: false };
     }
     if (path.startsWith('/workspace/3d') || path === '/3d') {
-      return { tab: '3d', showDashboard: false, showNotFound: false, showPrivacy: false, showTerms: false };
+      return { tab: '3d', showDashboard: false, showNotFound: false, showPrivacy: false, showTerms: false, showLanding: false, showLogin: false, showSignup: false };
     }
     if (path.startsWith('/workspace/simulation') || path === '/simulation') {
-      return { tab: 'simulation', showDashboard: false, showNotFound: false, showPrivacy: false, showTerms: false };
+      return { tab: 'simulation', showDashboard: false, showNotFound: false, showPrivacy: false, showTerms: false, showLanding: false, showLogin: false, showSignup: false };
     }
     if (path.startsWith('/workspace/gerbview') || path === '/gerbview') {
-      return { tab: 'gerbview', showDashboard: false, showNotFound: false, showPrivacy: false, showTerms: false };
+      return { tab: 'gerbview', showDashboard: false, showNotFound: false, showPrivacy: false, showTerms: false, showLanding: false, showLogin: false, showSignup: false };
     }
     if (path.startsWith('/workspace/calculator') || path === '/calculator') {
-      return { tab: 'calculator', showDashboard: false, showNotFound: false, showPrivacy: false, showTerms: false };
+      return { tab: 'calculator', showDashboard: false, showNotFound: false, showPrivacy: false, showTerms: false, showLanding: false, showLogin: false, showSignup: false };
     }
     if (path.startsWith('/workspace/schematic') || path === '/workspace' || path === '/schematic') {
-      return { tab: 'schematic', showDashboard: false, showNotFound: false, showPrivacy: false, showTerms: false };
+      return { tab: 'schematic', showDashboard: false, showNotFound: false, showPrivacy: false, showTerms: false, showLanding: false, showLogin: false, showSignup: false };
     }
     // Unknown path -> Custom 404
-    return { tab: 'schematic', showDashboard: false, showNotFound: true, showPrivacy: false, showTerms: false };
+    return { tab: 'schematic', showDashboard: false, showNotFound: true, showPrivacy: false, showTerms: false, showLanding: false, showLogin: false, showSignup: false };
   } catch {
-    return { tab: 'schematic', showDashboard: true, showNotFound: false, showPrivacy: false, showTerms: false };
+    return { tab: 'schematic', showDashboard: true, showNotFound: false, showPrivacy: false, showTerms: false, showLanding: false, showLogin: false, showSignup: false };
   }
 }
 
@@ -159,6 +179,10 @@ export const AppShell: React.FC = () => {
   const [showNotFound, setShowNotFound] = useState<boolean>(initialRoute.showNotFound);
   const [showPrivacyModal, setShowPrivacyModal] = useState<boolean>(initialRoute.showPrivacy);
   const [showTermsModal, setShowTermsModal] = useState<boolean>(initialRoute.showTerms);
+  const [showLanding, setShowLanding] = useState<boolean>(initialRoute.showLanding);
+  const [showLogin, setShowLogin] = useState<boolean>(initialRoute.showLogin);
+  const [showSignup, setShowSignup] = useState<boolean>(initialRoute.showSignup);
+  const [showCommandPalette, setShowCommandPalette] = useState<boolean>(false);
   const [showThankYouModal, setShowThankYouModal] = useState<boolean>(false);
   const [thankYouInfo, setThankYouInfo] = useState<{ title: string; message: string; details?: string }>({
     title: 'Manufacturing Output Generated',
@@ -185,6 +209,9 @@ export const AppShell: React.FC = () => {
       setShowNotFound(route.showNotFound);
       setShowPrivacyModal(route.showPrivacy);
       setShowTermsModal(route.showTerms);
+      setShowLanding(route.showLanding);
+      setShowLogin(route.showLogin);
+      setShowSignup(route.showSignup);
     };
 
     window.addEventListener('popstate', handlePopState);
@@ -296,23 +323,46 @@ export const AppShell: React.FC = () => {
 
   // Undo/Redo Engine
   const [transactionMgr] = useState(() => new TransactionManager<ApexProject>(100));
-  const [rightPanel, setRightPanel] = useState<'properties' | 'erc' | 'drc' | 'ai'>('properties');
-  const [rightPanelCollapsed, setRightPanelCollapsed] = useState<boolean>(false);
+  // Right Panel State with URL override & responsive defaults
+  const [rightPanel, setRightPanel] = useState<'properties' | 'erc' | 'drc' | 'ai'>(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const p = params.get('panel');
+      if (p === 'erc' || p === 'drc' || p === 'ai' || p === 'properties') return p;
+    }
+    return 'properties';
+  });
+
+  const [rightPanelCollapsed, setRightPanelCollapsed] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('right_panel') === 'collapsed' || params.get('panel') === 'none') return true;
+      if (params.get('right_panel') === 'open') return false;
+      if (window.innerWidth < 900) return true;
+    }
+    return false;
+  });
 
   // Resizable Right Sidebar Width (Draggable Splitter)
   const [rightPanelWidth, setRightPanelWidth] = useState<number>(() => {
     try {
+      if (typeof window !== 'undefined') {
+        const params = new URLSearchParams(window.location.search);
+        const urlW = params.get('panel_width');
+        if (urlW) return parseInt(urlW, 10);
+      }
       const saved = localStorage.getItem('floz_right_panel_width');
-      if (saved) return Math.min(850, Math.max(300, parseInt(saved, 10)));
+      if (saved) return Math.min(850, Math.max(260, parseInt(saved, 10)));
     } catch {}
-    return 420;
+    return 360;
   });
   const [isDraggingRightSplitter, setIsDraggingRightSplitter] = useState<boolean>(false);
 
   useEffect(() => {
     if (!isDraggingRightSplitter) return;
     const handleMouseMove = (e: MouseEvent) => {
-      const newWidth = Math.min(850, Math.max(300, window.innerWidth - e.clientX));
+      const maxW = Math.max(300, window.innerWidth - 320);
+      const newWidth = Math.min(maxW, Math.max(260, window.innerWidth - e.clientX));
       setRightPanelWidth(newWidth);
     };
     const handleMouseUp = () => {
@@ -539,6 +589,150 @@ export const AppShell: React.FC = () => {
     };
   }, []);
 
+  // Global shortcut for Command Palette (Cmd+K / Ctrl+K)
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setShowCommandPalette((prev) => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleGlobalKeyDown);
+    return () => window.removeEventListener('keydown', handleGlobalKeyDown);
+  }, []);
+
+  const commandList: CommandItem[] = useMemo(
+    () => [
+      { id: 'ws_schematic', title: 'Schematic Editor', category: 'Workspace', shortcut: 'F1', icon: Cpu, action: () => navigateToTab('schematic') },
+      { id: 'ws_pcb', title: 'PCB Layout Editor', category: 'Workspace', shortcut: 'F2', icon: Layers, action: () => navigateToTab('pcb') },
+      { id: 'ws_3d', title: '3D Board Viewer', category: 'Workspace', shortcut: 'F3', icon: Box, action: () => navigateToTab('3d') },
+      { id: 'ws_simulation', title: 'SPICE Simulation & Oscilloscope', category: 'Workspace', shortcut: 'F4', icon: Activity, action: () => navigateToTab('simulation') },
+      { id: 'ws_gerbview', title: 'Gerber & Drill Vector Viewer', category: 'Workspace', shortcut: 'F5', icon: FileCode, action: () => navigateToTab('gerbview') },
+      { id: 'ws_calculator', title: 'Impedance & Trace Calculators', category: 'Workspace', shortcut: 'F6', icon: Calculator, action: () => navigateToTab('calculator') },
+      { id: 'act_dashboard', title: 'Start Window / Solution Hub', category: 'Project', shortcut: 'Ctrl+O', icon: LayoutDashboard, action: openDashboard },
+      { id: 'act_new', title: 'New Blank Solution...', category: 'Project', icon: Plus, action: () => { openDashboard(); } },
+      { id: 'act_drc', title: 'Run Design Rule Check (DRC)', category: 'Tool', icon: ShieldCheck, action: () => { setRightPanel('drc'); setRightPanelCollapsed(false); } },
+      { id: 'act_erc', title: 'Run Electrical Rule Check (ERC)', category: 'Tool', icon: ShieldAlert, action: () => { setRightPanel('erc'); setRightPanelCollapsed(false); } },
+      { id: 'act_mfg', title: 'Export Gerber Package ZIP', category: 'Tool', shortcut: 'Ctrl+E', icon: Download, action: () => setShowMfgModal(true) },
+      { id: 'act_lib', title: 'Component Library Manager', category: 'Tool', icon: Package, action: () => setShowLibraryManager(true) },
+      { id: 'act_stackup', title: 'Board Stackup & Physical Specs', category: 'Tool', icon: Sliders, action: () => setShowSettingsModal(true) },
+      { id: 'act_health', title: 'Project Health & Diagnostics', category: 'Tool', icon: ShieldCheck, action: () => setShowHealthModal(true) },
+      { id: 'act_missing', title: 'Missing Asset Resolver', category: 'Tool', icon: Wrench, action: () => setShowMissingAssetsModal(true) },
+      { id: 'act_theme', title: `Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Theme`, category: 'System', icon: theme === 'dark' ? Sun : Moon, action: () => handleSetTheme(theme === 'dark' ? 'light' : 'dark') },
+      { id: 'act_settings', title: 'CAD Workspace Settings...', category: 'System', icon: SettingsIcon, action: () => setShowSettingsModal(true) },
+      { id: 'act_landing', title: 'Public Product Landing Page', category: 'System', icon: ExternalLink, action: () => setShowLanding(true) },
+    ],
+    [theme]
+  );
+
+  if (showLanding) {
+    return (
+      <div className="h-screen w-screen flex flex-col bg-cad-bg text-cad-text">
+        <SplashIntro />
+        <Landing
+          onOpenWorkspace={() => {
+            setShowLanding(false);
+            setShowProjectManager(false);
+            navigateToTab('schematic');
+          }}
+          onOpenDashboard={() => {
+            setShowLanding(false);
+            openDashboard();
+          }}
+          onOpenGuest={() => {
+            AuthService.loginAsGuest();
+            setShowLanding(false);
+            setShowProjectManager(false);
+            navigateToTab('schematic');
+          }}
+          onOpenLogin={() => {
+            setShowLanding(false);
+            setShowLogin(true);
+            if (window.location.protocol !== 'file:') {
+              window.history.pushState(null, '', '/login');
+            }
+          }}
+          onOpenSignup={() => {
+            setShowLanding(false);
+            setShowSignup(true);
+            if (window.location.protocol !== 'file:') {
+              window.history.pushState(null, '', '/signup');
+            }
+          }}
+          onOpenPrivacyPolicy={() => setShowPrivacyModal(true)}
+          onOpenTerms={() => setShowTermsModal(true)}
+          onOpenAbout={() => setShowAboutModal(true)}
+        />
+        {showPrivacyModal && (
+          <PrivacyPolicyModal isOpen={showPrivacyModal} onClose={() => setShowPrivacyModal(false)} />
+        )}
+        {showTermsModal && (
+          <TermsModal isOpen={showTermsModal} onClose={() => setShowTermsModal(false)} />
+        )}
+        {showAboutModal && (
+          <AboutModal isOpen={showAboutModal} onClose={() => setShowAboutModal(false)} />
+        )}
+        <CookieConsentBanner onOpenPrivacyPolicy={() => setShowPrivacyModal(true)} />
+      </div>
+    );
+  }
+
+  if (showLogin) {
+    return (
+      <div className="h-screen w-screen flex flex-col bg-cad-bg text-cad-text">
+        <Login
+          onAuthSuccess={(u) => {
+            setUser(u);
+            setShowLogin(false);
+            openDashboard();
+          }}
+          onSwitchToSignup={() => {
+            setShowLogin(false);
+            setShowSignup(true);
+          }}
+          onContinueAsGuest={() => {
+            AuthService.loginAsGuest();
+            setShowLogin(false);
+            openDashboard();
+          }}
+          onNavigateHome={() => {
+            setShowLogin(false);
+            setShowLanding(true);
+          }}
+        />
+        <CookieConsentBanner onOpenPrivacyPolicy={() => setShowPrivacyModal(true)} />
+      </div>
+    );
+  }
+
+  if (showSignup) {
+    return (
+      <div className="h-screen w-screen flex flex-col bg-cad-bg text-cad-text">
+        <Signup
+          onAuthSuccess={(u) => {
+            setUser(u);
+            setShowSignup(false);
+            openDashboard();
+          }}
+          onSwitchToLogin={() => {
+            setShowSignup(false);
+            setShowLogin(true);
+          }}
+          onContinueAsGuest={() => {
+            AuthService.loginAsGuest();
+            setShowSignup(false);
+            openDashboard();
+          }}
+          onNavigateHome={() => {
+            setShowSignup(false);
+            setShowLanding(true);
+          }}
+        />
+        <CookieConsentBanner onOpenPrivacyPolicy={() => setShowPrivacyModal(true)} />
+      </div>
+    );
+  }
+
   if (showNotFound) {
     return (
       <div className="h-screen w-screen flex flex-col bg-cad-bg text-cad-text">
@@ -563,21 +757,93 @@ export const AppShell: React.FC = () => {
     );
   }
 
+  if (showProjectManager) {
+    return (
+      <div className="h-screen w-screen flex flex-col bg-cad-bg text-cad-text">
+        <Dashboard
+          currentProject={project}
+          onOpenProject={(p) => {
+            setProject(p);
+            updateProject(() => p, 'Load Project');
+          }}
+          onOpenWorkspaceTab={(tab) => {
+            navigateToTab(tab);
+          }}
+          onOpenLanding={() => {
+            setShowProjectManager(false);
+            setShowLanding(true);
+            if (window.location.protocol !== 'file:') {
+              window.history.pushState(null, '', '/landing');
+            }
+          }}
+          onOpenSettings={() => setShowSettingsModal(true)}
+          onOpenLibraryManager={() => {
+            setShowProjectManager(false);
+            setShowLibraryManager(true);
+          }}
+          onOpenCircuitLab={() => setShowCircuitLab(true)}
+          onOpenAuthModal={() => setShowAuthModal(true)}
+          theme={theme}
+          onToggleTheme={() => handleSetTheme(theme === 'dark' ? 'light' : 'dark')}
+        />
+        {showSettingsModal && (
+          <SettingsModal
+            isOpen={showSettingsModal}
+            onClose={() => setShowSettingsModal(false)}
+            project={project}
+            onUpdateProject={updateProject}
+            theme={theme}
+            onSetTheme={handleSetTheme}
+            onOpenAuthModal={() => {
+              setShowSettingsModal(false);
+              setShowAuthModal(true);
+            }}
+          />
+        )}
+        {showAuthModal && (
+          <AuthModal
+            isOpen={showAuthModal}
+            onClose={() => setShowAuthModal(false)}
+            onAuthSuccess={(u) => {
+              setUser(u);
+              setShowAuthModal(false);
+            }}
+          />
+        )}
+        {showCircuitLab && (
+          <LiveCircuitLab
+            isOpen={showCircuitLab}
+            onClose={() => setShowCircuitLab(false)}
+            project={project}
+          />
+        )}
+        {showPrivacyModal && (
+          <PrivacyPolicyModal isOpen={showPrivacyModal} onClose={() => setShowPrivacyModal(false)} />
+        )}
+        {showTermsModal && (
+          <TermsModal isOpen={showTermsModal} onClose={() => setShowTermsModal(false)} />
+        )}
+        {showAboutModal && (
+          <AboutModal isOpen={showAboutModal} onClose={() => setShowAboutModal(false)} />
+        )}
+        <CookieConsentBanner onOpenPrivacyPolicy={() => setShowPrivacyModal(true)} />
+      </div>
+    );
+  }
+
   return (
-    <div className="w-screen h-screen flex flex-col bg-cad-bg text-cad-text select-none overflow-hidden font-sans">
+    <div className="w-full h-screen flex flex-col bg-cad-bg text-cad-text select-none overflow-hidden font-sans">
+      <SplashIntro />
       {/* 1. Desktop Application Menu Bar */}
-      <div className="h-7 bg-cad-header border-b border-cad-border px-2 flex items-center justify-between text-xs select-none z-50">
+      <div className="h-7 bg-cad-header border-b border-cad-border px-2 flex items-center justify-between text-xs select-none z-50 shrink-0 min-w-0">
         <div className="flex items-center space-x-0.5">
           {/* Brand Mark */}
           <div
             onClick={openDashboard}
-            className="flex items-center space-x-1.5 px-1.5 py-0.5 rounded-xs hover:bg-cad-surfaceHover cursor-pointer transition-colors duration-fast mr-1"
+            className="flex items-center px-1.5 py-0.5 rounded-xs hover:bg-cad-surfaceHover cursor-pointer transition-colors duration-fast mr-1"
             title="FloZ ECA Start Window (Ctrl+O)"
           >
-            <div className="w-4 h-4 rounded-xs bg-blue-600 flex items-center justify-center text-white font-bold text-[10px] shadow-xs">
-              F
-            </div>
-            <span className="font-semibold text-cad-textHeading text-[11px] tracking-wide">FloZ ECA</span>
+            <Logo size="sm" />
           </div>
 
           {/* Menu Dropdowns */}
@@ -652,14 +918,6 @@ export const AppShell: React.FC = () => {
                     setRightPanelCollapsed((prev) => !prev);
                   },
                 },
-                {
-                  label: 'Toggle Circuit Copilot',
-                  icon: Sparkles,
-                  action: () => {
-                    setRightPanel('ai');
-                    setRightPanelCollapsed((prev) => !prev);
-                  },
-                },
               ],
             },
             {
@@ -703,20 +961,15 @@ export const AppShell: React.FC = () => {
                     setRightPanelCollapsed(false);
                   },
                 },
-                {
-                  label: 'Circuit Copilot Analysis',
-                  icon: Sparkles,
-                  action: () => {
-                    setRightPanel('ai');
-                    setRightPanelCollapsed(false);
-                  },
-                },
               ],
             },
             {
               id: 'help',
               label: 'Help',
               items: [
+                { label: 'Command Palette...', icon: Terminal, shortcut: 'Ctrl+K', action: () => setShowCommandPalette(true) },
+                { label: 'Product Landing Page...', icon: ExternalLink, action: () => setShowLanding(true) },
+                { type: 'separator' },
                 { label: 'About FloZ ECA...', icon: Info, action: () => setShowAboutModal(true) },
                 { label: 'Privacy Policy...', icon: ShieldCheck, action: () => setShowPrivacyModal(true) },
                 { label: 'Terms of Service...', icon: FileText, action: () => setShowTermsModal(true) },
@@ -785,9 +1038,9 @@ export const AppShell: React.FC = () => {
       </div>
 
       {/* 2. Workstation Tab Bar & Quick Controls */}
-      <header className="h-8 bg-cad-panel border-b border-cad-border px-2 flex items-center justify-between text-xs select-none">
+      <header className="h-8 bg-cad-panel border-b border-cad-border px-2 flex items-center justify-between text-xs select-none shrink-0 min-w-0 overflow-x-auto no-scrollbar">
         {/* Workstation Tab Switcher */}
-        <div className="flex items-center h-full">
+        <div className="flex items-center h-full shrink-0">
           {[
             { id: 'schematic', label: 'Schematic Capture', icon: FileText },
             { id: 'pcb', label: 'PCB Layout', icon: Layers },
@@ -802,7 +1055,7 @@ export const AppShell: React.FC = () => {
               <button
                 key={tab.id}
                 onClick={() => navigateToTab(tab.id as WorkspaceTab)}
-                className={`h-full px-3 text-xs font-medium flex items-center gap-1.5 transition-colors duration-fast border-b-2 border-r border-cad-border/30 ${
+                className={`h-full px-3 text-xs font-medium flex items-center gap-1.5 transition-colors duration-fast border-b-2 border-r border-cad-border/30 shrink-0 ${
                   isActive
                     ? 'bg-cad-bg text-cad-textHeading border-b-blue-600 font-semibold'
                     : 'text-cad-textMuted border-b-transparent hover:text-cad-text hover:bg-cad-surfaceHover'
@@ -816,7 +1069,7 @@ export const AppShell: React.FC = () => {
         </div>
 
         {/* Global Toolbar Actions */}
-        <div className="flex items-center space-x-1">
+        <div className="flex items-center space-x-1 shrink-0 ml-2">
           {/* Quick Save */}
           <button
             onClick={() => {
@@ -824,6 +1077,7 @@ export const AppShell: React.FC = () => {
               showToast('Project Exported');
             }}
             title="Save Project (Ctrl+S)"
+            aria-label="Save Project (Ctrl+S)"
             className="p-1.5 hover:bg-cad-surfaceHover rounded-xs text-cad-text hover:text-cad-textHeading transition-colors duration-fast"
           >
             <Save size={13} />
@@ -834,6 +1088,7 @@ export const AppShell: React.FC = () => {
             onClick={handleUndo}
             disabled={!transactionMgr.canUndo()}
             title="Undo (Ctrl+Z)"
+            aria-label="Undo (Ctrl+Z)"
             className="p-1.5 hover:bg-cad-surfaceHover rounded-xs disabled:opacity-30 text-cad-text hover:text-cad-textHeading transition-colors duration-fast"
           >
             <Undo2 size={13} />
@@ -843,12 +1098,25 @@ export const AppShell: React.FC = () => {
             onClick={handleRedo}
             disabled={!transactionMgr.canRedo()}
             title="Redo (Ctrl+Y)"
+            aria-label="Redo (Ctrl+Y)"
             className="p-1.5 hover:bg-cad-surfaceHover rounded-xs disabled:opacity-30 text-cad-text hover:text-cad-textHeading transition-colors duration-fast"
           >
             <Redo2 size={13} />
           </button>
 
           <div className="h-3.5 w-px bg-cad-border mx-1" />
+
+          {/* Command Palette Trigger */}
+          <button
+            onClick={() => setShowCommandPalette(true)}
+            title="Open Command Palette (Ctrl+K)"
+            aria-label="Open Command Palette (Ctrl+K)"
+            className="hidden sm:flex items-center gap-1.5 px-2 py-0.5 rounded-xs bg-cad-subpanel hover:bg-cad-surfaceHover border border-cad-border text-cad-textMuted hover:text-cad-text text-[11px] font-mono transition-colors duration-fast"
+          >
+            <Search size={11} />
+            <span className="hidden md:inline">Commands</span>
+            <kbd className="text-[9px] bg-cad-panel px-1 py-0.2 rounded-xs border border-cad-border">⌘K</kbd>
+          </button>
 
           {/* Theme Switcher */}
           <button
@@ -864,6 +1132,7 @@ export const AppShell: React.FC = () => {
           <button
             onClick={() => setShowSettingsModal(true)}
             title="Preferences & Settings"
+            aria-label="Preferences & Settings"
             className="p-1.5 hover:bg-cad-surfaceHover rounded-xs text-cad-text hover:text-cad-textHeading transition-colors duration-fast"
           >
             <SettingsIcon size={13} />
@@ -879,6 +1148,7 @@ export const AppShell: React.FC = () => {
               }
             }}
             title={user.isGuest ? 'Guest Mode (Click to Sign In)' : `Logged in as ${user.name}`}
+            aria-label={user.isGuest ? 'Guest Mode (Click to Sign In)' : `Logged in as ${user.name}`}
             className="px-2 py-0.5 bg-cad-subpanel hover:bg-cad-surfaceHover text-cad-text rounded-xs text-[11px] font-medium flex items-center gap-1.5 border border-cad-border transition-colors duration-fast"
           >
             <UserIcon size={11} className={user.isGuest ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400'} />
@@ -887,9 +1157,9 @@ export const AppShell: React.FC = () => {
         </div>
       </header>
 
-      {/* 3. Engineering Sub-Toolbar */}
-      <div className="h-7.5 bg-cad-header border-b border-cad-border px-2 flex items-center justify-between text-xs select-none">
-        <div className="flex items-center space-x-1">
+      {/* 3. Workspace Sub-Toolbar */}
+      <div className="h-7.5 bg-cad-header border-b border-cad-border px-2 flex items-center justify-between text-xs select-none shrink-0 min-w-0 overflow-x-auto no-scrollbar">
+        <div className="flex items-center space-x-1 shrink-0">
           {/* Sync PCB */}
           <button
             onClick={handleSyncPCB}
@@ -960,7 +1230,7 @@ export const AppShell: React.FC = () => {
         </div>
 
         {/* Right Dock Switcher Toolbar */}
-        <div className="flex items-center space-x-0.5 bg-cad-subpanel p-0.5 rounded-xs border border-cad-border">
+        <div className="flex items-center space-x-0.5 bg-cad-subpanel p-0.5 rounded-xs border border-cad-border shrink-0 ml-2">
           <button
             onClick={() => {
               if (rightPanel === 'properties' && !rightPanelCollapsed) {
@@ -1021,32 +1291,13 @@ export const AppShell: React.FC = () => {
             <span>DRC</span>
           </button>
 
-          <button
-            onClick={() => {
-              if (rightPanel === 'ai' && !rightPanelCollapsed) {
-                setRightPanelCollapsed(true);
-              } else {
-                setRightPanel('ai');
-                setRightPanelCollapsed(false);
-              }
-            }}
-            title="Circuit Copilot"
-            className={`px-2 py-0.5 rounded-xs text-[11px] font-medium flex items-center gap-1 transition-colors duration-fast ${
-              !rightPanelCollapsed && rightPanel === 'ai'
-                ? 'bg-blue-600 text-white shadow-xs font-semibold'
-                : 'text-cad-text hover:bg-cad-surfaceHover'
-            }`}
-          >
-            <Sparkles size={11} className="text-blue-600 dark:text-blue-400" />
-            <span>Copilot</span>
-          </button>
         </div>
       </div>
 
       {/* 4. Central Working Area */}
-      <main className="flex-1 flex overflow-hidden relative">
+      <main className="flex-1 flex overflow-hidden relative min-w-0 min-h-0">
         {/* Editor Area */}
-        <div className="flex-1 h-full relative">
+        <div className="flex-1 h-full relative min-w-0 min-h-0 flex flex-col overflow-hidden">
           {activeTab === 'schematic' && (
             <SchematicEditor
               project={project}
@@ -1080,8 +1331,13 @@ export const AppShell: React.FC = () => {
         {/* Right Dock Panel (Fluidly Resizable Width) */}
         {!rightPanelCollapsed && activeTab !== 'simulation' && activeTab !== 'gerbview' && activeTab !== 'calculator' && (
           <aside
-            style={{ width: `${rightPanel === 'ai' ? rightPanelWidth : Math.min(380, rightPanelWidth)}px` }}
-            className="h-full flex flex-col relative shrink-0 select-none bg-cad-panel border-l border-cad-border"
+            style={{
+              width: `${Math.min(
+                Math.max(260, rightPanelWidth),
+                Math.max(280, typeof window !== 'undefined' ? window.innerWidth - 300 : 500)
+              )}px`,
+            }}
+            className="h-full flex flex-col relative shrink-0 select-none bg-cad-panel border-l border-cad-border min-w-0 overflow-hidden"
           >
             {/* Draggable Left Border Splitter Handle */}
             <div
@@ -1106,7 +1362,7 @@ export const AppShell: React.FC = () => {
             {rightPanel === 'erc' && (
               <ERCPanel
                 project={project}
-                onAskCopilot={(_query) => {
+                onAskFloZAI={(_query) => {
                   setRightPanel('ai');
                   setRightPanelCollapsed(false);
                 }}
@@ -1115,7 +1371,7 @@ export const AppShell: React.FC = () => {
             {rightPanel === 'drc' && (
               <DRCPanel
                 project={project}
-                onAskCopilot={(_query) => {
+                onAskFloZAI={(_query) => {
                   setRightPanel('ai');
                   setRightPanelCollapsed(false);
                 }}
@@ -1139,8 +1395,8 @@ export const AppShell: React.FC = () => {
       </main>
 
       {/* 5. Bottom Status Bar */}
-      <footer className="h-6 bg-cad-header border-t border-cad-border px-3 flex items-center justify-between text-[11px] text-cad-textMuted font-mono select-none">
-        <div className="flex items-center space-x-4">
+      <footer className="h-6 bg-cad-header border-t border-cad-border px-3 flex items-center justify-between text-[11px] text-cad-textMuted font-mono select-none shrink-0 min-w-0 overflow-x-auto no-scrollbar">
+        <div className="flex items-center space-x-4 shrink-0">
           <span className="text-cad-text font-medium">Units: {project.metadata.units}</span>
           <span>Grid: 0.5mm / 20mil</span>
           <span>Components: {project.pcb.footprints.length}</span>
@@ -1149,7 +1405,7 @@ export const AppShell: React.FC = () => {
           <span>Vias: {project.pcb.vias.length}</span>
         </div>
 
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-4 shrink-0 ml-4">
           <span>Sheet: 1/1</span>
           <span>Layer: F.Cu</span>
         </div>
@@ -1222,26 +1478,6 @@ export const AppShell: React.FC = () => {
         onClose={() => setShowMfgModal(false)}
       />
 
-      {showProjectManager && (
-        <ProjectManager
-          currentProject={project}
-          onOpenProject={(p) => {
-            setProject(p);
-            closeDashboard();
-          }}
-          onClose={closeDashboard}
-          onOpenLibraryManager={() => {
-            closeDashboard();
-            setShowLibraryManager(true);
-          }}
-          onOpenSettings={() => setShowSettingsModal(true)}
-          onOpenCircuitLab={() => setShowCircuitLab(true)}
-          onOpenAuthModal={() => setShowAuthModal(true)}
-          onOpenPrivacyPolicy={() => setShowPrivacyModal(true)}
-          onOpenTerms={() => setShowTermsModal(true)}
-          onOpenAbout={() => setShowAboutModal(true)}
-        />
-      )}
 
       {showSettingsModal && (
         <SettingsModal
@@ -1344,6 +1580,13 @@ export const AppShell: React.FC = () => {
           }}
         />
       )}
+
+      {/* Command Palette (Cmd+K / Ctrl+K) */}
+      <CommandPalette
+        isOpen={showCommandPalette}
+        onClose={() => setShowCommandPalette(false)}
+        commands={commandList}
+      />
     </div>
   );
 };

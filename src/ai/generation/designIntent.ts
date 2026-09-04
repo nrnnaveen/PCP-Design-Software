@@ -109,7 +109,7 @@ export class DesignIntent {
 
       return {
         title: 'ESP32 Wi-Fi & BLE Sensor Node Architecture',
-        description: 'Complete IoT sensor board featuring ESP32 module, 3.3V LDO regulator, input filtering, I2C telemetry, status LED, and user tactile switch.',
+        description: 'Complete ESP32-based reference board featuring USB-C power, 3.3V LDO regulator, I2C/SPI peripherals, status LED, and user tactile switch.',
         components,
         connections,
         globalNets: ['VBUS', '+3.3V', 'GND', 'I2C_SDA', 'I2C_SCL', 'LED_SIG', 'LED_ANODE', 'BTN_SIG'],

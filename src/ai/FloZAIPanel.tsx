@@ -1,6 +1,6 @@
 /**
- * FloZ ECA - Professional AI EDA Copilot Panel (FloZ AI Phase 2)
- * Production-grade engineering copilot with AbortController cancellation, pre/post-apply validation,
+ * FloZ ECA - FloZ AI Panel (FloZ AI Phase 2)
+ * Production-grade AI engineering assistant with AbortController cancellation, pre/post-apply validation,
  * clickable cross-probing, permission badges, and multi-provider health indicators.
  */
 
@@ -72,7 +72,7 @@ export const FloZAIPanel: React.FC<Props> = ({
     {
       id: 'msg_welcome',
       role: 'assistant',
-      content: `## Circuit Copilot
+      content: `## FloZ AI
 Engineering assistant for schematic capture, PCB layout, ERC/DRC diagnostics, and circuit analysis.
 
 Ask questions about your design, inspect nets and components, or choose a quick action below:`,
@@ -224,7 +224,7 @@ Ask questions about your design, inspect nets and components, or choose a quick 
     try {
       const preValidation = ActionValidator.preValidate(proposal, project);
       if (!preValidation.valid) {
-        alert(`Cannot apply invalid action:\n- ${preValidation.issues.join('\n- ')}`);
+        setPostApplyNotice(`Cannot apply invalid action: ${preValidation.issues.join('; ')}`);
         return;
       }
 
@@ -258,7 +258,7 @@ Ask questions about your design, inspect nets and components, or choose a quick 
         })
       );
     } catch (err: any) {
-      alert(`Failed to apply proposed modification: ${err.message}`);
+      setPostApplyNotice(`Failed to apply proposed modification: ${err.message}`);
     }
   };
 
@@ -300,7 +300,7 @@ Ask questions about your design, inspect nets and components, or choose a quick 
           <Sparkles size={13} className="text-blue-600 dark:text-blue-400" />
           <div className="flex items-center gap-1.5">
             <span className="font-semibold text-cad-textHeading uppercase font-mono tracking-wider text-[11px]">
-              Circuit Copilot
+              FloZ AI
             </span>
             <span className="px-1.5 py-0.2 bg-blue-500/15 border border-blue-500/30 text-blue-600 dark:text-blue-400 rounded text-[9px] font-mono font-bold">
               {settings.model === 'floz-ultra' ? 'FloZ Ultra' : 'FloZ Super'}
@@ -398,7 +398,7 @@ Ask questions about your design, inspect nets and components, or choose a quick 
             >
               {/* Message Header */}
               <div className="flex items-center space-x-1.5 text-[10px] font-mono text-cad-textMuted px-1">
-                <span className="font-semibold text-cad-textHeading">{isUser ? 'You' : 'Copilot'}</span>
+                <span className="font-semibold text-cad-textHeading">{isUser ? 'You' : 'FloZ AI'}</span>
                 <span>•</span>
                 <span>{msg.timestamp}</span>
               </div>
@@ -610,7 +610,7 @@ Ask questions about your design, inspect nets and components, or choose a quick 
         <div className="relative flex items-center">
           <input
             type="text"
-            placeholder="Ask Copilot about your design..."
+            placeholder="Ask FloZ AI about your design..."
             value={inputPrompt}
             onChange={(e) => setInputPrompt(e.target.value)}
             onKeyDown={(e) => {

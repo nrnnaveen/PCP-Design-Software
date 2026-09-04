@@ -1,5 +1,5 @@
 /**
- * FloZ ECA — Microsoft Fluent Footprint Assignment Dialog
+ * FloZ ECA — Footprint Assignment Dialog
  * Interactive 3-pane modal to map schematic symbols to PCB footprint packages.
  */
 

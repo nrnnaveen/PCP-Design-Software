@@ -1,5 +1,5 @@
 /**
- * FloZ ECA — Microsoft Fluent Symbol Chooser Dialog
+ * FloZ ECA — Symbol Chooser Dialog
  * Fast search and placement for schematic component symbols with multi-unit support.
  */
 

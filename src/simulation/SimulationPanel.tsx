@@ -25,6 +25,24 @@ const TRACE_COLORS: Record<string, string> = {
 
 export const SimulationPanel: React.FC<Props> = ({ project }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const [canvasDimensions, setCanvasDimensions] = useState<{ width: number; height: number }>({ width: 0, height: 0 });
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas || !canvas.parentElement) return;
+    const parent = canvas.parentElement;
+
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const { width, height } = entry.contentRect;
+        if (width > 0 && height > 0) {
+          setCanvasDimensions({ width: Math.round(width), height: Math.round(height) });
+        }
+      }
+    });
+    observer.observe(parent);
+    return () => observer.disconnect();
+  }, []);
   const [simType, setSimType] = useState<SimulationType>('transient');
   const [stopTime, setStopTime] = useState<number>(0.005); // 5ms
   const [timeStep, setTimeStep] = useState<number>(1e-5); // 10us
@@ -179,13 +197,13 @@ export const SimulationPanel: React.FC<Props> = ({ project }) => {
         lineY += 14;
       });
     }
-  }, [simResults, activeTraces, cursorPos]);
+  }, [simResults, activeTraces, cursorPos, canvasDimensions]);
 
   return (
-    <div className="relative w-full h-full flex flex-col bg-cad-bg select-none">
+    <div className="relative w-full h-full flex flex-col bg-cad-bg select-none min-w-0 min-h-0 overflow-hidden">
       {/* Simulation Top Control Bar */}
-      <div className="h-8 bg-cad-panel border-b border-cad-border px-2.5 flex items-center justify-between z-10">
-        <div className="flex items-center space-x-2.5">
+      <div className="h-8 bg-cad-panel border-b border-cad-border px-2.5 flex items-center justify-between z-10 shrink-0 min-w-0 overflow-x-auto no-scrollbar">
+        <div className="flex items-center space-x-2.5 shrink-0">
           <span className="text-xs font-semibold text-cad-textHeading flex items-center gap-1.5">
             <Activity size={15} className="text-emerald-600 dark:text-emerald-400" />
             SPICE Circuit Simulator
@@ -194,7 +212,7 @@ export const SimulationPanel: React.FC<Props> = ({ project }) => {
           <div className="h-3.5 w-px bg-cad-border mx-0.5" />
 
           {/* Mode Selector */}
-          <div className="flex items-center space-x-1 bg-cad-subpanel p-0.5 rounded-xs border border-cad-border">
+          <div className="flex items-center space-x-1 bg-cad-subpanel p-0.5 rounded-xs border border-cad-border shrink-0">
             <button
               onClick={() => setSimType('transient')}
               className={`px-2 py-0.5 rounded-xs text-xs font-medium transition-colors duration-fast ${
@@ -215,39 +233,33 @@ export const SimulationPanel: React.FC<Props> = ({ project }) => {
 
           <button
             onClick={handleRunSim}
-            className="px-2.5 py-0.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium rounded-xs flex items-center gap-1.5 shadow-xs transition-colors duration-fast"
+            className="px-2.5 py-0.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xs text-xs font-medium flex items-center gap-1 shadow-xs transition-colors duration-fast shrink-0"
           >
-            <Play size={11} fill="currentColor" />
-            Run Simulation
+            <Play size={12} />
+            <span>Run Sim</span>
           </button>
         </div>
 
-        {/* Trace Toggles */}
-        <div className="flex items-center space-x-1.5">
+        {/* Trace Legend / Toggles */}
+        <div className="flex items-center space-x-1.5 text-xs font-mono shrink-0 ml-2">
           {simResults &&
             Object.keys(simResults.traces).map((traceName) => (
               <button
                 key={traceName}
                 onClick={() =>
-                  setActiveTraces((prev) => ({ ...prev, [traceName]: !prev[traceName] }))
+                  setActiveTraces((prev) => ({
+                    ...prev,
+                    [traceName]: !prev[traceName],
+                  }))
                 }
-                className={`px-1.5 py-0.5 rounded-xs text-[10px] font-mono font-semibold flex items-center gap-1 transition-colors duration-fast ${
-                  activeTraces[traceName]
-                    ? 'border shadow-xs'
-                    : 'opacity-40 line-through bg-cad-subpanel text-cad-textMuted'
+                className={`px-1.5 py-0.5 rounded-xs border text-[11px] font-semibold transition-opacity ${
+                  activeTraces[traceName] ? 'opacity-100' : 'opacity-30 line-through'
                 }`}
                 style={{
-                  color: activeTraces[traceName] ? TRACE_COLORS[traceName] : undefined,
-                  borderColor: activeTraces[traceName] ? TRACE_COLORS[traceName] : 'transparent',
-                  backgroundColor: activeTraces[traceName]
-                    ? `${TRACE_COLORS[traceName]}15`
-                    : undefined,
+                  color: TRACE_COLORS[traceName] || '#94a3b8',
+                  borderColor: `${TRACE_COLORS[traceName] || '#94a3b8'}50`,
                 }}
               >
-                <div
-                  className="w-1.5 h-1.5 rounded-full"
-                  style={{ backgroundColor: TRACE_COLORS[traceName] }}
-                />
                 {traceName}
               </button>
             ))}
@@ -256,14 +268,14 @@ export const SimulationPanel: React.FC<Props> = ({ project }) => {
 
       {/* Oscilloscope Canvas Area */}
       <div
-        className="flex-1 w-full h-full relative"
+        className="flex-1 w-full h-full relative min-w-0 min-h-0 overflow-hidden"
         onMouseMove={(e) => {
           const rect = e.currentTarget.getBoundingClientRect();
           setCursorPos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
         }}
         onMouseLeave={() => setCursorPos(null)}
       >
-        <canvas ref={canvasRef} className="w-full h-full" />
+        <canvas ref={canvasRef} className="w-full h-full min-w-0 min-h-0 block" />
       </div>
     </div>
   );

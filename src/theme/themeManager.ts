@@ -1,6 +1,6 @@
 /**
- * FloZ ECA — Microsoft Fluent Centralized Theme Management System
- * Supports VS Code Dark+ (Default), Microsoft 365 Light, Midnight, Slate, and High Contrast.
+ * FloZ ECA — Centralized Theme Management System
+ * Supports FloZ Dark (default) and FloZ Light themes.
  */
 
 export type AppThemeId = 'dark' | 'light';
@@ -17,17 +17,17 @@ export interface ThemeDefinition {
 export const AVAILABLE_THEMES: ThemeDefinition[] = [
   {
     id: 'dark',
-    name: 'Fluent Dark',
+    name: 'FloZ Dark',
     mode: 'dark',
-    description: 'Modern VS Code & Microsoft Fluent dark palette with crisp contrast',
+    description: 'FloZ ECA professional dark palette with crisp contrast',
     previewColor: '#1e1e1e',
     badgeBg: 'bg-zinc-800 text-zinc-200 border-zinc-700',
   },
   {
     id: 'light',
-    name: 'Fluent Light',
+    name: 'FloZ Light',
     mode: 'light',
-    description: 'Clean Microsoft 365 daytime UI with high-contrast typography and subtle elevation',
+    description: 'FloZ ECA professional light palette with high-contrast typography and subtle elevation',
     previewColor: '#f3f3f3',
     badgeBg: 'bg-zinc-100 text-zinc-800 border-zinc-300',
   },

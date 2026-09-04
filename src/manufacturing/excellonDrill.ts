@@ -1,5 +1,5 @@
 /**
- * Apex EDA - Standard Excellon NC Drill File Generator
+ * FloZ ECA - Standard Excellon NC Drill File Generator
  * Generates CNC drilling coordinates (.drl) and drill summary reports.
  */
 
@@ -11,7 +11,7 @@ export class ExcellonDrillGenerator {
     const now = new Date().toISOString();
 
     let drl = '';
-    drl += `; Apex EDA Excellon NC Drill File\n`;
+    drl += `; FloZ ECA Excellon NC Drill File\n`;
     drl += `; Project: ${project.metadata.name}\n`;
     drl += `; Date: ${now}\n`;
     drl += `; Units: METRIC (mm)\n`;

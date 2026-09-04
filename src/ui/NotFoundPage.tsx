@@ -1,5 +1,5 @@
 /**
- * FloZ ECA — Microsoft Fluent 404 Page Not Found Component
+ * FloZ ECA — 404 Page Not Found Component
  * Professional, branded fallback for unknown routes with fast navigation recovery.
  */
 

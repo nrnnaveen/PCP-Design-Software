@@ -35,7 +35,7 @@ describe('FloZ EDA — Manufacturing-Grade Validation', () => {
 
     // Header & Format checks
     [fCu, bCu, fMask, bMask, fSilk, edgeCuts].forEach((gbr) => {
-      expect(gbr).toContain('G04 Apex EDA RS-274X Gerber Generator');
+      expect(gbr).toContain('G04 FloZ ECA RS-274X Gerber Generator');
       expect(gbr).toContain('%FSLAX46Y46*%');
       expect(gbr).toContain('%MOMM*%');
       expect(gbr).toContain('M02*');
@@ -60,7 +60,7 @@ describe('FloZ EDA — Manufacturing-Grade Validation', () => {
 
     const drl = ExcellonDrillGenerator.generate(generated);
 
-    expect(drl).toContain('; Apex EDA Excellon NC Drill File');
+    expect(drl).toContain('; FloZ ECA Excellon NC Drill File');
     expect(drl).toContain('METRIC,TZ');
     expect(drl).toContain('T01C');
     expect(drl).toContain('G90');

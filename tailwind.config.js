@@ -105,6 +105,8 @@ export default {
       },
       boxShadow: {
         xs: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+        'overlay-sm': 'var(--shadow-overlay-sm)',
+        'overlay-lg': 'var(--shadow-overlay-lg)',
       },
       transitionDuration: {
         fast: '100ms',

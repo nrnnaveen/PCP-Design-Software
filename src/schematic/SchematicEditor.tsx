@@ -81,6 +81,25 @@ export const SchematicEditor: React.FC<Props> = ({
   theme = 'high-contrast',
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const [canvasDimensions, setCanvasDimensions] = useState<{ width: number; height: number }>({ width: 0, height: 0 });
+
+  // Responsive Canvas Resize Observer (detects sidebar toggle, right dock resize, window changes)
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas || !canvas.parentElement) return;
+    const parent = canvas.parentElement;
+
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const { width, height } = entry.contentRect;
+        if (width > 0 && height > 0) {
+          setCanvasDimensions({ width: Math.round(width), height: Math.round(height) });
+        }
+      }
+    });
+    observer.observe(parent);
+    return () => observer.disconnect();
+  }, []);
 
   // Viewport Transform (Pan & Zoom)
   const [zoom, setZoom] = useState<number>(4.0); // pixels per mm
@@ -91,8 +110,16 @@ export const SchematicEditor: React.FC<Props> = ({
   const [gridMil, setGridMil] = useState<100 | 50 | 25>(100);
   const gridStep = gridMil === 100 ? 2.54 : gridMil === 50 ? 1.27 : 0.635;
 
-  // Sidebar visibility
-  const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(false);
+  // Sidebar visibility with URL parameter & responsive default
+  const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('sidebar') === 'collapsed') return true;
+      if (params.get('sidebar') === 'open') return false;
+      if (window.innerWidth < 1000) return true;
+    }
+    return false;
+  });
 
   // Selection Filters
   const [showFilterBar, setShowFilterBar] = useState<boolean>(false);
@@ -899,6 +926,7 @@ export const SchematicEditor: React.FC<Props> = ({
     worldToScreen,
     theme,
     project,
+    canvasDimensions,
   ]);
 
   // Mouse Interaction Handlers
@@ -1339,7 +1367,7 @@ export const SchematicEditor: React.FC<Props> = ({
   };
 
   return (
-    <div className="w-full h-full flex select-none overflow-hidden bg-cad-bg relative">
+    <div className="w-full h-full flex select-none overflow-hidden bg-cad-bg relative min-w-0 min-h-0">
       {/* 1. Left Symbol Library Sidebar */}
       <SymbolLibrarySidebar
         isCollapsed={sidebarCollapsed}
@@ -1349,10 +1377,10 @@ export const SchematicEditor: React.FC<Props> = ({
       />
 
       {/* 2. Central Schematic Canvas */}
-      <div className="flex-1 h-full flex flex-col relative overflow-hidden">
+      <div className="flex-1 h-full flex flex-col relative overflow-hidden min-w-0 min-h-0">
         {/* Schematic Main Engineering Toolbar */}
-        <div className="h-8 bg-cad-panel border-b border-cad-border px-2 flex items-center justify-between text-xs select-none">
-          <div className="flex items-center space-x-1">
+        <div className="h-8 bg-cad-panel border-b border-cad-border px-2 flex items-center justify-between text-xs select-none shrink-0 min-w-0 overflow-x-auto no-scrollbar">
+          <div className="flex items-center space-x-1 shrink-0">
             <button
               onClick={() => {
                 setActiveTool('select');
@@ -1479,7 +1507,7 @@ export const SchematicEditor: React.FC<Props> = ({
           </div>
 
           {/* Right Controls */}
-          <div className="flex items-center space-x-2.5 text-[11px] font-mono">
+          <div className="flex items-center space-x-2.5 text-[11px] font-mono shrink-0 ml-2">
             {ercViolations.length === 0 ? (
               <span className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-semibold">
                 <CheckCircle2 size={13} />
@@ -1542,7 +1570,7 @@ export const SchematicEditor: React.FC<Props> = ({
 
         {/* Selection Filter Bar */}
         {showFilterBar && (
-          <div className="h-7 bg-cad-subpanel border-b border-cad-border px-3 flex items-center gap-4 text-[11px] text-cad-text select-none">
+          <div className="h-7 bg-cad-subpanel border-b border-cad-border px-3 flex items-center gap-4 text-[11px] text-cad-text select-none shrink-0 min-w-0 overflow-x-auto no-scrollbar">
             <span className="font-semibold text-cad-textHeading flex items-center gap-1">
               <SlidersHorizontal size={11} /> Selection Filter:
             </span>
@@ -1607,7 +1635,7 @@ export const SchematicEditor: React.FC<Props> = ({
             e.dataTransfer.dropEffect = 'copy';
           }}
           onDrop={handleCanvasDrop}
-          className={`flex-1 w-full h-full ${
+          className={`flex-1 w-full h-full min-w-0 min-h-0 block ${
             isPanning
               ? 'cursor-grabbing'
               : activeTool === 'pan'

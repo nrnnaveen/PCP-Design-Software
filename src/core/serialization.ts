@@ -29,7 +29,7 @@ export class ProjectSerializer {
       const parsed = JSON.parse(jsonStr);
       return ProjectMigrationAdapter.migrate(parsed);
     } catch (err: any) {
-      throw new Error(`Failed to parse Apex EDA project file: ${err.message}`);
+      throw new Error(`Failed to parse FloZ ECA project file: ${err.message}`);
     }
   }
 
@@ -187,7 +187,7 @@ export class ProjectSerializer {
         generatePickAndPlace: true,
         generateBOM: true,
         generateDrillMap: true,
-        companyName: 'Apex Electronics Lab',
+        companyName: 'FloZ Electronics Lab',
         designer: 'Lead Engineer',
         revision: '1.0',
       };

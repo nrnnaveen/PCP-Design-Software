@@ -1,5 +1,5 @@
 /**
- * FloZ ECA — Microsoft Fluent Application Settings & Preferences Dialog
+ * FloZ ECA — Application Settings & Preferences Dialog
  * Manages UI themes, CAD grids, hotkey shortcuts, AI API keys, and workspace telemetry.
  */
 
@@ -136,7 +136,6 @@ export const SettingsModal: React.FC<Props> = ({
               { id: 'appearance', label: 'Appearance', icon: Sun },
               { id: 'account', label: 'Account', icon: UserIcon },
               { id: 'editor', label: 'Editor & Grid', icon: Sliders },
-              { id: 'ai', label: 'AI Inference', icon: Sparkles },
               { id: 'application', label: 'Application', icon: Database },
             ].map((item) => {
               const Icon = item.icon;
@@ -211,7 +210,7 @@ export const SettingsModal: React.FC<Props> = ({
                     User Session &amp; Profile
                   </h3>
                   <p className="text-xs text-cad-textMuted">
-                    Manage your current engineering user identity and workspace mode.
+                    Manage your user profile and workspace session.
                   </p>
                 </div>
 
@@ -341,7 +340,7 @@ export const SettingsModal: React.FC<Props> = ({
               <div className="space-y-3.5 max-w-xl">
                 <div>
                   <h3 className="text-xs font-semibold text-cad-textHeading uppercase font-mono tracking-wider mb-0.5">
-                    FloZ AI Copilot Engine
+                    FloZ AI Engine
                   </h3>
                   <p className="text-xs text-cad-textMuted">
                     Configure high-performance FloZ neural models, reasoning depth, and context scoping.

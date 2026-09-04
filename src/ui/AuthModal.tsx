@@ -1,5 +1,5 @@
 /**
- * FloZ ECA — Microsoft Fluent Authentication Dialog
+ * FloZ ECA — Authentication Dialog
  * Clean Login & Continue as Guest interface.
  */
 
@@ -79,7 +79,7 @@ export const AuthModal: React.FC<Props> = ({ isOpen, onClose, onAuthSuccess }) =
           <div className="text-center space-y-0.5">
             <h3 className="text-xs font-semibold text-cad-textHeading">Sign in to FloZ ECA</h3>
             <p className="text-[11px] text-cad-textMuted">
-              Save your projects locally or sync with your engineering workspace.
+              Save your projects locally or sync across your devices.
             </p>
           </div>
 

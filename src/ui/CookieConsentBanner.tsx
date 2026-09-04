@@ -1,5 +1,5 @@
 /**
- * FloZ ECA — Microsoft Fluent Cookie & Telemetry Consent Banner
+ * FloZ ECA — Cookie & Telemetry Consent Banner
  * Accessible, non-dark-pattern privacy consent complying with global privacy frameworks.
  */
 

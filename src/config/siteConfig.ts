@@ -33,12 +33,12 @@ const envSiteUrl = typeof import.meta !== 'undefined' && import.meta.env?.VITE_S
 export const siteConfig: SiteConfig = {
   siteUrl: envSiteUrl,
   siteName: (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SITE_NAME) || 'FloZ ECA',
-  siteTitle: 'FloZ ECA — Electronic Circuit Architect | Professional EDA & PCB Suite',
+  siteTitle: 'FloZ — AI PCB Design Software | Prompt to Circuit Board',
   siteDescription:
-    'FloZ ECA is a high-performance Electronic Design Automation (EDA) suite for schematic capture, multi-layer PCB layout, 3D WebGL board inspection, SPICE simulation, and Gerber manufacturing output generation.',
+    'FloZ turns user prompts into real, production-ready printed circuit boards. Describe what you want to build, and FloZ generates the full schematic, netlist, component placement, and multi-layer PCB layout in seconds.',
   version: '1.0.0',
-  author: 'FloZ EDA Engineering Team',
-  companyName: 'FloZ EDA',
+  author: 'FloZ AI Hardware Studio',
+  companyName: 'FloZ',
   contactEmail: typeof import.meta !== 'undefined' && import.meta.env?.VITE_CONTACT_EMAIL
     ? String(import.meta.env.VITE_CONTACT_EMAIL)
     : undefined,

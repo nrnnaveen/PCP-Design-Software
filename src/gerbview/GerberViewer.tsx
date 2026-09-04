@@ -16,6 +16,24 @@ interface Props {
 
 export const GerberViewer: React.FC<Props> = ({ project }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const [canvasDimensions, setCanvasDimensions] = useState<{ width: number; height: number }>({ width: 0, height: 0 });
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas || !canvas.parentElement) return;
+    const parent = canvas.parentElement;
+
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const { width, height } = entry.contentRect;
+        if (width > 0 && height > 0) {
+          setCanvasDimensions({ width: Math.round(width), height: Math.round(height) });
+        }
+      }
+    });
+    observer.observe(parent);
+    return () => observer.disconnect();
+  }, []);
 
   const [zoom, setZoom] = useState<number>(6.0);
   const [pan, setPan] = useState<{ x: number; y: number }>({ x: 300, y: 250 });
@@ -116,20 +134,20 @@ export const GerberViewer: React.FC<Props> = ({ project }) => {
 
       ctx.restore();
     });
-  }, [layers, zoom, pan, worldToScreen]);
+  }, [layers, zoom, pan, worldToScreen, canvasDimensions]);
 
   return (
-    <div className="relative w-full h-full flex flex-row bg-cad-bg select-none overflow-hidden font-sans">
+    <div className="relative w-full h-full flex flex-row bg-cad-bg select-none overflow-hidden font-sans min-w-0 min-h-0">
       {/* Main Canvas Area */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col min-w-0 min-h-0 relative overflow-hidden">
         {/* Top Control Bar */}
-        <div className="h-8 bg-cad-panel border-b border-cad-border px-2.5 flex items-center justify-between z-10 text-xs">
-          <div className="flex items-center space-x-2">
+        <div className="h-8 bg-cad-panel border-b border-cad-border px-2.5 flex items-center justify-between z-10 text-xs shrink-0 min-w-0 overflow-x-auto no-scrollbar">
+          <div className="flex items-center space-x-2 shrink-0">
             <FileCode size={14} className="text-amber-500 dark:text-amber-400" />
             <span className="text-xs font-semibold text-cad-textHeading">Gerber RS-274X & Excellon Drill Viewer</span>
           </div>
 
-          <div className="flex items-center space-x-2 text-xs text-cad-text font-mono">
+          <div className="flex items-center space-x-2 text-xs text-cad-text font-mono shrink-0 ml-2">
             <span>X: {hoverPos.x.toFixed(2)} mm</span>
             <span>Y: {hoverPos.y.toFixed(2)} mm</span>
             <div className="h-3.5 w-px bg-cad-border" />
@@ -179,12 +197,12 @@ export const GerberViewer: React.FC<Props> = ({ project }) => {
             const factor = e.deltaY < 0 ? 1.15 : 0.85;
             setZoom((z) => Math.max(1.5, Math.min(30, z * factor)));
           }}
-          className="flex-1 w-full h-full cursor-grab active:cursor-grabbing"
+          className="flex-1 w-full h-full cursor-grab active:cursor-grabbing min-w-0 min-h-0 block"
         />
       </div>
 
       {/* Right: Layer Manager Panel */}
-      <aside className="w-64 bg-cad-panel border-l border-cad-border flex flex-col shrink-0">
+      <aside className="w-64 bg-cad-panel border-l border-cad-border flex flex-col shrink-0 min-w-0 overflow-hidden">
         <div className="h-8 px-2.5 bg-cad-header border-b border-cad-border flex items-center justify-between">
           <span className="text-[11px] font-semibold text-cad-textHeading uppercase tracking-wider font-mono flex items-center gap-1.5">
             <Layers size={13} className="text-blue-600 dark:text-blue-400" />
