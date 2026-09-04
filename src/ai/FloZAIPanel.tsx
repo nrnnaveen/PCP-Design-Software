@@ -102,6 +102,18 @@ Ask questions about your design, inspect nets and components, or choose a quick 
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isStreaming, activeToolActivities]);
 
+  // Listen for global prompt submissions (from Dashboard prompt-to-pcb bar)
+  useEffect(() => {
+    const unsub = eventBus.on('FLOZ_AI_SUBMIT_PROMPT', (payload) => {
+      if (payload && payload.prompt && payload.prompt.trim()) {
+        handleSendMessage(payload.prompt.trim());
+      }
+    });
+    return () => {
+      if (typeof unsub === 'function') unsub();
+    };
+  }, [isStreaming, settings, project]);
+
   // Stop / Cancel Streaming
   const handleStopGenerating = () => {
     if (abortControllerRef.current) {
@@ -294,83 +306,24 @@ Ask questions about your design, inspect nets and components, or choose a quick 
 
   return (
     <div className="w-full h-full bg-cad-panel border-l border-cad-border flex flex-col select-none overflow-hidden text-xs font-sans">
-      {/* 1. Header */}
-      <div className="h-8 bg-cad-header border-b border-cad-border px-2.5 flex items-center justify-between shrink-0">
+      {/* 1. Header (GitHub Copilot Style: Name only) */}
+      <div className="h-9 bg-cad-header border-b border-cad-border px-3 flex items-center justify-between shrink-0">
         <div className="flex items-center space-x-2">
-          <Sparkles size={13} className="text-blue-600 dark:text-blue-400" />
-          <div className="flex items-center gap-1.5">
-            <span className="font-semibold text-cad-textHeading uppercase font-mono tracking-wider text-[11px]">
-              FloZ AI
-            </span>
-            <span className="px-1.5 py-0.2 bg-blue-500/15 border border-blue-500/30 text-blue-600 dark:text-blue-400 rounded text-[9px] font-mono font-bold">
-              {settings.model === 'floz-ultra' ? 'FloZ Ultra' : 'FloZ Super'}
-            </span>
-          </div>
+          <Sparkles size={14} className="text-blue-500" />
+          <span className="font-semibold text-cad-textHeading tracking-wide text-xs">
+            FloZ AI
+          </span>
         </div>
 
         <div className="flex items-center space-x-1">
-          {/* Quick Width Presets */}
-          {onSetPanelWidth && (
-            <div className="flex items-center bg-cad-subpanel border border-cad-border rounded-xs p-0.5 mr-1 text-[10px] font-mono">
-              <button
-                onClick={() => onSetPanelWidth(360)}
-                title="Compact Width (360px)"
-                className={`px-1.5 py-0.5 rounded-xs transition-colors duration-fast ${
-                  (panelWidth || 420) <= 380 ? 'bg-blue-600 text-white font-bold' : 'text-cad-textMuted hover:text-cad-text'
-                }`}
-              >
-                S
-              </button>
-              <button
-                onClick={() => onSetPanelWidth(480)}
-                title="Medium Width (480px)"
-                className={`px-1.5 py-0.5 rounded-xs transition-colors duration-fast ${
-                  (panelWidth || 420) > 380 && (panelWidth || 420) <= 560 ? 'bg-blue-600 text-white font-bold' : 'text-cad-textMuted hover:text-cad-text'
-                }`}
-              >
-                M
-              </button>
-              <button
-                onClick={() => onSetPanelWidth(640)}
-                title="Wide Width (640px)"
-                className={`px-1.5 py-0.5 rounded-xs transition-colors duration-fast ${
-                  (panelWidth || 420) > 560 ? 'bg-blue-600 text-white font-bold' : 'text-cad-textMuted hover:text-cad-text'
-                }`}
-              >
-                L
-              </button>
-            </div>
-          )}
-
           <button
             onClick={handleNewChat}
-            title="New Chat Session"
-            className="p-1 hover:bg-cad-surfaceHover rounded-xs text-cad-textMuted hover:text-cad-text transition-colors duration-fast"
+            title="New Chat"
+            className="p-1 hover:bg-cad-surfaceHover rounded text-cad-textMuted hover:text-cad-text transition-colors"
           >
             <Plus size={14} />
           </button>
-          <button
-            onClick={() => setShowSettingsModal(true)}
-            title="AI Assistant Settings"
-            className="p-1 hover:bg-cad-surfaceHover rounded-xs text-cad-textMuted hover:text-cad-text transition-colors duration-fast"
-          >
-            <Settings size={14} />
-          </button>
         </div>
-      </div>
-
-      {/* 2. Context Pills */}
-      <div className="px-3 py-1 bg-cad-subpanel border-b border-cad-border flex items-center gap-1.5 overflow-x-auto text-[10px] font-mono no-scrollbar">
-        <span className="text-cad-textMuted shrink-0 font-medium">Context:</span>
-        <span className="px-1.5 py-0.2 rounded-xs bg-blue-500/10 border border-blue-500/30 text-blue-600 dark:text-blue-400 shrink-0 font-medium">
-          Schematic ({project.schematic.sheets[0].symbols.length} parts)
-        </span>
-        <span className="px-1.5 py-0.2 rounded-xs bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 shrink-0 font-medium">
-          PCB ({project.pcb.footprints.length} footprints)
-        </span>
-        <span className="px-1.5 py-0.2 rounded-xs bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400 shrink-0 font-medium">
-          ERC Active
-        </span>
       </div>
 
       {/* Post-Apply Notification Banner */}
@@ -386,8 +339,8 @@ Ask questions about your design, inspect nets and components, or choose a quick 
         </div>
       )}
 
-      {/* 3. Messages Stream Area */}
-      <div className="flex-1 overflow-y-auto p-2.5 space-y-2.5 bg-cad-bg">
+      {/* 2. Messages Stream Area */}
+      <div className="flex-1 overflow-y-auto p-3 space-y-3 bg-cad-bg">
         {messages.map((msg) => {
           const isUser = msg.role === 'user';
 
@@ -405,35 +358,14 @@ Ask questions about your design, inspect nets and components, or choose a quick 
 
               {/* Message Bubble */}
               <div
-                className={`p-2.5 rounded-xs max-w-[95%] border leading-relaxed text-xs ${
+                className={`p-3 rounded-lg max-w-[95%] border leading-relaxed text-xs ${
                   isUser
                     ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
                     : 'bg-cad-panel border-cad-border text-cad-text shadow-xs'
                 }`}
               >
-                {/* Tool Activities Chips */}
-                {msg.toolActivities && msg.toolActivities.length > 0 && (
-                  <div className="mb-2.5 pb-2 border-b border-cad-border space-y-1">
-                    {msg.toolActivities.map((act) => (
-                      <div
-                        key={act.id}
-                        className="flex items-center gap-1.5 text-[10px] font-mono text-cad-textMuted"
-                      >
-                        {act.status === 'completed' ? (
-                          <CheckCircle2 size={11} className="text-emerald-500 dark:text-emerald-400 shrink-0" />
-                        ) : act.status === 'warning' ? (
-                          <AlertTriangle size={11} className="text-amber-500 dark:text-amber-400 shrink-0" />
-                        ) : (
-                          <RefreshCw size={11} className="animate-spin text-blue-500 dark:text-blue-400 shrink-0" />
-                        )}
-                        <span>{act.description}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
                 {/* Formatted Markdown Content */}
-                <div className="space-y-1.5 whitespace-pre-wrap font-sans text-xs">
+                <div className="space-y-1.5 whitespace-pre-wrap font-sans text-xs leading-relaxed">
                   {msg.content}
                 </div>
 
@@ -467,7 +399,7 @@ Ask questions about your design, inspect nets and components, or choose a quick 
                         {/* Visual Diff Box */}
                         <div className="bg-cad-panel p-2 rounded border border-cad-border text-[10px] space-y-1">
                           <div className="text-cad-textMuted uppercase font-bold text-[9px]">
-                            Proposed Modification Diff:
+                            Proposed Modifications:
                           </div>
                           {prop.diff.addedComponents?.map((c) => (
                             <div key={c.reference} className="text-emerald-600 dark:text-emerald-400 font-semibold">
@@ -531,16 +463,19 @@ Ask questions about your design, inspect nets and components, or choose a quick 
           );
         })}
 
-        {/* Live Active Tool Stream Indicator */}
+        {/* Live Copilot Thinking Indicator */}
         {isStreaming && (
-          <div className="p-2 rounded bg-cad-panel border border-cad-border text-[10px] font-mono flex items-center justify-between text-cad-textMuted">
-            <div className="flex items-center gap-1.5">
-              <RefreshCw size={11} className="animate-spin text-blue-600 dark:text-blue-400 shrink-0" />
-              <span>Analyzing design...</span>
+          <div className="p-2.5 rounded-lg bg-cad-panel border border-cad-border text-xs flex items-center justify-between text-cad-textMuted">
+            <div className="flex items-center gap-2">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+              </span>
+              <span className="font-mono text-[11px]">FloZ AI is synthesizing...</span>
             </div>
             <button
               onClick={handleStopGenerating}
-              className="px-2 py-0.5 bg-red-600/15 hover:bg-red-600/25 border border-red-500/40 text-red-600 dark:text-red-400 rounded text-[10px] font-mono flex items-center gap-1 transition-colors"
+              className="px-2 py-0.5 bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/30 rounded text-[10px] font-mono flex items-center gap-1 transition-colors"
             >
               <Square size={10} /> Stop
             </button>
@@ -550,34 +485,28 @@ Ask questions about your design, inspect nets and components, or choose a quick 
         <div ref={messagesEndRef} />
       </div>
 
-      {/* 4. Quick Suggestion Prompt Chips */}
-      <div className="p-2 bg-cad-panel border-t border-cad-border space-y-1.5">
-        <div className="flex flex-wrap gap-1 text-[10px] font-mono">
-          {[
-            'Explain this schematic',
-            'Check for ERC issues',
-            'Add 100nF cap to U1',
-            'Generate voltage divider',
-            'RC Low-Pass Filter',
-            'I2C Pull-Ups',
-            'Highlight +3.3V',
-          ].map((prompt) => (
-            <button
-              key={prompt}
-              onClick={() => handleSendMessage(prompt)}
-              disabled={isStreaming}
-              className="px-1.5 py-0.5 rounded-xs bg-cad-subpanel hover:bg-cad-surfaceHover text-cad-text border border-cad-border transition-colors duration-fast truncate font-medium"
-            >
-              {prompt}
-            </button>
-          ))}
-        </div>
+      {/* 3. Copilot Input Area with Integrated Model Selector */}
+      <div className="p-2.5 bg-cad-panel border-t border-cad-border">
+        <div className="relative rounded-lg border border-cad-inputBorder bg-cad-inputBg focus-within:border-blue-500 transition-colors shadow-xs flex flex-col">
+          <textarea
+            rows={2}
+            placeholder="Ask FloZ AI or describe a circuit to generate..."
+            value={inputPrompt}
+            onChange={(e) => setInputPrompt(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSendMessage();
+              }
+            }}
+            disabled={isStreaming}
+            className="w-full bg-transparent px-3 pt-2.5 pb-1 text-xs text-cad-inputText placeholder:text-cad-textMuted focus:outline-none resize-none font-sans leading-relaxed"
+          />
 
-        {/* Model Selector Bar */}
-        <div className="flex items-center justify-between pt-0.5 text-[10px] font-mono">
-          <div className="flex items-center gap-1">
-            <span className="text-cad-textMuted">Engine:</span>
-            <div className="flex items-center bg-cad-subpanel border border-cad-border rounded-xs p-0.5">
+          {/* Integrated Input Footer Toolbar */}
+          <div className="flex items-center justify-between px-2.5 py-1.5 border-t border-cad-border/50 text-[11px]">
+            {/* Model Selector */}
+            <div className="flex items-center bg-cad-subpanel border border-cad-border rounded p-0.5">
               {FLOZ_AI_MODELS.map((m) => {
                 const isSelected = (settings.model || 'floz-super') === m.id;
                 return (
@@ -588,57 +517,52 @@ Ask questions about your design, inspect nets and components, or choose a quick 
                       const next = { ...settings, model: m.id };
                       handleSaveSettings(next);
                     }}
-                    className={`px-1.5 py-0.5 rounded-xs font-medium transition-colors duration-fast ${
+                    className={`px-2 py-0.5 rounded text-[10px] font-mono transition-colors ${
                       isSelected
                         ? 'bg-blue-600 text-white font-bold shadow-xs'
                         : 'text-cad-textMuted hover:text-cad-text'
                     }`}
-                    title={`${m.name} (${m.tagline}): ${m.description}`}
+                    title={`${m.name} - ${m.description}`}
                   >
                     {m.name}
                   </button>
                 );
               })}
             </div>
-          </div>
-          <span className="text-[10px] text-cad-textMuted truncate">
-            {settings.model === 'floz-ultra' ? 'Deep Reasoning & DRC' : 'Fast & Deterministic'}
-          </span>
-        </div>
 
-        {/* Input Bar */}
-        <div className="relative flex items-center">
-          <input
-            type="text"
-            placeholder="Ask FloZ AI about your design..."
-            value={inputPrompt}
-            onChange={(e) => setInputPrompt(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                handleSendMessage();
-              }
-            }}
-            disabled={isStreaming}
-            className="w-full bg-cad-inputBg border border-cad-inputBorder rounded-xs pl-2.5 pr-10 py-1 text-xs text-cad-inputText font-mono placeholder:text-cad-textMuted focus:outline-none focus:border-blue-500 shadow-none"
-          />
-          {isStreaming ? (
-            <button
-              onClick={handleStopGenerating}
-              title="Stop Generating"
-              className="absolute right-1 p-0.5 bg-red-600 hover:bg-red-500 text-white rounded-xs transition-colors duration-fast"
-            >
-              <Square size={13} />
-            </button>
-          ) : (
-            <button
-              onClick={() => handleSendMessage()}
-              disabled={!inputPrompt.trim()}
-              className="absolute right-1 p-0.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 text-white rounded-xs transition-colors duration-fast"
-            >
-              <Send size={13} />
-            </button>
-          )}
+            {/* Right Controls: Settings & Send */}
+            <div className="flex items-center space-x-1">
+              <button
+                type="button"
+                onClick={() => setShowSettingsModal(true)}
+                className="p-1 text-cad-textMuted hover:text-cad-text rounded transition-colors"
+                title="FloZ AI Settings"
+              >
+                <Settings size={13} />
+              </button>
+
+              {isStreaming ? (
+                <button
+                  type="button"
+                  onClick={handleStopGenerating}
+                  title="Stop Generating"
+                  className="p-1 bg-red-600 hover:bg-red-500 text-white rounded transition-colors"
+                >
+                  <Square size={13} />
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => handleSendMessage()}
+                  disabled={!inputPrompt.trim()}
+                  title="Send message"
+                  className="p-1 bg-blue-600 hover:bg-blue-500 disabled:opacity-30 text-white rounded transition-colors"
+                >
+                  <Send size={13} />
+                </button>
+              )}
+            </div>
+          </div>
         </div>
       </div>
 

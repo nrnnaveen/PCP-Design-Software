@@ -273,4 +273,22 @@ describe('FloZ AI Phase 4 — Real AI-To-Schematic Generation Engine', () => {
     const uniqueCoords = new Set(labelCoords);
     expect(uniqueCoords.size).toBe(sheet.labels.length);
   });
+
+  it('15. Universal Circuit Synthesis: generates USB 32-bit module across Schematic, PCB Placement & 45° Routing', () => {
+    const plan = DesignIntent.parsePrompt('create an usb 32 module');
+    expect(plan).not.toBeNull();
+    expect(plan!.title).toContain('USB-C 32-Bit');
+    expect(plan!.components.length).toBe(8);
+
+    const project = createDemoProject();
+    const result = ToolCallParser.parseResponse('', 'create an usb 32 module pcb complete', project);
+    expect(result.proposals.length).toBe(1);
+
+    const fullWorkflowProp = result.proposals[0];
+    const generatedProject = fullWorkflowProp.applyAction(project);
+
+    expect(generatedProject.schematic.sheets[0].symbols.length).toBeGreaterThanOrEqual(8);
+    expect(generatedProject.pcb.footprints.length).toBeGreaterThanOrEqual(8);
+    expect(generatedProject.pcb.zones.length).toBeGreaterThanOrEqual(2);
+  });
 });

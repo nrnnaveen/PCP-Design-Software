@@ -30,7 +30,7 @@ export const FLOZ_AI_MODELS: FloZModelDefinition[] = [
   {
     id: 'floz-ultra',
     name: 'FloZ Ultra',
-    backendModel: 'nvidia/nemtron-4-340b-instruct',
+    backendModel: 'nvidia/nemotron-3-ultra-550b-a55b:free',
     badge: 'Ultra',
     tagline: 'Deep Reasoning',
     description: 'Complex multi-sheet EDA architecture, autorouting & deep DRC solving',

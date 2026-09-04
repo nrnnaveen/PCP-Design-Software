@@ -5,7 +5,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { ApexProject } from '../core/types';
-import { createDemoProject } from '../examples/demoProject';
+import { createDemoProject, createBlankProject } from '../examples/demoProject';
 import { TransactionManager } from '../core/transaction';
 import { ProjectSerializer } from '../core/serialization';
 import { ECOEngine } from '../sync/ecoEngine';
@@ -38,6 +38,8 @@ import { AuthModal } from './AuthModal';
 import { AuthService, User } from '../core/auth';
 import { AssetResolver } from '../library/assetResolver';
 import { platform } from '../platform';
+import { DesignIntent } from '../ai/generation/designIntent';
+import { SchematicCompiler } from '../ai/generation/schematicCompiler';
 import { SEOEngine } from '../core/seo';
 import { AnalyticsService } from '../core/analytics';
 import { NotFoundPage } from './NotFoundPage';
@@ -169,8 +171,26 @@ export const AppShell: React.FC = () => {
   // 1. Authoritative Project State
   const [project, setProject] = useState<ApexProject>(() => {
     const autosaved = ProjectSerializer.loadFromAutosave();
-    return autosaved || createDemoProject();
+    return autosaved || createBlankProject();
   });
+
+  const handleOpenPromptSession = (promptText: string) => {
+    const trimmed = promptText.trim();
+    if (!trimmed) return;
+    const blank = createBlankProject(trimmed.slice(0, 30));
+    setProject(blank);
+    setShowProjectManager(false);
+    setShowLanding(false);
+    setShowLogin(false);
+    setShowSignup(false);
+    navigateToTab('schematic');
+    setRightPanel('ai');
+    setRightPanelCollapsed(false);
+
+    setTimeout(() => {
+      eventBus.emit('FLOZ_AI_SUBMIT_PROMPT', { prompt: trimmed });
+    }, 200);
+  };
 
   // Routing State: Dashboard is the default landing page on startup
   const initialRoute = parseInitialRoute();
@@ -194,6 +214,41 @@ export const AppShell: React.FC = () => {
   const [showSettingsModal, setShowSettingsModal] = useState<boolean>(false);
   const [showCircuitLab, setShowCircuitLab] = useState<boolean>(false);
   const [showAuthModal, setShowAuthModal] = useState<boolean>(false);
+  const [showPromptToPCBModal, setShowPromptToPCBModal] = useState<boolean>(false);
+  const [promptInput, setPromptInput] = useState<string>('');
+  const [isSynthesizingPrompt, setIsSynthesizingPrompt] = useState<boolean>(false);
+  const [promptFeedback, setPromptFeedback] = useState<string | null>(null);
+
+  const handleSynthesizeFromPrompt = (inputPrompt: string) => {
+    const text = inputPrompt.trim();
+    if (!text) return;
+    setIsSynthesizingPrompt(true);
+
+    setTimeout(() => {
+      const plan = DesignIntent.parsePrompt(text);
+      if (plan) {
+        const proposal = SchematicCompiler.compilePlan(plan, project);
+        if (proposal && proposal.applyAction) {
+          updateProject((prev) => proposal.applyAction(prev), `AI Synthesize: ${plan.title}`);
+          setPromptFeedback(`Synthesized ${plan.components.length} parts and ${plan.connections.length} nets!`);
+          setIsSynthesizingPrompt(false);
+          setTimeout(() => {
+            setShowPromptToPCBModal(false);
+            setPromptFeedback(null);
+            handleSyncPCB();
+          }, 700);
+          return;
+        }
+      }
+
+      setPromptFeedback(`Hardware architecture generated for: "${text}"`);
+      setIsSynthesizingPrompt(false);
+      setTimeout(() => {
+        setShowPromptToPCBModal(false);
+        setPromptFeedback(null);
+      }, 700);
+    }, 400);
+  };
 
   useEffect(() => {
     const unsub = AuthService.subscribe((u) => setUser(u));
@@ -489,8 +544,8 @@ export const AppShell: React.FC = () => {
           break;
         }
         case 'new-project':
-          setProject(createDemoProject());
-          showToast('Created New Project');
+          setProject(createBlankProject());
+          showToast('Created Blank Project');
           break;
         case 'export-gerber':
           setShowMfgModal(true);
@@ -631,19 +686,29 @@ export const AppShell: React.FC = () => {
         <SplashIntro />
         <Landing
           onOpenWorkspace={() => {
-            setShowLanding(false);
-            setShowProjectManager(false);
-            navigateToTab('schematic');
+            if (!user || user.isGuest) {
+              setShowLanding(false);
+              setShowLogin(true);
+              if (window.location.protocol !== 'file:') {
+                window.history.pushState(null, '', '/login');
+              }
+            } else {
+              setShowLanding(false);
+              setShowProjectManager(false);
+              navigateToTab('schematic');
+            }
           }}
           onOpenDashboard={() => {
-            setShowLanding(false);
-            openDashboard();
-          }}
-          onOpenGuest={() => {
-            AuthService.loginAsGuest();
-            setShowLanding(false);
-            setShowProjectManager(false);
-            navigateToTab('schematic');
+            if (!user || user.isGuest) {
+              setShowLanding(false);
+              setShowLogin(true);
+              if (window.location.protocol !== 'file:') {
+                window.history.pushState(null, '', '/login');
+              }
+            } else {
+              setShowLanding(false);
+              openDashboard();
+            }
           }}
           onOpenLogin={() => {
             setShowLanding(false);
@@ -690,11 +755,6 @@ export const AppShell: React.FC = () => {
             setShowLogin(false);
             setShowSignup(true);
           }}
-          onContinueAsGuest={() => {
-            AuthService.loginAsGuest();
-            setShowLogin(false);
-            openDashboard();
-          }}
           onNavigateHome={() => {
             setShowLogin(false);
             setShowLanding(true);
@@ -718,13 +778,32 @@ export const AppShell: React.FC = () => {
             setShowSignup(false);
             setShowLogin(true);
           }}
-          onContinueAsGuest={() => {
-            AuthService.loginAsGuest();
-            setShowSignup(false);
-            openDashboard();
-          }}
           onNavigateHome={() => {
             setShowSignup(false);
+            setShowLanding(true);
+          }}
+        />
+        <CookieConsentBanner onOpenPrivacyPolicy={() => setShowPrivacyModal(true)} />
+      </div>
+    );
+  }
+
+  // Mandatory Auth Guard: Users must sign in or register to access Dashboard or CAD Workspace
+  if (!user || user.isGuest) {
+    return (
+      <div className="h-screen w-screen flex flex-col bg-cad-bg text-cad-text">
+        <Login
+          onAuthSuccess={(u) => {
+            setUser(u);
+            setShowLogin(false);
+            openDashboard();
+          }}
+          onSwitchToSignup={() => {
+            setShowLogin(false);
+            setShowSignup(true);
+          }}
+          onNavigateHome={() => {
+            setShowLogin(false);
             setShowLanding(true);
           }}
         />
@@ -769,6 +848,7 @@ export const AppShell: React.FC = () => {
           onOpenWorkspaceTab={(tab) => {
             navigateToTab(tab);
           }}
+          onOpenPromptSession={handleOpenPromptSession}
           onOpenLanding={() => {
             setShowProjectManager(false);
             setShowLanding(true);
@@ -1140,19 +1220,13 @@ export const AppShell: React.FC = () => {
 
           {/* User Account */}
           <button
-            onClick={() => {
-              if (user.isGuest) {
-                setShowAuthModal(true);
-              } else {
-                setShowSettingsModal(true);
-              }
-            }}
-            title={user.isGuest ? 'Guest Mode (Click to Sign In)' : `Logged in as ${user.name}`}
-            aria-label={user.isGuest ? 'Guest Mode (Click to Sign In)' : `Logged in as ${user.name}`}
+            onClick={() => setShowSettingsModal(true)}
+            title={`Logged in as ${user.name || 'FloZ Designer'}`}
+            aria-label={`Logged in as ${user.name || 'FloZ Designer'}`}
             className="px-2 py-0.5 bg-cad-subpanel hover:bg-cad-surfaceHover text-cad-text rounded-xs text-[11px] font-medium flex items-center gap-1.5 border border-cad-border transition-colors duration-fast"
           >
-            <UserIcon size={11} className={user.isGuest ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400'} />
-            <span className="truncate max-w-[80px]">{user.isGuest ? 'Guest' : user.name}</span>
+            <UserIcon size={11} className="text-emerald-600 dark:text-emerald-400" />
+            <span className="truncate max-w-[120px]">{user.name || 'FloZ Designer'}</span>
           </button>
         </div>
       </header>
@@ -1160,6 +1234,16 @@ export const AppShell: React.FC = () => {
       {/* 3. Workspace Sub-Toolbar */}
       <div className="h-7.5 bg-cad-header border-b border-cad-border px-2 flex items-center justify-between text-xs select-none shrink-0 min-w-0 overflow-x-auto no-scrollbar">
         <div className="flex items-center space-x-1 shrink-0">
+          {/* Prompt to PCB AI Synthesizer */}
+          <button
+            onClick={() => setShowPromptToPCBModal(true)}
+            title="Synthesize Circuit from Natural Language Prompt"
+            className="px-2.5 py-0.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xs text-[11px] font-semibold flex items-center gap-1.5 shadow-xs transition-colors duration-fast eng-tactile"
+          >
+            <Sparkles size={11} className="text-white" />
+            <span>Prompt to PCB</span>
+          </button>
+
           {/* Sync PCB */}
           <button
             onClick={handleSyncPCB}
@@ -1291,6 +1375,25 @@ export const AppShell: React.FC = () => {
             <span>DRC</span>
           </button>
 
+          <button
+            onClick={() => {
+              if (rightPanel === 'ai' && !rightPanelCollapsed) {
+                setRightPanelCollapsed(true);
+              } else {
+                setRightPanel('ai');
+                setRightPanelCollapsed(false);
+              }
+            }}
+            title="FloZ AI Assistant (Toggle)"
+            className={`px-2 py-0.5 rounded-xs text-[11px] font-medium flex items-center gap-1 transition-colors duration-fast ${
+              !rightPanelCollapsed && rightPanel === 'ai'
+                ? 'bg-blue-600 text-white shadow-xs font-semibold'
+                : 'text-cad-text hover:bg-cad-surfaceHover'
+            }`}
+          >
+            <Sparkles size={11} className="text-blue-400" />
+            <span>FloZ AI</span>
+          </button>
         </div>
       </div>
 
@@ -1579,6 +1682,103 @@ export const AppShell: React.FC = () => {
             showToast(`Imported ${summary.importedCount} items into FloZ ECA`);
           }}
         />
+      )}
+
+      {/* Prompt-to-PCB Synthesis Modal */}
+      {showPromptToPCBModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-150">
+          <div className="bg-cad-panel border border-cad-border w-full max-w-lg rounded-xl shadow-2xl p-5 space-y-4 animate-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between border-b border-cad-border pb-3">
+              <div className="flex items-center gap-2">
+                <div className="p-1 rounded bg-blue-500/15 text-blue-500">
+                  <Sparkles size={16} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-cad-textHeading">Prompt-to-PCB Synthesizer</h3>
+                  <p className="text-[11px] text-cad-textMuted">Describe your circuit to synthesize into the active project.</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowPromptToPCBModal(false)}
+                className="text-cad-textMuted hover:text-cad-text text-xs p-1"
+              >
+                ✕
+              </button>
+            </div>
+
+            {promptFeedback && (
+              <div className="p-2.5 rounded-md bg-blue-500/10 border border-blue-500/30 text-blue-400 text-xs flex items-center gap-2">
+                <Sparkles size={14} className="animate-spin" />
+                <span>{promptFeedback}</span>
+              </div>
+            )}
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleSynthesizeFromPrompt(promptInput);
+              }}
+              className="space-y-3"
+            >
+              <div>
+                <label className="block text-[11px] font-medium text-cad-text mb-1">
+                  Hardware Description Prompt
+                </label>
+                <textarea
+                  value={promptInput}
+                  onChange={(e) => setPromptInput(e.target.value)}
+                  placeholder="e.g. Add an AP2112K 3.3V LDO regulator with 10uF input/output filter capacitors connected to VBUS and GND..."
+                  rows={3}
+                  className="w-full bg-cad-inputBg border border-cad-inputBorder rounded-md p-2.5 text-xs text-cad-inputText placeholder:text-cad-textMuted focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 resize-none transition-colors"
+                  disabled={isSynthesizingPrompt}
+                  autoFocus
+                />
+              </div>
+
+              {/* Sample Prompt Chips */}
+              <div className="space-y-1.5">
+                <span className="text-[10px] uppercase font-mono text-cad-textMuted">Suggested Syntheses:</span>
+                <div className="flex flex-wrap gap-1.5 text-[11px]">
+                  {[
+                    'STM32 with USB-C and 3.3V LDO regulator',
+                    'ESP32 sensor node with I2C and battery charger',
+                    '12V to 5V 3A step-down buck converter',
+                    'I2C bus pull-up resistors with 4.7k',
+                  ].map((p, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => {
+                        setPromptInput(p);
+                        handleSynthesizeFromPrompt(p);
+                      }}
+                      className="px-2 py-1 bg-cad-subpanel hover:bg-cad-surfaceHover border border-cad-border rounded text-cad-text text-[11px] transition-colors"
+                    >
+                      {p}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="pt-2 flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowPromptToPCBModal(false)}
+                  className="px-3 py-1.5 bg-cad-subpanel hover:bg-cad-surfaceHover text-cad-text rounded-md text-xs font-medium border border-cad-border transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSynthesizingPrompt || !promptInput.trim()}
+                  className="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-60 text-white font-semibold rounded-md text-xs shadow-xs transition-colors flex items-center gap-1.5"
+                >
+                  {isSynthesizingPrompt ? 'Synthesizing...' : 'Synthesize Circuit'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
 
       {/* Command Palette (Cmd+K / Ctrl+K) */}

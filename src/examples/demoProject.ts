@@ -806,32 +806,47 @@ export function createDemoProject(): ApexProject {
   };
 }
 
-export function createEmptyProject(): ApexProject {
+export function createBlankProject(name = 'Untitled Board'): ApexProject {
   const base = createDemoProject();
   return {
     ...base,
     metadata: {
       ...base.metadata,
-      id: `proj_floz_${Date.now()}`,
-      name: 'New Circuit Project',
-      description: 'Clean Electronic Design Project',
+      id: `proj_floz_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+      name,
+      description: 'Clean AI-Generated Hardware Project',
+      version: '1.0.0',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     },
     schematic: {
       activeSheetId: 'sheet_main',
       sheets: [
         {
           ...base.schematic.sheets[0],
+          id: 'sheet_main',
+          title: 'Main Schematic',
           symbols: [],
           wires: [],
           junctions: [],
           labels: [],
           powerSymbols: [],
+          noConnects: [],
+          busEntries: [],
+          buses: [],
+          texts: [],
+          hierarchicalSheets: [],
         },
       ],
     },
     pcb: {
       ...base.pcb,
-      boardOutline: [],
+      boardOutline: [
+        { x: 0, y: 0 },
+        { x: 80, y: 0 },
+        { x: 80, y: 50 },
+        { x: 0, y: 50 },
+      ],
       footprints: [],
       tracks: [],
       vias: [],
@@ -844,4 +859,8 @@ export function createEmptyProject(): ApexProject {
       nets: {},
     },
   };
+}
+
+export function createEmptyProject(): ApexProject {
+  return createBlankProject('New Circuit Project');
 }

@@ -10,7 +10,6 @@ import { User } from '../../core/auth';
 interface SignupProps {
   onAuthSuccess?: (user: User) => void;
   onSwitchToLogin?: () => void;
-  onContinueAsGuest?: () => void;
   onNavigateHome?: () => void;
 }
 

@@ -142,6 +142,36 @@ export const AISettingsModal: React.FC<Props> = ({
             </div>
           </div>
 
+          {/* API Key Configuration */}
+          <div className="space-y-1.5">
+            <label className="text-[11px] text-cad-textHeading font-semibold flex items-center justify-between">
+              <span className="flex items-center gap-1.5">
+                <Key size={13} className="text-blue-600 dark:text-blue-400" /> FloZ AI Neural Key
+              </span>
+              <span className="text-[10px] text-cad-textMuted font-mono">Configured in .env</span>
+            </label>
+            <div className="relative flex items-center">
+              <input
+                type={showApiKey ? 'text' : 'password'}
+                placeholder="Enter custom API key (leave blank to use .env)"
+                value={localSettings.apiKey || ''}
+                onChange={(e) => setLocalSettings({ ...localSettings, apiKey: e.target.value })}
+                className="w-full bg-cad-inputBg border border-cad-inputBorder rounded-xs pl-2.5 pr-8 py-1 text-xs text-cad-inputText font-mono placeholder:text-cad-textMuted focus:outline-none focus:border-blue-500"
+              />
+              <button
+                type="button"
+                onClick={() => setShowApiKey(!showApiKey)}
+                className="absolute right-2 text-cad-textMuted hover:text-cad-text"
+                title={showApiKey ? 'Hide Key' : 'Show Key'}
+              >
+                {showApiKey ? <EyeOff size={13} /> : <Eye size={13} />}
+              </button>
+            </div>
+            <p className="text-[10px] text-cad-textMuted">
+              Pre-configured with NVIDIA Nemotron models. Override if you wish to use a custom personal key.
+            </p>
+          </div>
+
           {/* Context Level */}
           <div className="space-y-1.5">
             <label className="text-[11px] text-cad-textHeading font-semibold flex items-center gap-1.5">

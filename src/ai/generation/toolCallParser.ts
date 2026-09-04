@@ -171,12 +171,11 @@ export class ToolCallParser {
         proposal.validation = ActionValidator.preValidate(proposal, project);
         proposals.push(proposal);
 
-        let cleanText = `## Verified Project Facts\n` +
+        const cleanText = `## Verified Project Facts\n` +
           `- Components Resolved (${addedSymbols.length}): ${addedSymbols.map((s) => `${s.reference} (${s.value})`).join(', ')}\n` +
           `- Wires Generated: ${addedWires.length} electrical wire segments.\n\n` +
-          `## Engineering Recommendations & Action Proposals\n` +
           `The schematic circuit has been compiled into real FloZ ECA objects.\n\n` +
-          `## Action\nClick **[Apply Change]** below to commit these components to the active schematic canvas.`;
+          `Click **[Apply Change]** below to commit these components to the active schematic canvas.`;
 
         return { cleanText, proposals, toolActivities };
       }
@@ -202,7 +201,9 @@ export class ToolCallParser {
       proposals.push(routeProp);
 
       return {
-        cleanText: `## Verified Project Facts\n- PCB Netlist Ready for Routing\n\n## Recommendation\nAuto-route all unrouted airwires using 45° octilinear copper tracks and layer transition vias.\n\n## Action\nClick **[Apply Change]** below to execute multi-net routing on the PCB.`,
+        cleanText: rawText && rawText.trim()
+          ? rawText.trim()
+          : `### Auto-Route PCB Connections\n\nPrepared multi-net priority routing for all unrouted nets using 45° octilinear copper traces and layer transition vias.`,
         proposals,
         toolActivities,
       };
@@ -225,7 +226,9 @@ export class ToolCallParser {
       proposals.push(syncProp);
 
       return {
-        cleanText: `## Verified Project Facts\n- Schematic Components Ready for PCB Forward-Annotation\n\n## Recommendation\nSynchronize components, footprints, and netlist to the PCB layout with intelligent rule-based placement.\n\n## Action\nClick **[Apply Change]** below to generate the PCB layout.`,
+        cleanText: rawText && rawText.trim()
+          ? rawText.trim()
+          : `### Synchronize Schematic to PCB Layout\n\nForward-annotated schematic components, footprints, and net connections to the PCB layout with rule-based auto-placement.`,
         proposals,
         toolActivities,
       };
@@ -249,7 +252,9 @@ export class ToolCallParser {
       proposals.push(fixProp);
 
       return {
-        cleanText: `## Verified Project Facts\n- Detected ${fixResult.fixedCount} auto-fixable diagnostic issues.\n\n## Recommendation\nApply automatic repairs: ${fixResult.appliedFixes.join('; ')}.\n\n## Action\nClick **[Apply Change]** below to commit diagnostic fixes.`,
+        cleanText: rawText && rawText.trim()
+          ? rawText.trim()
+          : `### Auto-Fix Diagnostics\n\nIdentified and resolved **${fixResult.fixedCount} violations**: ${fixResult.appliedFixes.join('; ')}.`,
         proposals,
         toolActivities,
       };
@@ -304,18 +309,15 @@ export class ToolCallParser {
         const compCount = prop.diff.addedComponents?.length || 0;
         const wireCount = prop.diff.addedWires?.length || 0;
 
-        let cleanText = `## Verified Project Facts\n` +
-          `- Circuit: **${plan.title}**\n` +
-          `- Resolved Components (${compCount}): ${prop.diff.addedComponents?.map((c) => `${c.reference} (${c.value})`).join(', ')}\n` +
-          `- Planned Connections: ${wireCount} orthogonal wire segments.\n` +
-          (isCompletePCBRequested ? `- PCB Workflow: Automated Placement, 45° Multi-Net Routing, and Ground Pour.\n\n` : `\n`) +
-          `## Engineering Recommendations & Action Proposals\n` +
-          `${plan.description}\n\n` +
-          `## Action\nClick **[Apply Change]** below to execute this design workflow on the active project.`;
+        const cleanText = rawText && rawText.trim()
+          ? rawText.trim()
+          : `### ${plan.title}\n\n${plan.description}\n\n- **Resolved Components (${compCount})**: ${prop.diff.addedComponents?.map((c) => `\`${c.reference}\` (${c.value})`).join(', ')}\n- **Orthogonal Net Connections**: ${wireCount} wire segments\n${isCompletePCBRequested ? '- **PCB Multi-Layer**: Automatic 45° trace routing, ground planes (F.Cu & B.Cu), and 3D packages.' : ''}`;
 
         return { cleanText, proposals, toolActivities };
       }
     }
+
+    return { cleanText: rawText, proposals, toolActivities };
 
     return { cleanText: rawText, proposals, toolActivities };
   }

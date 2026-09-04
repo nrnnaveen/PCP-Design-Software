@@ -64,6 +64,49 @@ export class DesignIntent {
       };
     }
 
+    // 1b. USB-C 32-Bit Microcontroller / ESP32 Module
+    if (
+      !q.includes('button') && !q.includes('sht31') && !q.includes('100uf') &&
+      ((q.includes('usb') && (q.includes('32') || q.includes('module') || q.includes('controller'))) ||
+       (q.includes('esp32') && (q.includes('usb') || q.includes('module') || q.includes('board'))))
+    ) {
+      const components: PlannedComponent[] = [
+        { id: 'j1', role: 'USB-C Power & Interface Connector', queryTerm: 'conn_usbc_16pin', value: 'USB_C_16P', domain: 'connector' },
+        { id: 'u_reg', role: '3.3V 600mA LDO Voltage Regulator', queryTerm: 'reg_ap2112k_3v3', value: 'AP2112K-3.3', domain: 'regulator', targetRef: 'j1' },
+        { id: 'c_in', role: '10uF Ceramic Input Capacitor', queryTerm: 'device_c', value: '10uF', domain: 'passives', targetRef: 'u_reg' },
+        { id: 'c_out', role: '10uF Ceramic Output Capacitor', queryTerm: 'device_c', value: '10uF', domain: 'passives', targetRef: 'u_reg' },
+        { id: 'u_mcu', role: 'ESP32 32-Bit Dual-Core MCU Module', queryTerm: 'mcu_esp32_wroom', value: 'ESP32-WROOM-32', domain: 'mcu' },
+        { id: 'c_decoup', role: '100nF High-Frequency Decoupling Capacitor', queryTerm: 'device_c', value: '100nF', domain: 'passives', targetRef: 'u_mcu' },
+        { id: 'r_led', role: '1k LED Current Limiting Resistor', queryTerm: 'device_r', value: '1k', domain: 'passives', targetRef: 'u_mcu' },
+        { id: 'd_led', role: 'Status Indicator LED', queryTerm: 'device_led', value: 'LED_GREEN', domain: 'sensor', targetRef: 'r_led' },
+      ];
+
+      const connections: PlannedConnection[] = [
+        { from: { componentId: 'j1', pinNumberOrName: 'VBUS' }, to: { componentId: 'u_reg', pinNumberOrName: 'VIN' }, netName: 'VBUS', isPower: true },
+        { from: { componentId: 'j1', pinNumberOrName: 'GND' }, to: { componentId: 'u_reg', pinNumberOrName: 'GND' }, netName: 'GND', isPower: true },
+        { from: { componentId: 'c_in', pinNumberOrName: '1' }, to: { componentId: 'u_reg', pinNumberOrName: 'VIN' }, netName: 'VBUS', isPower: true },
+        { from: { componentId: 'c_in', pinNumberOrName: '2' }, to: { componentId: 'u_reg', pinNumberOrName: 'GND' }, netName: 'GND', isPower: true },
+        { from: { componentId: 'u_reg', pinNumberOrName: 'VOUT' }, to: { componentId: 'c_out', pinNumberOrName: '1' }, netName: '+3.3V', isPower: true },
+        { from: { componentId: 'c_out', pinNumberOrName: '2' }, to: { componentId: 'u_reg', pinNumberOrName: 'GND' }, netName: 'GND', isPower: true },
+        { from: { componentId: 'u_reg', pinNumberOrName: 'VOUT' }, to: { componentId: 'u_mcu', pinNumberOrName: '3V3' }, netName: '+3.3V', isPower: true },
+        { from: { componentId: 'u_mcu', pinNumberOrName: 'GND' }, to: { componentId: 'u_reg', pinNumberOrName: 'GND' }, netName: 'GND', isPower: true },
+        { from: { componentId: 'c_decoup', pinNumberOrName: '1' }, to: { componentId: 'u_mcu', pinNumberOrName: '3V3' }, netName: '+3.3V', isPower: true },
+        { from: { componentId: 'c_decoup', pinNumberOrName: '2' }, to: { componentId: 'u_mcu', pinNumberOrName: 'GND' }, netName: 'GND', isPower: true },
+        { from: { componentId: 'u_mcu', pinNumberOrName: 'IO2' }, to: { componentId: 'r_led', pinNumberOrName: '1' }, netName: 'STATUS_LED' },
+        { from: { componentId: 'r_led', pinNumberOrName: '2' }, to: { componentId: 'd_led', pinNumberOrName: 'A' }, netName: 'LED_ANODE' },
+        { from: { componentId: 'd_led', pinNumberOrName: 'K' }, to: { componentId: 'u_mcu', pinNumberOrName: 'GND' }, netName: 'GND', isPower: true },
+      ];
+
+      return {
+        title: 'USB-C 32-Bit Microcontroller Module',
+        description: 'Complete 32-bit hardware module featuring USB-C 5V power input, 3.3V LDO regulator, ESP32 dual-core processor, decoupling network, and status indicator LED.',
+        components,
+        connections,
+        globalNets: ['VBUS', '+3.3V', 'GND', 'STATUS_LED', 'LED_ANODE'],
+        powerRails: ['VBUS', '+3.3V', 'GND'],
+      };
+    }
+
     // 2. ESP32 Wi-Fi & BLE Sensor Node with USB Power, LDO, I2C, LED and Push Button
     if (
       q.includes('esp32') &&

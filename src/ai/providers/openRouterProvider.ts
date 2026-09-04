@@ -52,7 +52,7 @@ export class OpenRouterProvider implements IAIProvider {
       raw.includes('nemotron-4') ||
       raw.includes('nemotron-3-ultra')
     ) {
-      return { backendId: 'nvidia/nemtron-4-340b-instruct', displayName: 'FloZ Ultra' };
+      return { backendId: 'nvidia/nemotron-3-ultra-550b-a55b:free', displayName: 'FloZ Ultra' };
     }
     // Default to FloZ Super
     return { backendId: 'nvidia/nemotron-3-super-120b-a12b:free', displayName: 'FloZ Super' };
@@ -61,7 +61,7 @@ export class OpenRouterProvider implements IAIProvider {
   public async testConnection(): Promise<{ ok: boolean; message: string }> {
     const key = this.resolveApiKey();
     if (!key) {
-      return { ok: true, message: 'FloZ Local Inference Engine active (100% offline & deterministic).' };
+      return { ok: false, message: 'No FloZ AI API key configured.' };
     }
     try {
       const res = await fetch('https://openrouter.ai/api/v1/auth/key', {
@@ -70,9 +70,9 @@ export class OpenRouterProvider implements IAIProvider {
       if (res.ok) {
         return { ok: true, message: 'FloZ AI Neural Service connected successfully.' };
       }
-      return { ok: false, message: `FloZ AI status code: ${res.status}` };
+      return { ok: false, message: `Neural service status code: ${res.status}` };
     } catch (err: any) {
-      return { ok: false, message: `FloZ AI connection: ${err.message}` };
+      return { ok: false, message: `Neural service connection error: ${err.message}` };
     }
   }
 
@@ -90,31 +90,20 @@ export class OpenRouterProvider implements IAIProvider {
   ): Promise<ProviderResponse> {
     const apiKey = this.resolveApiKey();
     const { backendId, displayName } = this.resolveBackendModel();
+    const lastUserMsg = messages[messages.length - 1]?.content || '';
 
-    // If no API key found in env or storage, fall back seamlessly to FloZ Local Engineering Engine
+    // If no API key configured, generate directly via ToolCallParser without noisy traces
     if (!apiKey) {
-      onToolActivity({
-        id: `act_${Date.now()}`,
-        name: 'FloZ Local Engine',
-        permission: 'ANALYZE',
-        description: 'Running deterministic offline CAD rule solver & netlist compiler',
-        status: 'completed',
-      });
-      return new LocalEngineeringEngine().chatStream(messages, context, project, onChunk, onToolActivity, abortSignal);
+      const parsed = ToolCallParser.parseResponse('', lastUserMsg, project);
+      return { text: parsed.cleanText, proposals: parsed.proposals, toolActivities: [] };
     }
 
     const contextText = ContextBuilder.formatContextPrompt(context);
-    const systemPrompt = `You are FloZ AI (${displayName}), a senior Electronic Design Automation (EDA) engineer for FloZ ECA.
-You analyze schematics, PCB layouts, electrical rule check (ERC) results, design rule check (DRC) results, and component libraries.
-Always format engineering answers with standard headers:
-## Finding
-(Concise summary of findings)
-## Evidence
-(Specific component references, pins, coordinates, net names, or ERC codes from the provided context)
-## Recommendation
-(Actionable engineering advice)
+    const systemPrompt = `You are FloZ AI (${displayName}), a world-class Electronic Design Automation (EDA) Copilot for FloZ ECA.
+You assist electrical engineers with schematic capture, PCB layout, 45° trace routing, and ERC/DRC diagnostics.
+Respond directly and concisely in clean Markdown, similar to GitHub Copilot.
+Do not use verbose boilerplate headers or repetitious disclaimers. Focus on actionable circuit design, exact component values, pinouts, and PCB layout guidelines.
 
-Do NOT hallucinate connections or components that are not in the context.
 Current Project Context:
 ${contextText}`;
 
@@ -132,21 +121,13 @@ ${contextText}`;
       }
 
       try {
-        onToolActivity({
-          id: `act_${Date.now()}`,
-          name: `${displayName} Inference`,
-          permission: 'READ',
-          description: `Synthesizing with ${displayName}${attempts > 0 ? ` (Retry ${attempts})` : ''}...`,
-          status: 'running',
-        });
-
         const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${apiKey}`,
             'HTTP-Referer': 'https://floz.eda',
-            'X-Title': 'FloZ ECA',
+            'X-Title': 'FloZ AI',
           },
           body: JSON.stringify({
             model: backendId,
@@ -158,39 +139,13 @@ ${contextText}`;
         });
 
         if (!response.ok) {
-          if (response.status === 429) {
+          if (response.status === 429 && attempts < maxAttempts - 1) {
             attempts++;
-            if (attempts < maxAttempts) {
-              onToolActivity({
-                id: `act_${Date.now()}`,
-                name: 'Rate Limit Backoff',
-                permission: 'READ',
-                description: `Retrying in ${attempts * 1.5}s...`,
-                status: 'warning',
-              });
-              await new Promise((r) => setTimeout(r, attempts * 1500));
-              continue;
-            } else {
-              onToolActivity({
-                id: `act_${Date.now()}`,
-                name: 'Local Solver Fallback',
-                permission: 'READ',
-                description: 'Switching to FloZ deterministic CAD solver',
-                status: 'warning',
-              });
-              return new LocalEngineeringEngine().chatStream(messages, context, project, onChunk, onToolActivity, abortSignal);
-            }
+            await new Promise((r) => setTimeout(r, 1000));
+            continue;
           }
-          throw new Error(`FloZ AI service returned error: ${response.status} ${response.statusText}`);
+          throw new Error(`FloZ AI service returned HTTP ${response.status}`);
         }
-
-        onToolActivity({
-          id: `act_${Date.now()}`,
-          name: 'Streaming Response',
-          permission: 'READ',
-          description: `Receiving stream from ${displayName}`,
-          status: 'completed',
-        });
 
         let fullText = '';
         const reader = response.body?.getReader();
@@ -227,28 +182,32 @@ ${contextText}`;
           }
         }
 
-        const lastUserMsg = messages[messages.length - 1]?.content || '';
         const parsed = ToolCallParser.parseResponse(fullText, lastUserMsg, project);
-        return { text: parsed.cleanText, toolActivities: parsed.toolActivities, proposals: parsed.proposals };
+        return { text: parsed.cleanText, toolActivities: [], proposals: parsed.proposals };
       } catch (err: any) {
         if (abortSignal?.aborted || err.name === 'AbortError') {
           return { text: '*(Generation stopped by user)*', toolActivities: [] };
         }
-        console.warn('OpenRouter stream attempt failed:', err);
         attempts++;
         if (attempts >= maxAttempts) {
-          onToolActivity({
-            id: `act_${Date.now()}`,
-            name: 'Fallback Triggered',
-            permission: 'ANALYZE',
-            description: `Network error (${err.message}). Running local offline solver.`,
-            status: 'warning',
-          });
-          return new LocalEngineeringEngine().chatStream(messages, context, project, onChunk, onToolActivity, abortSignal);
+          // If network or upstream issue, parse user intent cleanly without fake local error messages
+          const fallbackParsed = ToolCallParser.parseResponse('', lastUserMsg, project);
+          if (fallbackParsed.proposals && fallbackParsed.proposals.length > 0) {
+            return {
+              text: fallbackParsed.cleanText,
+              toolActivities: [],
+              proposals: fallbackParsed.proposals,
+            };
+          }
+          return {
+            text: `Unable to complete synthesis: ${err.message}. Please check your connection or try again.`,
+            toolActivities: [],
+          };
         }
       }
     }
 
-    return new LocalEngineeringEngine().chatStream(messages, context, project, onChunk, onToolActivity, abortSignal);
+    const fallbackParsed = ToolCallParser.parseResponse('', lastUserMsg, project);
+    return { text: fallbackParsed.cleanText, toolActivities: [], proposals: fallbackParsed.proposals };
   }
 }

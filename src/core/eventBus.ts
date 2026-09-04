@@ -14,7 +14,8 @@ export type EDAEventType =
   | 'REQUEST_SIMULATION_PROBE'
   | 'PROJECT_MODIFIED'
   | 'ACTIVE_LAYER_CHANGED'
-  | 'TOOL_CHANGED';
+  | 'TOOL_CHANGED'
+  | 'FLOZ_AI_SUBMIT_PROMPT';
 
 export interface EDAEventPayload {
   SELECT_SYMBOL: { symbolId?: string; reference?: string; sheetId?: string };
@@ -28,6 +29,7 @@ export interface EDAEventPayload {
   PROJECT_MODIFIED: { actionName: string };
   ACTIVE_LAYER_CHANGED: { layerId: string };
   TOOL_CHANGED: { tool: string };
+  FLOZ_AI_SUBMIT_PROMPT: { prompt: string };
 }
 
 type Callback<T> = (data: T) => void;

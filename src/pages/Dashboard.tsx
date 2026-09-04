@@ -1,12 +1,13 @@
 /**
- * FloZ — Modern Clean Full-Screen Dashboard
- * Neat, uncluttered project navigator and starter templates.
- * Clean design, zero AI jargon or clutter, instant workflow.
+ * FloZ — AI Prompt-to-PCB Dashboard
+ * Turn user prompts into real, manufactured PCB designs.
+ * Minimalist full-screen layout with instant AI circuit synthesis,
+ * active design quick-resume, and starter hardware templates.
  */
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { ApexProject } from '../core/types';
-import { createDemoProject } from '../examples/demoProject';
+import { createBlankProject } from '../examples/demoProject';
 import { ProjectSerializer } from '../core/serialization';
 import { AuthService, User } from '../core/auth';
 import { Logo } from '../components/branding/Logo';
@@ -27,7 +28,9 @@ import {
   Moon,
   Box,
   FileText,
-  Compass,
+  Sparkles,
+  Zap,
+  Loader2,
 } from 'lucide-react';
 import { AppThemeId } from '../theme/themeManager';
 
@@ -36,6 +39,7 @@ interface DashboardProps {
   onOpenProject: (project: ApexProject) => void;
   onOpenWorkspaceTab: (tab: 'schematic' | 'pcb' | '3d' | 'simulation' | 'gerbview' | 'calculator') => void;
   onOpenLanding: () => void;
+  onOpenPromptSession?: (prompt: string) => void;
   onOpenSettings?: () => void;
   onOpenLibraryManager?: () => void;
   onOpenCircuitLab?: () => void;
@@ -47,7 +51,7 @@ interface DashboardProps {
 interface ProjectItem {
   id: string;
   name: string;
-  category: 'active' | 'template' | 'custom';
+  category: 'active' | 'custom';
   description: string;
   layers: 2 | 4 | 6 | 8;
   partsCount: number;
@@ -56,21 +60,32 @@ interface ProjectItem {
   generator?: () => ApexProject;
 }
 
+const SAMPLE_PROMPTS = [
+  { label: '⚡ ESP32-S3 IoT Node', prompt: 'ESP32-S3 with USB-C, LiPo charger, and I2C temperature sensor' },
+  { label: '🦾 STM32 Motor Driver', prompt: 'STM32 Cortex-M4 with dual H-bridge motor driver and CAN bus' },
+  { label: '🔋 12V Buck Converter', prompt: '12V to 5V 3A step-down switching regulator with low noise' },
+  { label: '🔌 USB-C Power Hub', prompt: 'USB-C Power Delivery controller with 20V negotiation and ESD protection' },
+];
+
 export const Dashboard: React.FC<DashboardProps> = ({
   currentProject,
   onOpenProject,
   onOpenWorkspaceTab,
   onOpenLanding,
+  onOpenPromptSession,
   onOpenSettings,
   onOpenAuthModal,
   theme = 'dark',
   onToggleTheme,
 }) => {
-  const [activeTab, setActiveTab] = useState<'projects' | 'templates'>('projects');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [searchQuery, setSearchQuery] = useState('');
   const [showNewModal, setShowNewModal] = useState(false);
   const [user, setUser] = useState<User>(() => AuthService.getUser());
+
+  // AI Prompt Bar State
+  const [aiPrompt, setAiPrompt] = useState('');
+  const [isSynthesizing, setIsSynthesizing] = useState(false);
 
   // New Project State
   const [projectName, setProjectName] = useState('New Circuit Design');
@@ -92,67 +107,27 @@ export const Dashboard: React.FC<DashboardProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [showNewModal]);
 
-  // Clean Hardware Starter Templates
-  const templates: ProjectItem[] = useMemo(() => [
-    {
-      id: 'template_stm32',
-      name: 'Microcontroller Board',
-      category: 'template',
-      description: '32-bit controller board with USB-C connector and 3.3V power regulator.',
-      layers: 2,
-      partsCount: 16,
-      lastModified: 'Template',
-      generator: () => createDemoProject(),
-    },
-    {
-      id: 'template_buck',
-      name: 'Power Converter',
-      category: 'template',
-      description: 'Step-down voltage switching regulator with input filter capacitors.',
-      layers: 4,
-      partsCount: 12,
-      lastModified: 'Template',
-      generator: () => {
-        const p = createDemoProject();
-        p.metadata.id = `power_${Date.now()}`;
-        p.metadata.name = 'Power Converter';
-        p.metadata.description = 'Step-down voltage switching regulator.';
-        return p;
-      },
-    },
-    {
-      id: 'template_ble',
-      name: 'Wireless Sensor',
-      category: 'template',
-      description: 'Low-power telemetry sensor board with battery supervisor.',
-      layers: 2,
-      partsCount: 14,
-      lastModified: 'Template',
-      generator: () => {
-        const p = createDemoProject();
-        p.metadata.id = `sensor_${Date.now()}`;
-        p.metadata.name = 'Wireless Sensor';
-        p.metadata.description = 'Low-power telemetry sensor board.';
-        return p;
-      },
-    },
-    {
-      id: 'template_usbpd',
-      name: 'USB-C Module',
-      category: 'template',
-      description: 'USB-C power hub controller module with circuit protection.',
-      layers: 4,
-      partsCount: 18,
-      lastModified: 'Template',
-      generator: () => {
-        const p = createDemoProject();
-        p.metadata.id = `usbc_${Date.now()}`;
-        p.metadata.name = 'USB-C Module';
-        p.metadata.description = 'USB-C power hub controller module.';
-        return p;
-      },
-    },
-  ], []);
+  // Handle Prompt-to-PCB AI Synthesis
+  const handleSynthesizePrompt = (customPrompt?: string) => {
+    const query = (customPrompt || aiPrompt).trim();
+    if (!query) return;
+
+    if (onOpenPromptSession) {
+      onOpenPromptSession(query);
+      return;
+    }
+
+    setIsSynthesizing(true);
+    setTimeout(() => {
+      const fresh = createBlankProject(query.slice(0, 30));
+      fresh.metadata.description = query;
+      fresh.metadata.author = user.name || 'FloZ Designer';
+
+      onOpenProject(fresh);
+      setIsSynthesizing(false);
+      onOpenWorkspaceTab('schematic');
+    }, 300);
+  };
 
   // Active Projects
   const myProjects: ProjectItem[] = useMemo(() => {
@@ -174,29 +149,16 @@ export const Dashboard: React.FC<DashboardProps> = ({
   }, [currentProject]);
 
   const items = useMemo(() => {
-    const base = activeTab === 'projects' ? myProjects : templates;
-    if (!searchQuery.trim()) return base;
+    if (!searchQuery.trim()) return myProjects;
     const q = searchQuery.toLowerCase();
-    return base.filter((p) => p.name.toLowerCase().includes(q) || p.description.toLowerCase().includes(q));
-  }, [activeTab, myProjects, templates, searchQuery]);
+    return myProjects.filter((p) => p.name.toLowerCase().includes(q) || p.description.toLowerCase().includes(q));
+  }, [myProjects, searchQuery]);
 
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
     const trimmed = projectName.trim() || 'Untitled Board';
-
-    const fresh = createDemoProject();
-    fresh.metadata.id = `proj_${Date.now()}`;
-    fresh.metadata.name = trimmed;
-    fresh.metadata.author = user.name || 'Designer';
-    fresh.schematic.sheets[0].symbols = [];
-    fresh.schematic.sheets[0].wires = [];
-    fresh.schematic.sheets[0].junctions = [];
-    fresh.schematic.sheets[0].labels = [];
-    fresh.pcb.footprints = [];
-    fresh.pcb.tracks = [];
-    fresh.pcb.vias = [];
-    fresh.pcb.zones = [];
-    fresh.netGraph = { nets: {} };
+    const fresh = createBlankProject(trimmed);
+    fresh.metadata.author = user.name || 'FloZ Designer';
 
     onOpenProject(fresh);
     setShowNewModal(false);
@@ -230,7 +192,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             <Logo size="sm" onClick={onOpenLanding} />
             <span className="text-cad-border text-sm hidden sm:inline">/</span>
             <span className="text-xs font-semibold text-cad-textHeading hidden sm:inline">
-              Dashboard
+              Prompt-to-PCB Studio
             </span>
           </div>
 
@@ -239,7 +201,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-cad-textMuted pointer-events-none" />
             <input
               type="text"
-              placeholder="Search projects or templates..."
+              placeholder="Search projects..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-9 pr-3 py-1.5 bg-cad-inputBg border border-cad-inputBorder rounded-md text-xs text-cad-inputText placeholder:text-cad-textMuted focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
@@ -254,7 +216,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-md text-xs font-medium flex items-center gap-1.5 shadow-xs transition-colors duration-fast eng-tactile"
           >
             <Plus size={14} />
-            <span>New Project</span>
+            <span>Blank Board</span>
           </button>
 
           {/* Import File */}
@@ -283,25 +245,16 @@ export const Dashboard: React.FC<DashboardProps> = ({
           {/* User Session */}
           <div className="flex items-center gap-2 bg-cad-subpanel px-3 py-1.5 rounded-md border border-cad-border text-xs">
             <UserIcon size={13} className="text-cad-textMuted" />
-            <span className="font-medium text-cad-text max-w-[100px] truncate">
-              {user.name}
+            <span className="font-medium text-cad-text max-w-[120px] truncate">
+              {user.name || 'FloZ Designer'}
             </span>
-            {user.isGuest ? (
-              <button
-                onClick={onOpenAuthModal}
-                className="text-blue-500 hover:underline font-semibold ml-1 text-[11px]"
-              >
-                Sign In
-              </button>
-            ) : (
-              <button
-                onClick={() => AuthService.logout()}
-                className="text-cad-textMuted hover:text-red-400 ml-1 transition-colors"
-                title="Sign Out"
-              >
-                <LogOut size={13} />
-              </button>
-            )}
+            <button
+              onClick={() => AuthService.logout()}
+              className="text-cad-textMuted hover:text-red-400 ml-1 transition-colors"
+              title="Sign Out"
+            >
+              <LogOut size={13} />
+            </button>
           </div>
 
           {/* Open CAD Button */}
@@ -321,35 +274,15 @@ export const Dashboard: React.FC<DashboardProps> = ({
         <aside className="w-52 border-r border-cad-border bg-cad-subpanel p-4 flex flex-col justify-between shrink-0">
           <div className="space-y-6">
             <div className="space-y-1">
-              <button
-                onClick={() => setActiveTab('projects')}
-                className={`w-full px-3 py-2 rounded-md text-xs font-medium flex items-center gap-2.5 transition-colors duration-fast ${
-                  activeTab === 'projects'
-                    ? 'bg-blue-600 text-white font-semibold shadow-xs'
-                    : 'text-cad-text hover:bg-cad-surfaceHover'
-                }`}
+              <div
+                className="w-full px-3 py-2 rounded-md text-xs font-semibold flex items-center gap-2.5 bg-blue-600 text-white shadow-xs"
               >
                 <FolderOpen size={15} />
                 <span>My Projects</span>
                 <span className="ml-auto text-[10px] px-1.5 py-0.2 rounded-full bg-black/20 text-white/90">
                   {myProjects.length}
                 </span>
-              </button>
-
-              <button
-                onClick={() => setActiveTab('templates')}
-                className={`w-full px-3 py-2 rounded-md text-xs font-medium flex items-center gap-2.5 transition-colors duration-fast ${
-                  activeTab === 'templates'
-                    ? 'bg-blue-600 text-white font-semibold shadow-xs'
-                    : 'text-cad-text hover:bg-cad-surfaceHover'
-                }`}
-              >
-                <Compass size={15} />
-                <span>Templates</span>
-                <span className="ml-auto text-[10px] px-1.5 py-0.2 rounded-full bg-black/20 text-white/90">
-                  {templates.length}
-                </span>
-              </button>
+              </div>
             </div>
 
             <div className="space-y-1 pt-4 border-t border-cad-border">
@@ -366,14 +299,86 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </div>
 
           <div className="text-[11px] text-cad-textMuted flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-500" />
-            <span>Local &amp; Ready</span>
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span>AI Hardware Engine Ready</span>
           </div>
         </aside>
 
         {/* Content Canvas */}
         <main className="flex-1 flex flex-col overflow-y-auto bg-cad-bg p-6 space-y-6">
-          {/* Active Project Hero Banner */}
+          {/* A. Prominent AI Prompt-to-PCB Generator Hero Card */}
+          <div className="bg-gradient-to-r from-blue-900/20 via-cad-panel to-cad-panel border border-blue-500/30 rounded-xl p-5 shadow-md space-y-3.5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-xs font-semibold text-blue-400">
+                <Sparkles size={15} />
+                <span>AI Prompt to Real PCB</span>
+              </div>
+              <span className="text-[10px] text-cad-textMuted font-mono">
+                Natural Language Compiler
+              </span>
+            </div>
+
+            <div>
+              <h2 className="text-base sm:text-lg font-bold text-cad-textHeading">
+                Synthesize a Complete Circuit Board with AI
+              </h2>
+              <p className="text-xs text-cad-textMuted">
+                Describe the microcontrollers, sensors, or power requirements you need. FloZ generates the full schematic and routed PCB layout.
+              </p>
+            </div>
+
+            {/* Prompt Form */}
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleSynthesizePrompt();
+              }}
+              className="flex items-center gap-2 bg-cad-inputBg border border-cad-inputBorder focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500 rounded-lg p-1.5 transition-all shadow-xs"
+            >
+              <input
+                type="text"
+                value={aiPrompt}
+                onChange={(e) => setAiPrompt(e.target.value)}
+                placeholder="e.g. ESP32-S3 IoT node with USB-C, LiPo charger, and I2C temperature sensor..."
+                className="w-full bg-transparent text-xs text-cad-inputText placeholder:text-cad-textMuted focus:outline-none px-2 py-1.5"
+                disabled={isSynthesizing}
+              />
+              <button
+                type="submit"
+                disabled={isSynthesizing || !aiPrompt.trim()}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-60 text-white rounded-md text-xs font-semibold flex items-center gap-1.5 shrink-0 transition-colors shadow-xs eng-tactile"
+              >
+                {isSynthesizing ? (
+                  <>
+                    <Loader2 size={13} className="animate-spin" />
+                    <span>Synthesizing...</span>
+                  </>
+                ) : (
+                  <>
+                    <Zap size={13} />
+                    <span>Generate PCB</span>
+                  </>
+                )}
+              </button>
+            </form>
+
+            {/* Prompt Chips */}
+            <div className="flex flex-wrap items-center gap-2 pt-0.5 text-xs">
+              <span className="text-[11px] text-cad-textMuted">Quick prompts:</span>
+              {SAMPLE_PROMPTS.map((p, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => handleSynthesizePrompt(p.prompt)}
+                  className="px-2.5 py-1 rounded-md text-[11px] bg-cad-subpanel hover:bg-cad-surfaceHover border border-cad-border text-cad-textMuted hover:text-cad-text transition-colors"
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* B. Active Project Quick-Resume Hero */}
           {currentProject?.metadata && (
             <div className="bg-cad-panel border border-cad-border rounded-lg p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="space-y-1.5">
@@ -433,12 +438,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
           <div className="flex items-center justify-between pt-1">
             <div>
               <h3 className="text-sm font-semibold text-cad-textHeading">
-                {activeTab === 'projects' ? 'Projects' : 'Starter Templates'}
+                Saved &amp; Active Projects
               </h3>
               <p className="text-xs text-cad-textMuted">
-                {activeTab === 'projects'
-                  ? 'Your saved circuit designs.'
-                  : 'Start from a ready-to-use reference board.'}
+                Your synthesized and custom circuit designs.
               </p>
             </div>
 
@@ -554,8 +557,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 animate-in fade-in duration-150">
           <div className="bg-cad-panel border border-cad-border w-full max-w-sm rounded-lg shadow-xl p-5 space-y-4 animate-in zoom-in-95 duration-150">
             <div className="border-b border-cad-border pb-2">
-              <h3 className="text-sm font-semibold text-cad-textHeading">New Project</h3>
-              <p className="text-xs text-cad-textMuted">Create a fresh blank circuit design.</p>
+              <h3 className="text-sm font-semibold text-cad-textHeading">New Blank Board</h3>
+              <p className="text-xs text-cad-textMuted">Create a fresh blank circuit canvas.</p>
             </div>
 
             <form onSubmit={handleCreate} className="space-y-3.5 text-xs">

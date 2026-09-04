@@ -9,7 +9,6 @@
 import React, { useState, useMemo, useRef } from 'react';
 import { Logo } from '../../components/branding/Logo';
 import { AuthService, User } from '../../core/auth';
-import { GuestSessionManager } from '../../lib/auth/guestSession';
 import { CircuitMotionGraphic } from '../../components/branding/CircuitMotionGraphic';
 import {
   Mail,
@@ -29,7 +28,6 @@ interface AuthProps {
   onAuthSuccess?: (user: User) => void;
   onSwitchToSignup?: () => void;
   onSwitchToLogin?: () => void;
-  onContinueAsGuest?: () => void;
   onNavigateHome?: () => void;
 }
 
@@ -38,7 +36,6 @@ export const Login: React.FC<AuthProps> = ({
   onAuthSuccess,
   onSwitchToSignup,
   onSwitchToLogin,
-  onContinueAsGuest,
   onNavigateHome,
 }) => {
   const [mode, setMode] = useState<'login' | 'signup'>(initialMode);
@@ -127,11 +124,6 @@ export const Login: React.FC<AuthProps> = ({
     }
   };
 
-  const handleGuest = () => {
-    const user = GuestSessionManager.startGuestSession();
-    onContinueAsGuest ? onContinueAsGuest() : onAuthSuccess?.(user);
-  };
-
   return (
     <div className="min-h-screen w-full bg-cad-bg text-cad-text flex flex-col items-center justify-center p-4 select-none relative overflow-hidden font-sans">
       {/* Kinetic background motion graphic */}
@@ -165,12 +157,12 @@ export const Login: React.FC<AuthProps> = ({
         <div className="flex flex-col items-center text-center space-y-2">
           <Logo size="md" subtitle={false} onClick={onNavigateHome} />
           <h2 className="text-base font-bold text-cad-textHeading pt-1">
-            {mode === 'login' ? 'Welcome back' : 'Create an account'}
+            {mode === 'login' ? 'Sign in to FloZ' : 'Create your FloZ Account'}
           </h2>
           <p className="text-xs text-cad-textMuted">
             {mode === 'login'
-              ? 'Sign in to access your projects and boards'
-              : 'Get started with fast, modern circuit design'}
+              ? 'Access your synthesized AI circuit boards and projects'
+              : 'Turn natural language prompts into physical circuit boards'}
           </p>
         </div>
 
@@ -323,24 +315,6 @@ export const Login: React.FC<AuthProps> = ({
             )}
           </button>
         </form>
-
-        {/* Divider */}
-        <div className="relative flex items-center justify-center pt-1">
-          <div className="border-t border-cad-border w-full" />
-          <span className="bg-cad-panel px-2 text-[10px] text-cad-textMuted uppercase tracking-wider absolute">
-            or
-          </span>
-        </div>
-
-        {/* Clean Guest Access (No AI sparkles) */}
-        <button
-          type="button"
-          onClick={handleGuest}
-          className="w-full py-2 bg-cad-subpanel hover:bg-cad-surfaceHover text-cad-text font-medium rounded-md text-xs border border-cad-border flex items-center justify-center gap-2 transition-colors duration-fast eng-tactile"
-        >
-          <UserIcon size={14} className="text-emerald-500" />
-          <span>Continue as Guest</span>
-        </button>
       </div>
     </div>
   );

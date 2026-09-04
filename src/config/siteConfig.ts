@@ -38,7 +38,7 @@ export const siteConfig: SiteConfig = {
     'FloZ turns user prompts into real, production-ready printed circuit boards. Describe what you want to build, and FloZ generates the full schematic, netlist, component placement, and multi-layer PCB layout in seconds.',
   version: '1.0.0',
   author: 'FloZ AI Hardware Studio',
-  companyName: 'FloZ',
+  companyName: (typeof import.meta !== 'undefined' && import.meta.env?.VITE_COMPANY_NAME) || 'FloZ EDA',
   contactEmail: typeof import.meta !== 'undefined' && import.meta.env?.VITE_CONTACT_EMAIL
     ? String(import.meta.env.VITE_CONTACT_EMAIL)
     : undefined,

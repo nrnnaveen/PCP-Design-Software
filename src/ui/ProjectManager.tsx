@@ -6,7 +6,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { ApexProject } from '../core/types';
-import { createDemoProject } from '../examples/demoProject';
+import { createBlankProject } from '../examples/demoProject';
 import { ProjectSerializer } from '../core/serialization';
 import { AuthService, User } from '../core/auth';
 import { siteConfig } from '../config/siteConfig';
@@ -129,20 +129,8 @@ export const ProjectManager: React.FC<Props> = ({
       return;
     }
     setPrjNameError(null);
-
-    const freshProject = createDemoProject();
-    freshProject.metadata.id = `proj_${Date.now()}`;
-    freshProject.metadata.name = trimmed;
-    freshProject.metadata.author = user.name || 'FloZ ECA Engineer';
-    freshProject.schematic.sheets[0].symbols = [];
-    freshProject.schematic.sheets[0].wires = [];
-    freshProject.schematic.sheets[0].junctions = [];
-    freshProject.schematic.sheets[0].labels = [];
-    freshProject.pcb.footprints = [];
-    freshProject.pcb.tracks = [];
-    freshProject.pcb.vias = [];
-    freshProject.netGraph = { nets: {} };
-
+    const freshProject = createBlankProject(trimmed);
+    freshProject.metadata.author = user.name || 'FloZ Designer';
     onOpenProject(freshProject);
     onClose();
   };
