@@ -35,7 +35,7 @@ export const siteConfig: SiteConfig = {
   siteName: (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SITE_NAME) || 'FloZ ECA',
   siteTitle: 'FloZ — AI PCB Design Software | Prompt to Circuit Board',
   siteDescription:
-    'FloZ turns user prompts into real, production-ready printed circuit boards. Describe what you want to build, and FloZ generates the full schematic, netlist, component placement, and multi-layer PCB layout in seconds.',
+    'FloZ ECA is an AI-integrated electronic design automation platform built to make PCB design more accessible, practical, and less intimidating.',
   version: '1.0.0',
   author: 'FloZ AI Hardware Studio',
   companyName: (typeof import.meta !== 'undefined' && import.meta.env?.VITE_COMPANY_NAME) || 'FloZ EDA',

@@ -29,7 +29,7 @@ import { ERCPanel } from '../erc/ERCPanel';
 import { DRCPanel } from '../drc/DRCPanel';
 import { FloZAIPanel } from '../ai/FloZAIPanel';
 import { ManufacturingModal } from '../manufacturing/ManufacturingModal';
-import { AboutModal } from './AboutModal';
+import { AboutModal, AboutTabId } from './AboutModal';
 import { ProjectHealthModal } from './ProjectHealthModal';
 import { MissingAssetsModal } from './MissingAssetsModal';
 import { SettingsModal } from './SettingsModal';
@@ -95,6 +95,8 @@ import {
   HelpCircle,
   Wrench,
   Plus,
+  GitMerge,
+  Mail,
 } from 'lucide-react';
 
 export type WorkspaceTab =
@@ -438,8 +440,14 @@ export const AppShell: React.FC = () => {
   const [showLibraryManager, setShowLibraryManager] = useState<boolean>(false);
   const [showMfgModal, setShowMfgModal] = useState<boolean>(false);
   const [showAboutModal, setShowAboutModal] = useState<boolean>(false);
+  const [aboutTab, setAboutTab] = useState<AboutTabId>('about-eca');
   const [showHealthModal, setShowHealthModal] = useState<boolean>(false);
   const [showMissingAssetsModal, setShowMissingAssetsModal] = useState<boolean>(false);
+
+  const openAboutWithTab = useCallback((tab: AboutTabId) => {
+    setAboutTab(tab);
+    setShowAboutModal(true);
+  }, []);
 
   // Drag & drop import analysis modal
   const [dropImportAnalysis, setDropImportAnalysis] = useState<ImportAnalysisSummary | null>(null);
@@ -564,7 +572,7 @@ export const AppShell: React.FC = () => {
           setRightPanelCollapsed(false);
           break;
         case 'help-about':
-          setShowAboutModal(true);
+          openAboutWithTab('about-eca');
           break;
       }
     };
@@ -676,8 +684,17 @@ export const AppShell: React.FC = () => {
       { id: 'act_theme', title: `Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Theme`, category: 'System', icon: theme === 'dark' ? Sun : Moon, action: () => handleSetTheme(theme === 'dark' ? 'light' : 'dark') },
       { id: 'act_settings', title: 'CAD Workspace Settings...', category: 'System', icon: SettingsIcon, action: () => setShowSettingsModal(true) },
       { id: 'act_landing', title: 'Public Product Landing Page', category: 'System', icon: ExternalLink, action: () => setShowLanding(true) },
+      { id: 'act_about', title: 'About FloZ ECA & Philosophy', category: 'System', icon: Info, action: () => openAboutWithTab('about-eca') },
+      { id: 'act_floz_ai', title: 'FloZ AI — Prompt to Circuit Overview', category: 'System', icon: Sparkles, action: () => openAboutWithTab('floz-ai') },
+      { id: 'act_features', title: 'Features & Capabilities', category: 'System', icon: Layers, action: () => openAboutWithTab('features') },
+      { id: 'act_how_it_works', title: 'How FloZ ECA Works (Step-by-Step)', category: 'System', icon: GitMerge, action: () => openAboutWithTab('how-it-works') },
+      { id: 'act_disclaimer', title: 'AI Disclaimer & Circuit Verification', category: 'System', icon: ShieldAlert, action: () => openAboutWithTab('disclaimer') },
+      { id: 'act_faq', title: 'Frequently Asked Questions (FAQ)', category: 'System', icon: HelpCircle, action: () => openAboutWithTab('faq') },
+      { id: 'act_contact', title: 'Contact & Support', category: 'System', icon: Mail, action: () => openAboutWithTab('contact') },
+      { id: 'act_privacy', title: 'Privacy Policy', category: 'System', icon: ShieldCheck, action: () => setShowPrivacyModal(true) },
+      { id: 'act_terms', title: 'Terms and Conditions', category: 'System', icon: FileText, action: () => setShowTermsModal(true) },
     ],
-    [theme]
+    [theme, openAboutWithTab]
   );
 
   if (showLanding) {
@@ -726,7 +743,9 @@ export const AppShell: React.FC = () => {
           }}
           onOpenPrivacyPolicy={() => setShowPrivacyModal(true)}
           onOpenTerms={() => setShowTermsModal(true)}
-          onOpenAbout={() => setShowAboutModal(true)}
+          onOpenAbout={() => openAboutWithTab('about-eca')}
+          onOpenFAQ={() => openAboutWithTab('faq')}
+          onOpenContact={() => openAboutWithTab('contact')}
         />
         {showPrivacyModal && (
           <PrivacyPolicyModal isOpen={showPrivacyModal} onClose={() => setShowPrivacyModal(false)} />
@@ -735,7 +754,11 @@ export const AppShell: React.FC = () => {
           <TermsModal isOpen={showTermsModal} onClose={() => setShowTermsModal(false)} />
         )}
         {showAboutModal && (
-          <AboutModal isOpen={showAboutModal} onClose={() => setShowAboutModal(false)} />
+          <AboutModal
+            isOpen={showAboutModal}
+            onClose={() => setShowAboutModal(false)}
+            initialTab={aboutTab}
+          />
         )}
         <CookieConsentBanner onOpenPrivacyPolicy={() => setShowPrivacyModal(true)} />
       </div>
@@ -863,6 +886,11 @@ export const AppShell: React.FC = () => {
           }}
           onOpenCircuitLab={() => setShowCircuitLab(true)}
           onOpenAuthModal={() => setShowAuthModal(true)}
+          onOpenAbout={() => openAboutWithTab('about-eca')}
+          onOpenFAQ={() => openAboutWithTab('faq')}
+          onOpenContact={() => openAboutWithTab('contact')}
+          onOpenPrivacyPolicy={() => setShowPrivacyModal(true)}
+          onOpenTerms={() => setShowTermsModal(true)}
           theme={theme}
           onToggleTheme={() => handleSetTheme(theme === 'dark' ? 'light' : 'dark')}
         />
@@ -904,7 +932,11 @@ export const AppShell: React.FC = () => {
           <TermsModal isOpen={showTermsModal} onClose={() => setShowTermsModal(false)} />
         )}
         {showAboutModal && (
-          <AboutModal isOpen={showAboutModal} onClose={() => setShowAboutModal(false)} />
+          <AboutModal
+            isOpen={showAboutModal}
+            onClose={() => setShowAboutModal(false)}
+            initialTab={aboutTab}
+          />
         )}
         <CookieConsentBanner onOpenPrivacyPolicy={() => setShowPrivacyModal(true)} />
       </div>
@@ -1050,7 +1082,14 @@ export const AppShell: React.FC = () => {
                 { label: 'Command Palette...', icon: Terminal, shortcut: 'Ctrl+K', action: () => setShowCommandPalette(true) },
                 { label: 'Product Landing Page...', icon: ExternalLink, action: () => setShowLanding(true) },
                 { type: 'separator' },
-                { label: 'About FloZ ECA...', icon: Info, action: () => setShowAboutModal(true) },
+                { label: 'About FloZ ECA...', icon: Info, action: () => openAboutWithTab('about-eca') },
+                { label: 'FloZ AI Overview...', icon: Sparkles, action: () => openAboutWithTab('floz-ai') },
+                { label: 'How FloZ ECA Works...', icon: GitMerge, action: () => openAboutWithTab('how-it-works') },
+                { label: 'Features & Capabilities...', icon: Layers, action: () => openAboutWithTab('features') },
+                { label: 'AI Disclaimer & Verification...', icon: ShieldAlert, action: () => openAboutWithTab('disclaimer') },
+                { label: 'Frequently Asked Questions (FAQ)...', icon: HelpCircle, action: () => openAboutWithTab('faq') },
+                { label: 'Contact & Support...', icon: Mail, action: () => openAboutWithTab('contact') },
+                { type: 'separator' },
                 { label: 'Privacy Policy...', icon: ShieldCheck, action: () => setShowPrivacyModal(true) },
                 { label: 'Terms of Service...', icon: FileText, action: () => setShowTermsModal(true) },
               ],
@@ -1620,6 +1659,7 @@ export const AppShell: React.FC = () => {
         <AboutModal
           isOpen={showAboutModal}
           onClose={() => setShowAboutModal(false)}
+          initialTab={aboutTab}
         />
       )}
 

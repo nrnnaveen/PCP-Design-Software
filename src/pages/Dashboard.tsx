@@ -31,6 +31,8 @@ import {
   Sparkles,
   Zap,
   Loader2,
+  Info,
+  HelpCircle,
 } from 'lucide-react';
 import { AppThemeId } from '../theme/themeManager';
 
@@ -44,6 +46,11 @@ interface DashboardProps {
   onOpenLibraryManager?: () => void;
   onOpenCircuitLab?: () => void;
   onOpenAuthModal?: () => void;
+  onOpenPrivacyPolicy?: () => void;
+  onOpenTerms?: () => void;
+  onOpenAbout?: () => void;
+  onOpenFAQ?: () => void;
+  onOpenContact?: () => void;
   theme?: AppThemeId;
   onToggleTheme?: () => void;
 }
@@ -74,7 +81,14 @@ export const Dashboard: React.FC<DashboardProps> = ({
   onOpenLanding,
   onOpenPromptSession,
   onOpenSettings,
+  onOpenLibraryManager,
+  onOpenCircuitLab,
   onOpenAuthModal,
+  onOpenPrivacyPolicy,
+  onOpenTerms,
+  onOpenAbout,
+  onOpenFAQ,
+  onOpenContact,
   theme = 'dark',
   onToggleTheme,
 }) => {
@@ -295,12 +309,55 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   <span>Settings</span>
                 </button>
               )}
+              {onOpenAbout && (
+                <button
+                  onClick={onOpenAbout}
+                  className="w-full px-3 py-2 rounded-md text-xs font-medium flex items-center gap-2.5 text-cad-text hover:bg-cad-surfaceHover transition-colors duration-fast"
+                >
+                  <Info size={15} />
+                  <span>About FloZ ECA</span>
+                </button>
+              )}
+              {onOpenFAQ && (
+                <button
+                  onClick={onOpenFAQ}
+                  className="w-full px-3 py-2 rounded-md text-xs font-medium flex items-center gap-2.5 text-cad-text hover:bg-cad-surfaceHover transition-colors duration-fast"
+                >
+                  <HelpCircle size={15} />
+                  <span>FAQ & Support</span>
+                </button>
+              )}
             </div>
           </div>
 
-          <div className="text-[11px] text-cad-textMuted flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span>AI Hardware Engine Ready</span>
+          <div className="pt-4 border-t border-cad-border flex flex-col gap-2">
+            <div className="text-[11px] text-cad-textMuted flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span>AI Hardware Engine Ready</span>
+            </div>
+            {(onOpenTerms || onOpenPrivacyPolicy || onOpenContact) && (
+              <div className="flex items-center gap-2 text-[10px] text-cad-textMuted pt-1 flex-wrap">
+                {onOpenTerms && (
+                  <button onClick={onOpenTerms} className="hover:text-cad-text transition-colors">
+                    Terms
+                  </button>
+                )}
+                {onOpenTerms && onOpenPrivacyPolicy && <span>·</span>}
+                {onOpenPrivacyPolicy && (
+                  <button onClick={onOpenPrivacyPolicy} className="hover:text-cad-text transition-colors">
+                    Privacy
+                  </button>
+                )}
+                {onOpenContact && (
+                  <>
+                    <span>·</span>
+                    <button onClick={onOpenContact} className="hover:text-cad-text transition-colors">
+                      Contact
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
           </div>
         </aside>
 

@@ -56,54 +56,199 @@ export const PrivacyPolicyModal: React.FC<Props> = ({ isOpen, onClose }) => {
         </div>
 
         {/* Content */}
-        <div className="p-4 overflow-y-auto space-y-3 text-xs leading-relaxed text-cad-text">
-          <section className="space-y-1">
-            <h3 className="font-semibold text-cad-textHeading flex items-center gap-1.5 text-xs">
-              <HardDrive size={13} className="text-emerald-600 dark:text-emerald-400" />
-              1. Local-First Data Architecture
-            </h3>
-            <p className="text-cad-textMuted">
-              {siteConfig.siteName} is built from the ground up as a <strong>local-first Electronic Design Automation (EDA) system</strong>. All schematic sheets, netlists, PCB layer geometry, SPICE models, trace routing, and design rules remain stored directly inside your browser’s indexed storage or local filesystem.
-            </p>
-          </section>
+        <div className="p-5 overflow-y-auto space-y-4 text-xs leading-relaxed text-cad-text">
+          <div className="space-y-1">
+            <h3 className="text-sm font-semibold text-cad-textHeading">Privacy Policy</h3>
+            <p className="text-[11px] font-mono text-cad-textMuted">Last Updated: September 4, 2026</p>
+          </div>
 
-          <section className="space-y-1">
-            <h3 className="font-semibold text-cad-textHeading flex items-center gap-1.5 text-xs">
-              <Cpu size={13} className="text-blue-600 dark:text-blue-400" />
-              2. FloZ AI &amp; Circuit Inference Privacy
-            </h3>
-            <p className="text-cad-textMuted">
-              When utilizing the optional FloZ AI with a custom OpenRouter or LLM API key, your circuit prompts and netlist excerpts are transmitted exclusively to your configured AI inference provider via HTTPS. When operating in <em>Local EDA Rule Synthesis</em> mode, all analysis is computed 100% offline on your device with zero outbound network calls.
-            </p>
-          </section>
+          <p className="text-cad-text">
+            FloZ (&quot;we&quot;, &quot;us&quot;, &quot;our&quot;) respects your privacy.
+          </p>
 
-          <section className="space-y-1">
-            <h3 className="font-semibold text-cad-textHeading flex items-center gap-1.5 text-xs">
-              <Lock size={13} className="text-purple-600 dark:text-purple-400" />
-              3. Telemetry &amp; Analytics
-            </h3>
-            <p className="text-cad-textMuted">
-              We do not track, profile, or sell your hardware designs, schematic IP, or component metadata. Minimal, privacy-preserving performance telemetry (such as crash diagnostics) may be collected only with your explicit opt-in preference under Settings.
-            </p>
-          </section>
+          <p className="text-cad-text">
+            This Privacy Policy explains what information may be collected when you use FloZ ECA and related FloZ services, how that information may be used, and the choices available to you.
+          </p>
 
-          {siteConfig.contactEmail && (
-            <section className="space-y-1 border-t border-cad-border pt-2.5">
-              <h3 className="font-semibold text-cad-textHeading flex items-center gap-1.5 text-xs">
-                <Mail size={13} className="text-amber-600 dark:text-amber-400" />
-                4. Data Protection Inquiries
-              </h3>
+          <p className="text-cad-text font-medium">
+            We believe privacy policies shouldn&apos;t require a law degree to understand, so we&apos;ve tried to keep this one straightforward.
+          </p>
+
+          {/* Section 1 */}
+          <section className="space-y-2 pt-2 border-t border-cad-border">
+            <h4 className="font-semibold text-cad-textHeading text-xs">1. Information We May Collect</h4>
+            <p className="text-cad-textMuted">
+              Depending on how you use FloZ ECA, we may collect information such as:
+            </p>
+
+            <div className="space-y-1.5 pl-2 border-l-2 border-blue-500/40">
+              <h5 className="font-semibold text-cad-textHeading text-[11px]">Account Information</h5>
               <p className="text-cad-textMuted">
-                For questions regarding our privacy practices or data rights, contact us at{' '}
-                <a
-                  href={`mailto:${siteConfig.contactEmail}`}
-                  className="text-blue-600 dark:text-blue-400 hover:underline font-mono"
-                >
-                  {siteConfig.contactEmail}
-                </a>.
+                If you create an account, we may collect information required to create and maintain that account, such as:
               </p>
-            </section>
-          )}
+              <ul className="list-disc list-inside text-cad-textMuted space-y-0.5 pl-1">
+                <li>Name or display name</li>
+                <li>Email address</li>
+                <li>Authentication information</li>
+                <li>Account preferences</li>
+              </ul>
+            </div>
+
+            <div className="space-y-1.5 pl-2 border-l-2 border-emerald-500/40 pt-1">
+              <h5 className="font-semibold text-cad-textHeading text-[11px]">Project Information</h5>
+              <p className="text-cad-textMuted">
+                When you use FloZ ECA, you may create or upload electronic design projects. This may include:
+              </p>
+              <ul className="list-disc list-inside text-cad-textMuted space-y-0.5 pl-1">
+                <li>Schematics</li>
+                <li>PCB layouts</li>
+                <li>Component information</li>
+                <li>Project files</li>
+                <li>Design configurations</li>
+                <li>AI prompts related to your project</li>
+              </ul>
+              <p className="text-cad-textMuted text-[11px]">
+                We use this information to provide the features you request.
+              </p>
+            </div>
+
+            <div className="space-y-1.5 pl-2 border-l-2 border-purple-500/40 pt-1">
+              <h5 className="font-semibold text-cad-textHeading text-[11px]">Usage Information</h5>
+              <p className="text-cad-textMuted">
+                We may collect technical information about how the service is used, such as:
+              </p>
+              <ul className="list-disc list-inside text-cad-textMuted space-y-0.5 pl-1">
+                <li>Browser type</li>
+                <li>Device information</li>
+                <li>Operating system</li>
+                <li>IP address</li>
+                <li>General usage activity</li>
+                <li>Error and diagnostic information</li>
+              </ul>
+              <p className="text-cad-textMuted text-[11px]">
+                This information helps us maintain, secure, and improve the service.
+              </p>
+            </div>
+          </section>
+
+          {/* Section 2 */}
+          <section className="space-y-1.5 pt-2 border-t border-cad-border">
+            <h4 className="font-semibold text-cad-textHeading text-xs">2. How We Use Information</h4>
+            <p className="text-cad-textMuted">We may use collected information to:</p>
+            <ul className="list-disc list-inside text-cad-textMuted space-y-0.5 pl-1">
+              <li>Provide and operate FloZ ECA.</li>
+              <li>Authenticate users.</li>
+              <li>Save and manage projects.</li>
+              <li>Process AI requests.</li>
+              <li>Provide customer support.</li>
+              <li>Detect abuse and security problems.</li>
+              <li>Fix bugs and technical problems.</li>
+              <li>Improve product performance and usability.</li>
+              <li>Develop new features.</li>
+              <li>Comply with applicable legal requirements.</li>
+            </ul>
+            <p className="text-cad-text font-medium pt-1">
+              We do not collect information simply because we can. If we don&apos;t need something for the product or its operation, we&apos;d rather not have it.
+            </p>
+          </section>
+
+          {/* Section 3 */}
+          <section className="space-y-1.5 pt-2 border-t border-cad-border">
+            <h4 className="font-semibold text-cad-textHeading text-xs">3. AI Processing</h4>
+            <p className="text-cad-textMuted">
+              FloZ ECA includes AI-powered functionality.
+            </p>
+            <p className="text-cad-textMuted">
+              When you use FloZ AI, information you provide to the AI may be processed by third-party AI infrastructure or service providers that we use to operate the feature. Depending on the implementation of the service, this may include:
+            </p>
+            <ul className="list-disc list-inside text-cad-textMuted space-y-0.5 pl-1">
+              <li>Your AI prompt</li>
+              <li>Relevant project information</li>
+              <li>Design-related instructions</li>
+              <li>Context required to generate a response</li>
+            </ul>
+            <p className="text-amber-600 dark:text-amber-400 font-medium text-[11px] pt-1">
+              We recommend that you do not include passwords, private credentials, API keys, personal secrets, or other sensitive information in AI prompts.
+            </p>
+          </section>
+
+          {/* Section 4 */}
+          <section className="space-y-1.5 pt-2 border-t border-cad-border">
+            <h4 className="font-semibold text-cad-textHeading text-xs">4. Third-Party Services</h4>
+            <p className="text-cad-textMuted">
+              FloZ may use third-party services for purposes such as authentication, hosting, database storage, AI processing, analytics, error monitoring, and infrastructure. These providers may process information on our behalf and are expected to handle information according to their applicable terms and privacy requirements.
+            </p>
+          </section>
+
+          {/* Section 5 */}
+          <section className="space-y-1.5 pt-2 border-t border-cad-border">
+            <h4 className="font-semibold text-cad-textHeading text-xs">5. Cookies and Similar Technologies</h4>
+            <p className="text-cad-textMuted">
+              FloZ may use cookies or similar technologies to keep users signed in, remember preferences, maintain sessions, understand product usage, and improve service performance. Where required by applicable law, we will provide appropriate choices regarding non-essential cookies.
+            </p>
+          </section>
+
+          {/* Section 6 */}
+          <section className="space-y-1.5 pt-2 border-t border-cad-border">
+            <h4 className="font-semibold text-cad-textHeading text-xs">6. Data Security</h4>
+            <p className="text-cad-textMuted">
+              We take reasonable technical and organizational measures to protect information from unauthorized access, alteration, disclosure, or destruction.
+            </p>
+            <p className="text-cad-textMuted italic">
+              However, no online service can promise absolute security. If someone tells you their database is mathematically impossible to hack, they&apos;re probably selling something.
+            </p>
+          </section>
+
+          {/* Section 7 */}
+          <section className="space-y-1.5 pt-2 border-t border-cad-border">
+            <h4 className="font-semibold text-cad-textHeading text-xs">7. Data Retention</h4>
+            <p className="text-cad-textMuted">
+              We retain information for as long as reasonably necessary to provide our services, maintain accounts, comply with legal obligations, resolve disputes, and enforce agreements. Retention periods may vary depending on the type of information and how it is used.
+            </p>
+          </section>
+
+          {/* Section 8 */}
+          <section className="space-y-1.5 pt-2 border-t border-cad-border">
+            <h4 className="font-semibold text-cad-textHeading text-xs">8. Your Choices</h4>
+            <p className="text-cad-textMuted">
+              Depending on your location and applicable law, you may have rights regarding your personal information, including the ability to request access, correction, deletion, restriction, object to processing, or withdraw consent where processing is based on consent. Requests can be made through our designated support or privacy contact method.
+            </p>
+          </section>
+
+          {/* Section 9 */}
+          <section className="space-y-1.5 pt-2 border-t border-cad-border">
+            <h4 className="font-semibold text-cad-textHeading text-xs">9. Children&apos;s Privacy</h4>
+            <p className="text-cad-textMuted">
+              FloZ is not intentionally designed to collect personal information from children in violation of applicable laws. If you believe a child has provided personal information to us without appropriate authorization, please contact us.
+            </p>
+          </section>
+
+          {/* Section 10 */}
+          <section className="space-y-1.5 pt-2 border-t border-cad-border">
+            <h4 className="font-semibold text-cad-textHeading text-xs">10. International Processing</h4>
+            <p className="text-cad-textMuted">
+              Depending on our infrastructure and service providers, information may be processed or stored in countries other than your own. Where required, we will use appropriate safeguards for international data transfers.
+            </p>
+          </section>
+
+          {/* Section 11 */}
+          <section className="space-y-1.5 pt-2 border-t border-cad-border">
+            <h4 className="font-semibold text-cad-textHeading text-xs">11. Changes to This Policy</h4>
+            <p className="text-cad-textMuted">
+              We may update this Privacy Policy when our services, technology, or legal requirements change. When significant changes are made, we will take reasonable steps to notify users. The &quot;Last Updated&quot; date at the top of this page indicates when the policy was most recently revised.
+            </p>
+          </section>
+
+          {/* Section 12 */}
+          <section className="space-y-1.5 pt-2 border-t border-cad-border">
+            <h4 className="font-semibold text-cad-textHeading text-xs">12. Contact</h4>
+            <p className="text-cad-textMuted">
+              If you have questions about this Privacy Policy or how FloZ handles information, please contact us through the official FloZ support or contact channel.
+            </p>
+            <p className="text-cad-textHeading font-semibold pt-1">
+              Privacy matters. We take it seriously — even if we occasionally explain it without the legalese.
+            </p>
+          </section>
         </div>
 
         {/* Footer */}

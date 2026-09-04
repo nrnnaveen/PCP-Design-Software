@@ -25,6 +25,8 @@ interface LandingProps {
   onOpenPrivacyPolicy: () => void;
   onOpenTerms: () => void;
   onOpenAbout: () => void;
+  onOpenFAQ?: () => void;
+  onOpenContact?: () => void;
 }
 
 export const Landing: React.FC<LandingProps> = ({
@@ -35,6 +37,8 @@ export const Landing: React.FC<LandingProps> = ({
   onOpenPrivacyPolicy,
   onOpenTerms,
   onOpenAbout,
+  onOpenFAQ,
+  onOpenContact,
 }) => {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [isMuted, setIsMuted] = useState<boolean>(true);
@@ -169,7 +173,7 @@ export const Landing: React.FC<LandingProps> = ({
           &copy; {new Date().getFullYear()} {siteConfig.companyName}. All rights reserved.
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3 sm:gap-4 flex-wrap">
           <button onClick={onOpenTerms} className="hover:text-white transition-colors">
             Terms
           </button>
@@ -181,6 +185,22 @@ export const Landing: React.FC<LandingProps> = ({
           <button onClick={onOpenAbout} className="hover:text-white transition-colors">
             About
           </button>
+          {onOpenFAQ && (
+            <>
+              <span>·</span>
+              <button onClick={onOpenFAQ} className="hover:text-white transition-colors">
+                FAQ
+              </button>
+            </>
+          )}
+          {onOpenContact && (
+            <>
+              <span>·</span>
+              <button onClick={onOpenContact} className="hover:text-white transition-colors">
+                Contact
+              </button>
+            </>
+          )}
         </div>
       </footer>
     </div>
